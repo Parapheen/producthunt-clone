@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+
+	<script src="/assets/js/htmx.min.js"></script>
+	<link href="/assets/css/output.css" rel="stylesheet">
+</head>
+
+<body>
+	<h1 class="text-3xl font-bold text-center">Hello world!</h1>
+
+	<a class="btn" hx-get="/api/login" hx-target="#modal-container">
+		Войти
+	</a>
+
+	<div id="modal-container"></div>
+</body>
+
+</html>
