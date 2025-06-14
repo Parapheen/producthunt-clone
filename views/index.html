@@ -8,17 +8,19 @@
 	<title>Document</title>
 
 	<script src="/assets/js/htmx.min.js"></script>
+	<script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
+	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-token-with-polyfills-latest.js"></script>
 	<link href="/assets/css/output.css" rel="stylesheet">
 </head>
 
 <body>
 	<h1 class="text-3xl font-bold text-center">Hello world!</h1>
-
-	<a class="btn" hx-get="/api/login" hx-target="#modal-container">
+	<button class="font-semibold rounded-full p-2 bg-rose-400 text-white" hx-get="/api/login" hx-target="body"
+		hx-swap="beforeend">
 		Войти
-	</a>
+	</button>
 
-	<div id="modal-container"></div>
 </body>
 
 </html>

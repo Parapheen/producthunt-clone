@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"os"
@@ -10,16 +11,28 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/yandex"
 )
 
 type Server struct {
 	router *chi.Mux
 }
 
+var yandexConfig = oauth2.Config{
+	ClientID:     os.Getenv("YANDEX_CLIENT_ID"),
+	ClientSecret: os.Getenv("YANDEX_CLIENT_SECRET"),
+	Endpoint:     yandex.Endpoint,
+	RedirectURL:  "http://localhost:3333/auth/yandex/callback",
+	Scopes:       []string{"email"},
+}
+
 func NewServer() *Server {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
+
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles("views/index.html")
 		if err != nil {
@@ -34,8 +47,8 @@ func NewServer() *Server {
 		}
 	})
 
-	r.Get("/message", func(w http.ResponseWriter, r *http.Request) {
-		t, err := template.ParseFiles("views/message.html")
+	r.Get("/api/login", func(w http.ResponseWriter, r *http.Request) {
+		t, err := template.ParseFiles("views/partials/auth-modal.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -47,17 +60,56 @@ func NewServer() *Server {
 		}
 	})
 
-	r.Get("/api/login", func(w http.ResponseWriter, r *http.Request) {
-		t, err := template.ParseFiles("views/auth-modal.html")
+	r.Get("/auth/yandex", func(w http.ResponseWriter, r *http.Request) {
+
+		state := uuid.NewString()
+		http.SetCookie(w, &http.Cookie{
+			Name:     "ouath_state",
+			Value:    state,
+			HttpOnly: true,
+		})
+
+		url := yandexConfig.AuthCodeURL(state)
+
+		http.Redirect(w, r, url, http.StatusFound)
+	})
+
+	r.Get("/auth/yandex/callback", func(w http.ResponseWriter, r *http.Request) {
+		// validate state
+		cookie, err := r.Cookie("ouath_state")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		err = t.Execute(w, nil)
+
+		state := r.URL.Query().Get("state")
+		if cookie.Value != state {
+			http.Error(w, "Invalid state", http.StatusInternalServerError)
+			return
+		}
+
+		code := r.URL.Query().Get("code")
+
+		token, err := yandexConfig.Exchange(r.Context(), code)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		userInfo, err := yandexConfig.Client(r.Context(), token).Get("https://login.yandex.ru/info")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Println(userInfo)
+
+		// clean state cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:     "ouath_state",
+			Value:    "",
+			HttpOnly: true,
+		})
 	})
 
 	workDir, _ := os.Getwd()
@@ -95,4 +147,3 @@ func fileServer(r chi.Router, path string, root http.FileSystem) error {
 
 	return nil
 }
-
