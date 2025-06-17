@@ -1,4 +1,4 @@
-package session
+package user
 
 import (
 	"encoding/hex"
@@ -11,15 +11,13 @@ import (
 type Session struct {
 	ID        uuid.UUID
 	Token     string
-	UserID    uuid.UUID
 	ExpiresAt time.Time
 }
 
-func NewSession(userID uuid.UUID) *Session {
+func NewSession() *Session {
 	return &Session{
 		ID:        uuid.New(),
 		Token:     generateToken(),
-		UserID:    userID,
 		ExpiresAt: time.Now().Add(time.Hour * 24 * 7),
 	}
 }

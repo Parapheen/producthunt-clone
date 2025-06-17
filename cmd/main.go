@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Parapheen/ph-clone/internal/domain/auth"
+	"github.com/Parapheen/ph-clone/internal/app"
 	"github.com/Parapheen/ph-clone/internal/infra/sqlite"
 	"github.com/Parapheen/ph-clone/internal/server"
 	"github.com/Parapheen/ph-clone/internal/server/handler"
@@ -31,9 +31,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	authService := auth.NewService()
+	userRepository := sqlite.NewUserRepository(db)
 
-	h := handler.NewHandler(authService)
+	authService := app.NewAuthService(userRepository)
+	userService := app.NewUserService(userRepository)
+
+	h := handler.NewHandler(authService, userService)
 	s := server.NewServer(h)
 
 	logger.Info("Staring server", "address", addr)

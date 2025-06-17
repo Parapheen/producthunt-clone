@@ -10,16 +10,27 @@
 	<script src="/assets/js/htmx.min.js"></script>
 	<script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
 	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
-	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-token-with-polyfills-latest.js"></script>
+	<script
+		src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-token-with-polyfills-latest.js"></script>
 	<link href="/assets/css/output.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2/dist/basecoat.cdn.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2/dist/js/all.min.js" defer></script>
 </head>
 
 <body>
 	<h1 class="text-3xl font-bold text-center">Hello world!</h1>
-	<button class="font-semibold rounded-full p-2 bg-rose-400 text-white" hx-get="/api/login" hx-target="body"
+
+	{{if .User}}
+	<p>Hello, {{.User.Name}}!</p>
+	<a class="btn-outline rounded-full border-rose-400" href="/api/logout">Выйти</a>
+	{{ else }}
+	<button class="btn rounded-full bg-rose-400 text-white" hx-get="/api/login" hx-target="body"
 		hx-swap="beforeend">
 		Войти
 	</button>
+	{{end}}
+
+
 
 </body>
 

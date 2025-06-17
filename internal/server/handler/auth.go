@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"time"
@@ -32,7 +31,7 @@ func (h *Handler) YandexAuth(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(time.Minute * 10),
 	})
 
-	url := h.AuthService.GetRedirectURL(state)
+	url := h.AuthService.GetSocialRedirectURL("yandex", state)
 
 	http.Redirect(w, r, url, http.StatusFound)
 }
@@ -53,10 +52,11 @@ func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 	code := r.URL.Query().Get("code")
 
-	user, err := h.AuthService.Authenticate(r.Context(), code)
-
-	// user service login or create and save session cookie
-	fmt.Printf("%+v\n", user)
+	user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "yandex", code)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// clean state cookie
 	http.SetCookie(w, &http.Cookie{
@@ -66,5 +66,40 @@ func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 	})
+
+	// set session cookie
+	sessionCookie := &http.Cookie{
+		Name:     "session",
+		Value:    user.Session.Token,
+		HttpOnly: true,
+		Path:     "/",
+		Expires:  user.Session.ExpiresAt,
+	}
+	http.SetCookie(w, sessionCookie)
+
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.AuthService.Logout(r.Context(), cookie.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    "",
+		HttpOnly: true,
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+	})
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }

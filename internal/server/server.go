@@ -24,6 +24,7 @@ func NewServer(h *handler.Handler) *Server {
 	r.Get("/auth/yandex/callback", h.YandexAuthCallback)
 
 	r.Get("/api/login", h.LoginModal)
+	r.Get("/api/logout", h.Logout)
 
 	fileServer(r, "/assets")
 

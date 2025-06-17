@@ -1637,6 +1637,9 @@
   .border-gray-300 {
     border-color: var(--color-gray-300);
   }
+  .border-rose-400 {
+    border-color: var(--color-rose-400);
+  }
   .bg-\[\#1a1a1a\] {
     background-color: #1a1a1a;
   }
