@@ -2275,6 +2275,9 @@
   .text-gray-700 {
     color: var(--color-gray-700);
   }
+  .text-rose-400 {
+    color: var(--color-rose-400);
+  }
   .text-white {
     color: var(--color-white);
   }

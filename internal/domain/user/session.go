@@ -34,3 +34,8 @@ func generateToken() string {
 func (s *Session) IsExpired() bool {
 	return s.ExpiresAt.Before(time.Now())
 }
+
+func (s *Session) Refresh() {
+	s.Token = generateToken()
+	s.ExpiresAt = time.Now().Add(time.Hour * 24 * 7)
+}

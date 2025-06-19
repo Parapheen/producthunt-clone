@@ -45,14 +45,32 @@ func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider strin
 		return nil, fmt.Errorf("error getting user info: %w", err)
 	}
 
-	u := user.NewUserFromSocialAccount(userInfo)
-
-	err = a.userRepository.Create(ctx, u)
+	existingUser, err := a.userRepository.GetByProvider(ctx, userInfo.Provider, userInfo.ProviderID)
 	if err != nil {
-		return nil, fmt.Errorf("error creating user: %w", err)
+		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 
-	return u, nil
+	isNewUser := existingUser == nil
+
+	if isNewUser {
+		newUser := user.NewUserFromSocialAccount(userInfo)
+		err = a.userRepository.Create(ctx, newUser)
+		if err != nil {
+			return nil, fmt.Errorf("error creating user: %w", err)
+		}
+		return newUser, nil
+	}
+
+	if existingUser.Session == nil {
+		existingUser.Session = user.NewSession()
+		err = a.userRepository.CreateSession(ctx, existingUser)
+		if err != nil {
+			return nil, fmt.Errorf("error refreshing session: %w", err)
+		}
+		return existingUser, nil
+	}
+
+	return existingUser, nil
 }
 
 func (a *AuthService) Logout(ctx context.Context, session string) error {

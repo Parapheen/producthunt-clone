@@ -2,10 +2,28 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
+
+type UserModel struct {
+	ID    uuid.UUID `db:"id"`
+	Email string    `db:"email"`
+	Name  string    `db:"name"`
+
+	SessionID        *uuid.UUID `db:"session_id"`
+	SessionToken     *string    `db:"session_token"`
+	SessionExpiresAt *time.Time `db:"session_expires_at"`
+
+	SocialAccountID         uuid.UUID `db:"social_account_id"`
+	SocialAccountProvider   string    `db:"social_account_provider"`
+	SocialAccountProviderID string    `db:"social_account_provider_id"`
+}
 
 type UserRepository struct {
 	db *sqlx.DB
@@ -62,6 +80,83 @@ func (r *UserRepository) GetBySession(ctx context.Context, session string) (*use
 	}
 
 	return u, nil
+}
+
+func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*user.User, error) {
+	query := `SELECT 
+		u.id, u.email, u.name, 
+		ss.id as session_id, ss.token as session_token, ss.expires_at as session_expires_at,
+		s.id as social_account_id, s.provider as social_account_provider, s.provider_id as social_account_provider_id
+		FROM users u
+		JOIN social_accounts s ON u.id = s.user_id
+		LEFT JOIN sessions ss ON u.id = ss.user_id
+		WHERE s.provider = $1 AND s.provider_id = $2`
+	uData := &UserModel{}
+
+	err := r.db.GetContext(ctx, uData, query, provider, providerID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	u := &user.User{
+		ID:    uData.ID,
+		Email: uData.Email,
+		Name:  uData.Name,
+
+		SocialAccounts: []*user.SocialAccount{
+			{
+				ID:         uData.SocialAccountID,
+				Provider:   uData.SocialAccountProvider,
+				ProviderID: uData.SocialAccountProviderID,
+			},
+		},
+	}
+
+	if uData.SessionID != nil {
+		u.Session = &user.Session{
+			ID:        *uData.SessionID,
+			Token:     *uData.SessionToken,
+			ExpiresAt: *uData.SessionExpiresAt,
+		}
+	}
+
+	return u, nil
+}
+
+func (r *UserRepository) CreateSession(ctx context.Context, user *user.User) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`INSERT INTO sessions (id, token, user_id, expires_at)
+		VALUES ($1, $2, $3, $4)`,
+		user.Session.ID,
+		user.Session.Token,
+		user.ID,
+		user.Session.ExpiresAt,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *UserRepository) RefreshSession(ctx context.Context, session *user.Session) error {
+	_, err := r.db.ExecContext(
+		ctx,
+		`UPDATE sessions 
+		SET token = $1, expires_at = $2 WHERE id = $3`,
+		session.Token,
+		session.ExpiresAt,
+		session.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *UserRepository) DeleteSession(ctx context.Context, session string) error {
