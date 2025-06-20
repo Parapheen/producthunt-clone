@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>ph clone</title>
 
 	<script src="/assets/js/htmx.min.js"></script>
 	<script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
@@ -20,9 +20,31 @@
 <body>
 	{{ template "header" . }}
 
-	{{if .User}}
-	<p>Hello, {{.User.Name}}!</p>
-	{{ end}}
+	<div class="container mx-auto max-w-lg mt-32">
+		<div class="card">
+			<header>
+				<h2>Добавьте свой продукт</h2>
+			</header>
+			<section>
+				<form class="form grid gap-6">
+					<div class="grid gap-2">
+						<label for="product-name">Название продукта</label>
+						<input type="text" id="product-name" placeholder="product hunt">
+					</div>
+					<div class="grid gap-2">
+						<label for="product-url">Ссылка</label>
+						<input type="text" id="product-url" placeholder="https://my-product">
+					</div>
+
+				</form>
+			</section>
+			<footer>
+				<button class="btn btn-primary w-full rounded-full" type="submit">
+					Создать
+				</button>
+			</footer>
+		</div>
+	</div>
 
 </body>
 

@@ -19,6 +19,7 @@ func NewServer(h *handler.Handler) *Server {
 	r.Use(middleware.Logger)
 
 	r.Get("/", h.Home)
+	r.Get("/new-product", h.NewProductForm)
 
 	r.Get("/auth/yandex", h.YandexAuth)
 	r.Get("/auth/yandex/callback", h.YandexAuthCallback)

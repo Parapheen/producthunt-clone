@@ -25,7 +25,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t, err := template.ParseFiles("views/index.html")
+	t, err := template.ParseFiles("views/index.html", "views/header.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

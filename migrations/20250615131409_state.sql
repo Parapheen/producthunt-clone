@@ -31,6 +31,41 @@ CREATE TABLE sessions (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Changed NOW()
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Changed NOW()
 );
+
+CREATE TABLE products (
+    id TEXT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    url VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE product_members (
+    product_id TEXT NOT NULL REFERENCES products(id),
+    user_id TEXT NOT NULL REFERENCES users(id),
+    role VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (product_id, user_id)
+);
+
+CREATE TABLE launches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id TEXT NOT NULL REFERENCES products(id),
+    name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    tagline VARCHAR(255) NOT NULL,
+    state VARCHAR(255) NOT NULL, -- draft, in_review, declined, published, archived
+    url VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    launch_date TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (product_id, slug)
+);
 -- +goose StatementEnd
 
 -- +goose Down
@@ -39,4 +74,6 @@ CREATE TABLE sessions (
 DROP TABLE sessions;
 DROP TABLE social_accounts; -- Corrected table name
 DROP TABLE users;
+DROP TABLE products;
+DROP TABLE launches;
 -- +goose StatementEnd
