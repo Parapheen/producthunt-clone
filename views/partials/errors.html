@@ -1,0 +1,5 @@
+<div id="errors" hx-swap-oob=true class="flex flex-col gap-y-2 mt-5" role="alert">
+	{{ range $index, $error := .Errors }}
+	<p class="text-red-500">{{ $error }}</p>
+	{{ end }}
+</div>

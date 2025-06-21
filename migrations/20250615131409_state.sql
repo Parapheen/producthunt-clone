@@ -52,12 +52,12 @@ CREATE TABLE product_members (
 );
 
 CREATE TABLE launches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     product_id TEXT NOT NULL REFERENCES products(id),
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     tagline VARCHAR(255) NOT NULL,
-    state VARCHAR(255) NOT NULL, -- draft, in_review, declined, published, archived
+    state VARCHAR(255) NOT NULL, -- draft, review, declined, published, archived
     url VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
     launch_date TIMESTAMP,
@@ -66,6 +66,28 @@ CREATE TABLE launches (
 
     UNIQUE (product_id, slug)
 );
+
+CREATE TABLE tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE launch_tags (
+    launch_id INTEGER NOT NULL REFERENCES launches(id),
+    tag_id INTEGER NOT NULL REFERENCES tags(id),
+
+    PRIMARY KEY (launch_id, tag_id)
+);
+
+CREATE TABLE launch_upvotes (
+    launch_id INTEGER NOT NULL REFERENCES launches(id),
+    user_id TEXT NOT NULL REFERENCES users(id),
+
+    PRIMARY KEY (launch_id, user_id)
+);
+
 -- +goose StatementEnd
 
 -- +goose Down
@@ -76,4 +98,8 @@ DROP TABLE social_accounts; -- Corrected table name
 DROP TABLE users;
 DROP TABLE products;
 DROP TABLE launches;
+DROP TABLE tags;
+DROP TABLE launch_tags;
+DROP TABLE launch_upvotes;
+DROP TABLE product_members;
 -- +goose StatementEnd

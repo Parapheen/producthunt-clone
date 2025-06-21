@@ -32,11 +32,18 @@ func main() {
 	}
 
 	userRepository := sqlite.NewUserRepository(db)
+	productRepository := sqlite.NewProductRepository(db)
 
 	authService := app.NewAuthService(userRepository)
 	userService := app.NewUserService(userRepository)
+	productService := app.NewProductService(productRepository)
 
-	h := handler.NewHandler(authService, userService)
+	h := handler.NewHandler(
+		logger,
+		authService,
+		userService,
+		productService,
+	)
 	s := server.NewServer(h)
 
 	logger.Info("Staring server", "address", addr)

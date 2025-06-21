@@ -26,6 +26,7 @@ func NewServer(h *handler.Handler) *Server {
 
 	r.Get("/api/login", h.LoginModal)
 	r.Get("/api/logout", h.Logout)
+	r.Post("/api/new-product", h.NewProduct)
 
 	fileServer(r, "/assets")
 

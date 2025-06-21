@@ -1,13 +1,24 @@
 package handler
 
+import "log/slog"
+
 type Handler struct {
-	AuthService AuthService
-	UserService UserService
+	Logger         *slog.Logger
+	AuthService    AuthService
+	UserService    UserService
+	ProductService ProductService
 }
 
-func NewHandler(authService AuthService, userService UserService) *Handler {
+func NewHandler(
+	logger *slog.Logger,
+	authService AuthService,
+	userService UserService,
+	ProductService ProductService,
+) *Handler {
 	return &Handler{
-		AuthService: authService,
-		UserService: userService,
+		Logger:         logger,
+		AuthService:    authService,
+		UserService:    userService,
+		ProductService: ProductService,
 	}
 }

@@ -26,20 +26,22 @@
 				<h2>Добавьте свой продукт</h2>
 			</header>
 			<section>
-				<form class="form grid gap-6">
+				<form id="create-product-form" class="form grid gap-6" hx-post="/api/new-product"
+						hx-swap="none" hx-disable-elt="button">
 					<div class="grid gap-2">
-						<label for="product-name">Название продукта</label>
-						<input type="text" id="product-name" placeholder="product hunt">
+						<label for="name">Название продукта</label>
+						<input name="name" type="text" id="name" placeholder="product hunt">
 					</div>
 					<div class="grid gap-2">
-						<label for="product-url">Ссылка</label>
-						<input type="text" id="product-url" placeholder="https://my-product">
+						<label for="url">Ссылка</label>
+						<input name="url" type="text" id="url" placeholder="https://my-product">
 					</div>
-
 				</form>
+				<div id="errors"></div>
 			</section>
 			<footer>
-				<button class="btn btn-primary w-full rounded-full" type="submit">
+				<button class="btn btn-primary w-full rounded-full" type="submit"
+					form="create-product-form">
 					Создать
 				</button>
 			</footer>
