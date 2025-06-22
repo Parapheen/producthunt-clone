@@ -11,9 +11,9 @@ type Launch struct {
 	ID          uuid.UUID
 	ProductID   uuid.UUID
 	Name        string
+	Tagline     string
 	URL         string
 	Description string
-	Tagline     string
 	State
 	Slug       string
 	LaunchDate *time.Time

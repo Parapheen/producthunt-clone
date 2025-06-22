@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 
+	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/google/uuid"
@@ -22,4 +23,9 @@ type ProductService interface {
 	Create(ctx context.Context, name, url string, owner uuid.UUID) (*product.Product, error)
 	NameExists(ctx context.Context, name string) (bool, error)
 	URLExists(ctx context.Context, u string) (bool, error)
+	GetBySlug(ctx context.Context, slug string) (*product.Product, error)
+}
+
+type LaunchService interface {
+	GetBySlug(ctx context.Context, slug string) (*launch.Launch, error)
 }

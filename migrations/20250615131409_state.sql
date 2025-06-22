@@ -55,8 +55,8 @@ CREATE TABLE launches (
     id TEXT PRIMARY KEY,
     product_id TEXT NOT NULL REFERENCES products(id),
     name VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    tagline VARCHAR(255) NOT NULL,
+    description TEXT,
+    tagline VARCHAR(255),
     state VARCHAR(255) NOT NULL, -- draft, review, declined, published, archived
     url VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,

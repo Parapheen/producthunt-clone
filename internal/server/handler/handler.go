@@ -7,18 +7,21 @@ type Handler struct {
 	AuthService    AuthService
 	UserService    UserService
 	ProductService ProductService
+	LaunchService  LaunchService
 }
 
 func NewHandler(
 	logger *slog.Logger,
 	authService AuthService,
 	userService UserService,
-	ProductService ProductService,
+	productService ProductService,
+	launchService LaunchService,
 ) *Handler {
 	return &Handler{
 		Logger:         logger,
 		AuthService:    authService,
 		UserService:    userService,
-		ProductService: ProductService,
+		ProductService: productService,
+		LaunchService:  launchService,
 	}
 }

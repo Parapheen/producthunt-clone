@@ -14,19 +14,19 @@ func (s State) String() string {
 	return [...]string{"draft", "review", "declined", "published", "archived"}[s]
 }
 
-func ParseState(s string) (State, error) {
+func ParseState(s string) State {
 	switch s {
 	case "draft":
-		return Draft, nil
+		return Draft
 	case "review":
-		return Review, nil
+		return Review
 	case "declined":
-		return Declined, nil
+		return Declined
 	case "published":
-		return Published, nil
+		return Published
 	case "archived":
-		return Archived, nil
+		return Archived
 	default:
-		return Draft, nil
+		return Draft
 	}
 }

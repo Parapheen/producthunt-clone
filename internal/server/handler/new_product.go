@@ -119,7 +119,9 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 
 	switch err {
 	case nil:
-		http.Redirect(w, r, "/products/"+p.Slug, http.StatusFound)
+		createdFirstLaunch := p.Launches[0]
+		redirectTo := "/products/" + p.Slug + "/launches/" + createdFirstLaunch.Slug + "/edit"
+		http.Redirect(w, r, redirectTo, http.StatusFound)
 	case product.ProductNameTooLong:
 		errors = append(errors, "Название продукта слишком длинное")
 	case product.ProductURLTooLong:

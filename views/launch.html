@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>ph clone</title>
+
+	<script src="/assets/js/htmx.min.js"></script>
+	<script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
+	<script
+		src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-token-with-polyfills-latest.js"></script>
+	<link href="/assets/css/output.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.4/dist/basecoat.cdn.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2/dist/js/all.min.js" defer></script>
+</head>
+
+<body>
+	{{ template "header" . }}
+
+	<div class="container mx-auto max-w-xl mt-32 flex flex-col gap-y-4">
+		<div class="flex flex-col gap-y-2">
+			<h1 class="text-3xl font-bold">Расскажите подробнее о запуске</h1>
+			<p class="text-muted">Нам понадобятся название, oneliner, описание и ссылка.</p>
+		</div>
+
+		<div class="card">
+			<header class="flex justify-between items-center">
+				<h2 class="text-xl font-bold">Общая информация</h2>
+				<span class="badge-outline text-sm">
+					{{ .Launch.State }}
+				</span>
+			</header>
+			<section>
+				<form id="update-launch-form" class="form grid gap-6" hx-post="/api/update-launch"
+					hx-swap="none" hx-disable-elt="button">
+					<div class="grid gap-2">
+						<label for="name">Название запуска</label>
+						<input name="name" type="text" id="name" value="{{ .Launch.Name }}"
+							placeholder="product hunt">
+					</div>
+					<div class="grid gap-2">
+						<label for="url">Ссылка</label>
+						<input name="url" type="text" id="url" value="{{ .Launch.URL }}"
+							placeholder="https://my-product">
+					</div>
+					<div class="grid gap-2">
+						<label for="tagline">Oneliner</label>
+						<input name="tagline" type="text" id="tagline"
+							value="{{ .Launch.Tagline }}"
+							placeholder="Лучшее место для запуска">
+						<p class="text-gray-500 text-sm">Однострочный описание запуска. Не более
+							140
+							символов.</p>
+					</div>
+					<div class="grid gap-2">
+						<label for="description">Описание</label>
+						<textarea name="description" id="description"
+							placeholder="product hunt">{{ .Launch.Description }}</textarea>
+						<p class="text-gray-500 text-sm">Описание запуска. Не более 250
+							символов.</p>
+					</div>
+					<div class="grid gap-2">
+						<label for="launch-date">Дата запуска</label>
+						<input name="launch-date" type="date" id="launch-date"
+							value="{{ .Launch.LaunchDate }}">
+					</div>
+				</form>
+				<div id="errors"></div>
+			</section>
+			<footer>
+				<button class="btn btn-primary w-full rounded-full" type="submit"
+					form="update-launch-form">
+					Сохранить
+				</button>
+			</footer>
+		</div>
+	</div>
+</body>
+
+</html>

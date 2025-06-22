@@ -45,3 +45,7 @@ func (s *ProductService) NameExists(ctx context.Context, name string) (bool, err
 func (s *ProductService) URLExists(ctx context.Context, u string) (bool, error) {
 	return s.productRepo.ExistsByURL(ctx, u)
 }
+
+func (s *ProductService) GetBySlug(ctx context.Context, slug string) (*product.Product, error) {
+	return s.productRepo.GetBySlug(ctx, slug)
+}

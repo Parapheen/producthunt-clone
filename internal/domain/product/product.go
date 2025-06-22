@@ -13,7 +13,7 @@ type Product struct {
 	Slug string
 
 	Launches []*launch.Launch
-	Members  []Member
+	Members  []*Member
 }
 
 func NewProduct(name, url string) *Product {
@@ -32,5 +32,5 @@ func NewProduct(name, url string) *Product {
 }
 
 func (p *Product) AddMember(member *Member) {
-	p.Members = append(p.Members, *member)
+	p.Members = append(p.Members, member)
 }

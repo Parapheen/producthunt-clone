@@ -3,6 +3,6 @@ package launch
 import "context"
 
 type LaunchRepository interface {
-	Create(ctx context.Context, launch *Launch) error
+	GetBySlug(ctx context.Context, slug string) (*Launch, error)
 }
 
