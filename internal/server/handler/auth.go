@@ -8,6 +8,9 @@ import (
 	"github.com/google/uuid"
 )
 
+const oauthStateCookie = "oauth_state"
+const sessionCookieName = "session"
+
 func (h *Handler) LoginModal(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("views/partials/auth-modal.html")
 	if err != nil {
@@ -24,7 +27,7 @@ func (h *Handler) LoginModal(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) YandexAuth(w http.ResponseWriter, r *http.Request) {
 	state := uuid.NewString()
 	http.SetCookie(w, &http.Cookie{
-		Name:     "ouath_state",
+		Name:     oauthStateCookie,
 		Value:    state,
 		HttpOnly: true,
 		Path:     "/",
@@ -38,7 +41,7 @@ func (h *Handler) YandexAuth(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// validate state
-	cookie, err := r.Cookie("ouath_state")
+	cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -60,7 +63,7 @@ func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 	// clean state cookie
 	http.SetCookie(w, &http.Cookie{
-		Name:     "ouath_state",
+		Name:     oauthStateCookie,
 		Value:    "",
 		HttpOnly: true,
 		Path:     "/",
@@ -69,7 +72,7 @@ func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 	// set session cookie
 	sessionCookie := &http.Cookie{
-		Name:     "session",
+		Name:     sessionCookieName,
 		Value:    user.Session.Token,
 		HttpOnly: true,
 		Path:     "/",
@@ -81,7 +84,7 @@ func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session")
+	cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -94,7 +97,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
+		Name:     sessionCookieName,
 		Value:    "",
 		HttpOnly: true,
 		Path:     "/",

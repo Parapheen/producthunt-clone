@@ -69,17 +69,40 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 }
 
 func (r *UserRepository) GetBySession(ctx context.Context, session string) (*user.User, error) {
-	query := `SELECT u.id, u.email, u.name FROM users u
+	query := `SELECT u.id, u.email, u.name, s.id as session_id, s.token as session_token, s.expires_at as session_expires_at
+		FROM users u
 		INNER JOIN sessions s ON u.id = s.user_id
-		WHERE s.token = ?`
-	u := &user.User{}
+		WHERE s.token = $1`
+	var uData struct {
+		ID    uuid.UUID `db:"id"`
+		Email string    `db:"email"`
+		Name  string    `db:"name"`
 
-	err := r.db.GetContext(ctx, u, query, session)
+		SessionID        *uuid.UUID `db:"session_id"`
+		SessionToken     *string    `db:"session_token"`
+		SessionExpiresAt *time.Time `db:"session_expires_at"`
+	}
+
+	err := r.db.GetContext(ctx, &uData, query, session)
+
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
-	return u, nil
+	return &user.User{
+		ID:    uData.ID,
+		Email: uData.Email,
+		Name:  uData.Name,
+
+		Session: &user.Session{
+			ID:        *uData.SessionID,
+			Token:     *uData.SessionToken,
+			ExpiresAt: *uData.SessionExpiresAt,
+		},
+	}, nil
 }
 
 func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*user.User, error) {

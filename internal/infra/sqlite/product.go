@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -40,14 +41,12 @@ func (r *ProductRepository) Create(ctx context.Context, product *product.Product
 			}
 		}
 
-		for _, launch := range product.Launches {
-			_, err := tx.ExecContext(context.WithoutCancel(ctx), `
+		_, err = tx.ExecContext(context.WithoutCancel(ctx), `
 				INSERT INTO launches (id, product_id, name, url, state, slug)
 				VALUES ($1, $2, $3, $4, $5, $6)
-			`, launch.ID, product.ID, launch.Name, launch.URL, launch.State.String(), launch.Slug)
-			if err != nil {
-				return err
-			}
+			`, uuid.New(), product.ID, product.Name, product.URL, launch.Draft, product.Slug)
+		if err != nil {
+			return err
 		}
 
 		return nil

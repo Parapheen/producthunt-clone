@@ -12,5 +12,8 @@ require (
 	github.com/Machiel/slugify v1.0.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
+	github.com/justinas/nosurf v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.28
 )
+
+require github.com/goforj/godump v1.2.0 // indirect

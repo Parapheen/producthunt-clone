@@ -4,11 +4,13 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/Parapheen/ph-clone/internal/app"
 	"github.com/Parapheen/ph-clone/internal/infra/sqlite"
 	"github.com/Parapheen/ph-clone/internal/server"
 	"github.com/Parapheen/ph-clone/internal/server/handler"
-	"github.com/joho/godotenv"
+	mw "github.com/Parapheen/ph-clone/internal/server/middleware"
 )
 
 const (
@@ -40,6 +42,8 @@ func main() {
 	productService := app.NewProductService(productRepository)
 	launchService := app.NewLaunchService(launchRepository)
 
+	m := mw.NewMiddleware(userService)
+
 	h := handler.NewHandler(
 		logger,
 		authService,
@@ -47,7 +51,7 @@ func main() {
 		productService,
 		launchService,
 	)
-	s := server.NewServer(h)
+	s := server.NewServer(h, m)
 
 	logger.Info("Staring server", "address", addr)
 	s.Run(addr)

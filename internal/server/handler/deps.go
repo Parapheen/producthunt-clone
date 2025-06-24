@@ -28,4 +28,6 @@ type ProductService interface {
 
 type LaunchService interface {
 	GetBySlug(ctx context.Context, slug string) (*launch.Launch, error)
+	GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error)
+	Update(ctx context.Context, launch *launch.Launch) error
 }

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 )
@@ -17,5 +18,17 @@ func NewUserService(userRepository user.UserRepository) *UserService {
 }
 
 func (s *UserService) GetBySession(ctx context.Context, session string) (*user.User, error) {
-	return s.UserRepository.GetBySession(ctx, session)
+	u, err := s.UserRepository.GetBySession(ctx, session)
+
+	switch err {
+	case nil:
+		if u.Session.IsExpired() {
+			return nil, user.ErrSessionExpired
+		}
+		return u, nil
+	case sql.ErrNoRows:
+		return nil, user.ErrUserNotFound
+	default:
+		return nil, err
+	}
 }

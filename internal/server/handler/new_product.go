@@ -8,6 +8,7 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/justinas/nosurf"
 )
 
 func (h *Handler) NewProductForm(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,8 @@ func (h *Handler) NewProductForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = t.Execute(w, map[string]interface{}{
-		"User": user,
+		"User":  user,
+		"token": nosurf.Token(r),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -119,9 +121,15 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 
 	switch err {
 	case nil:
-		createdFirstLaunch := p.Launches[0]
+		createdFirstLaunch, errLaunch := h.LaunchService.GetLatestByProduct(r.Context(), p.ID)
+		if errLaunch != nil {
+			h.Logger.ErrorContext(r.Context(), "error getting latest launch", slog.Any("error", errLaunch))
+			errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
+		}
+
 		redirectTo := "/products/" + p.Slug + "/launches/" + createdFirstLaunch.Slug + "/edit"
-		http.Redirect(w, r, redirectTo, http.StatusFound)
+		w.Header().Add("HX-Redirect", redirectTo)
+		return
 	case product.ProductNameTooLong:
 		errors = append(errors, "Название продукта слишком длинное")
 	case product.ProductURLTooLong:
@@ -151,6 +159,5 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		return
 	}
 }

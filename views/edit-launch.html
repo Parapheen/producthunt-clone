@@ -36,6 +36,9 @@
 			<section>
 				<form id="update-launch-form" class="form grid gap-6" hx-post="/api/update-launch"
 					hx-swap="none" hx-disable-elt="button">
+					<input type="hidden" name="csrf_token" value="{{ .token }}">
+					<input type="hidden" name="product_slug" value="{{ .Product.Slug }}">
+					<input type="hidden" name="launch_slug" value="{{ .Launch.Slug }}">
 					<div class="grid gap-2">
 						<label for="name">Название запуска</label>
 						<input name="name" type="text" id="name" value="{{ .Launch.Name }}"

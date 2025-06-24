@@ -27,7 +27,8 @@
 			</header>
 			<section>
 				<form id="create-product-form" class="form grid gap-6" hx-post="/api/new-product"
-						hx-swap="none" hx-disable-elt="button">
+					hx-swap="none" hx-disable-elt="button">
+					<input type="hidden" name="csrf_token" value="{{ .token }}">
 					<div class="grid gap-2">
 						<label for="name">Название продукта</label>
 						<input name="name" type="text" id="name" placeholder="product hunt">

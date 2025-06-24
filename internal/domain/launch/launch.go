@@ -44,3 +44,7 @@ func (l *Launch) Publish() {
 		l.LaunchDate = &now
 	}
 }
+
+func (l *Launch) IsDraft() bool {
+	return l.State == Draft
+}
