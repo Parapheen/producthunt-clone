@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"html/template"
 	"net/http"
 
@@ -9,21 +8,7 @@ import (
 )
 
 func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
-	sessionCookie, err := r.Cookie("session")
-	if err != nil && !errors.Is(err, http.ErrNoCookie) {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var user *user.User
-
-	if sessionCookie != nil {
-		user, err = s.UserService.GetBySession(r.Context(), sessionCookie.Value)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
+	user := user.GetUserFromContext(r.Context())
 
 	t, err := template.ParseFiles("views/index.html", "views/header.html")
 	if err != nil {

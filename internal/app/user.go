@@ -32,3 +32,16 @@ func (s *UserService) GetBySession(ctx context.Context, session string) (*user.U
 		return nil, err
 	}
 }
+
+func (s *UserService) GetByID(ctx context.Context, id string) (*user.User, error) {
+	u, err := s.UserRepository.GetByID(ctx, id)
+
+	switch err {
+	case nil:
+		return u, nil
+	case sql.ErrNoRows:
+		return nil, user.ErrUserNotFound
+	default:
+		return nil, err
+	}
+}

@@ -49,3 +49,7 @@ func (s *ProductService) URLExists(ctx context.Context, u string) (bool, error) 
 func (s *ProductService) GetBySlug(ctx context.Context, slug string) (*product.Product, error) {
 	return s.productRepo.GetBySlug(ctx, slug)
 }
+
+func (s *ProductService) GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error) {
+	return s.productRepo.GetByOwner(ctx, owner)
+}

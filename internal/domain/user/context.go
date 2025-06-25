@@ -6,7 +6,7 @@ type ContextKey string
 
 const ContextKeyUser ContextKey = "user"
 
-func GetUser(ctx context.Context) *User {
+func GetUserFromContext(ctx context.Context) *User {
 	if u, ok := ctx.Value(ContextKeyUser).(*User); ok {
 		return u
 	}

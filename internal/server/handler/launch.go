@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 )
 
 func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
-	u := user.GetUser(r.Context())
+	u := user.GetUserFromContext(r.Context())
 
 	productSlug := r.PathValue("productSlug")
 	launchSlug := r.PathValue("launchSlug")
@@ -60,21 +59,7 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
-	sessionCookie, err := r.Cookie("session")
-	if err != nil && !errors.Is(err, http.ErrNoCookie) {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var user *user.User
-
-	if sessionCookie != nil {
-		user, err = h.UserService.GetBySession(r.Context(), sessionCookie.Value)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
+	u := user.GetUserFromContext(r.Context())
 
 	productSlug := r.FormValue("product_slug")
 	launchSlug := r.FormValue("launch_slug")
@@ -88,7 +73,7 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 
 	godump.Dump(p)
 
-	if !p.IsOwner(user.ID) {
+	if !p.IsOwner(u.ID) {
 		http.Error(w, "Вы не автор этого продукта", http.StatusForbidden)
 		return
 	}

@@ -1,11 +1,16 @@
 package user
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type User struct {
-	ID    uuid.UUID
-	Email string
-	Name  string
+	ID        uuid.UUID
+	Email     string
+	Name      string
+	CreatedAt time.Time
 
 	Session        *Session
 	SocialAccounts []*SocialAccount

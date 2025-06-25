@@ -22,9 +22,11 @@ func NewServer(h *handler.Handler, m *mw.Middleware) *Server {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
+	r.Use(m.SessionMiddleware)
 
 	r.Get("/", h.Home)
 	r.Get("/new-product", h.NewProductForm)
+	r.Get("/u/{userID}", h.UserProfile)
 	r.Get("/products/{productSlug}/launches/{launchSlug}/edit", h.GetEditLaunch)
 
 	r.Get("/auth/yandex", h.YandexAuth)

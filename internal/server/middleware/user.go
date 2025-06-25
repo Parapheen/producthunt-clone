@@ -5,9 +5,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
-	"github.com/Parapheen/ph-clone/internal/pkg/env"
 )
 
 const sessionCookieName = "session"
@@ -30,19 +30,25 @@ func (m *Middleware) SessionMiddleware(next http.Handler) http.Handler {
 		switch err {
 		case nil:
 			r = r.WithContext(context.WithValue(r.Context(), user.ContextKeyUser, u))
-			http.SetCookie(w, &http.Cookie{
-				Name:     sessionCookieName,
-				Value:    u.Session.ID.String(),
-				Path:     "/",
-				HttpOnly: true,
-				Secure:   env.IsProduction(),
-				Expires:  u.Session.ExpiresAt,
-			})
 			next.ServeHTTP(w, r)
 		case user.ErrSessionExpired:
-			http.Redirect(w, r, "/login", http.StatusFound)
+			slog.Info("session expired", slog.Any("cookie", cookie))
+			http.SetCookie(w, &http.Cookie{
+				Name:     sessionCookieName,
+				Value:    "",
+				HttpOnly: true,
+				Path:     "/",
+				Expires:  time.Unix(0, 0),
+			})
 		case user.ErrUserNotFound:
-			http.Redirect(w, r, "/login", http.StatusFound)
+			slog.Info("user not found", slog.Any("cookie", cookie))
+			http.SetCookie(w, &http.Cookie{
+				Name:     sessionCookieName,
+				Value:    "",
+				HttpOnly: true,
+				Path:     "/",
+				Expires:  time.Unix(0, 0),
+			})
 		default:
 			slog.Error("error getting user by session", slog.Any("err", err))
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

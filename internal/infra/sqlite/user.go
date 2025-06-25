@@ -2,8 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
@@ -12,17 +10,18 @@ import (
 )
 
 type UserModel struct {
-	ID    uuid.UUID `db:"id"`
-	Email string    `db:"email"`
-	Name  string    `db:"name"`
+	ID        uuid.UUID `db:"id"`
+	Email     string    `db:"email"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at"`
 
 	SessionID        *uuid.UUID `db:"session_id"`
 	SessionToken     *string    `db:"session_token"`
 	SessionExpiresAt *time.Time `db:"session_expires_at"`
 
-	SocialAccountID         uuid.UUID `db:"social_account_id"`
-	SocialAccountProvider   string    `db:"social_account_provider"`
-	SocialAccountProviderID string    `db:"social_account_provider_id"`
+	SocialAccountID         *uuid.UUID `db:"social_account_id"`
+	SocialAccountProvider   *string    `db:"social_account_provider"`
+	SocialAccountProviderID *string    `db:"social_account_provider_id"`
 }
 
 type UserRepository struct {
@@ -69,33 +68,23 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 }
 
 func (r *UserRepository) GetBySession(ctx context.Context, session string) (*user.User, error) {
-	query := `SELECT u.id, u.email, u.name, s.id as session_id, s.token as session_token, s.expires_at as session_expires_at
+	query := `SELECT u.id, u.email, u.name, u.created_at, s.id as session_id, s.token as session_token, s.expires_at as session_expires_at
 		FROM users u
 		INNER JOIN sessions s ON u.id = s.user_id
 		WHERE s.token = $1`
-	var uData struct {
-		ID    uuid.UUID `db:"id"`
-		Email string    `db:"email"`
-		Name  string    `db:"name"`
-
-		SessionID        *uuid.UUID `db:"session_id"`
-		SessionToken     *string    `db:"session_token"`
-		SessionExpiresAt *time.Time `db:"session_expires_at"`
-	}
+	var uData UserModel
 
 	err := r.db.GetContext(ctx, &uData, query, session)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
 	return &user.User{
-		ID:    uData.ID,
-		Email: uData.Email,
-		Name:  uData.Name,
+		ID:        uData.ID,
+		Email:     uData.Email,
+		Name:      uData.Name,
+		CreatedAt: uData.CreatedAt,
 
 		Session: &user.Session{
 			ID:        *uData.SessionID,
@@ -107,7 +96,7 @@ func (r *UserRepository) GetBySession(ctx context.Context, session string) (*use
 
 func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*user.User, error) {
 	query := `SELECT 
-		u.id, u.email, u.name, 
+		u.id, u.email, u.name, u.created_at,
 		ss.id as session_id, ss.token as session_token, ss.expires_at as session_expires_at,
 		s.id as social_account_id, s.provider as social_account_provider, s.provider_id as social_account_provider_id
 		FROM users u
@@ -118,22 +107,20 @@ func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID
 
 	err := r.db.GetContext(ctx, uData, query, provider, providerID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 
 	u := &user.User{
-		ID:    uData.ID,
-		Email: uData.Email,
-		Name:  uData.Name,
+		ID:        uData.ID,
+		Email:     uData.Email,
+		Name:      uData.Name,
+		CreatedAt: uData.CreatedAt,
 
 		SocialAccounts: []*user.SocialAccount{
 			{
-				ID:         uData.SocialAccountID,
-				Provider:   uData.SocialAccountProvider,
-				ProviderID: uData.SocialAccountProviderID,
+				ID:         *uData.SocialAccountID,
+				Provider:   *uData.SocialAccountProvider,
+				ProviderID: *uData.SocialAccountProviderID,
 			},
 		},
 	}
@@ -164,6 +151,35 @@ func (r *UserRepository) CreateSession(ctx context.Context, user *user.User) err
 	}
 
 	return nil
+}
+
+func (r *UserRepository) GetByID(ctx context.Context, id string) (*user.User, error) {
+	query := `SELECT u.id, u.email, u.name, u.created_at, s.id as session_id, s.token as session_token, s.expires_at as session_expires_at
+		FROM users u
+		INNER JOIN sessions s ON u.id = s.user_id
+		WHERE u.id = $1`
+	var uData UserModel
+
+	err := r.db.GetContext(ctx, &uData, query, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	u := &user.User{
+		ID:        uData.ID,
+		Email:     uData.Email,
+		Name:      uData.Name,
+		CreatedAt: uData.CreatedAt,
+
+		Session: &user.Session{
+			ID:        *uData.SessionID,
+			Token:     *uData.SessionToken,
+			ExpiresAt: *uData.SessionExpiresAt,
+		},
+	}
+
+	return u, nil
 }
 
 func (r *UserRepository) RefreshSession(ctx context.Context, session *user.Session) error {

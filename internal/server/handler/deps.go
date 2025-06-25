@@ -17,6 +17,7 @@ type AuthService interface {
 
 type UserService interface {
 	GetBySession(ctx context.Context, session string) (*user.User, error)
+	GetByID(ctx context.Context, id string) (*user.User, error)
 }
 
 type ProductService interface {
@@ -24,6 +25,7 @@ type ProductService interface {
 	NameExists(ctx context.Context, name string) (bool, error)
 	URLExists(ctx context.Context, u string) (bool, error)
 	GetBySlug(ctx context.Context, slug string) (*product.Product, error)
+	GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error)
 }
 
 type LaunchService interface {
