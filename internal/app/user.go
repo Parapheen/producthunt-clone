@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/google/uuid"
 )
 
 type UserService struct {
@@ -33,7 +34,7 @@ func (s *UserService) GetBySession(ctx context.Context, session string) (*user.U
 	}
 }
 
-func (s *UserService) GetByID(ctx context.Context, id string) (*user.User, error) {
+func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
 	u, err := s.UserRepository.GetByID(ctx, id)
 
 	switch err {

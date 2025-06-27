@@ -28,3 +28,7 @@ func (s *LaunchService) GetLatestByProduct(ctx context.Context, productID uuid.U
 func (s *LaunchService) Update(ctx context.Context, launch *launch.Launch) error {
 	return s.launchRepo.Update(ctx, launch)
 }
+
+func (s *LaunchService) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error) {
+	return s.launchRepo.GetByOwner(ctx, ownerID)
+}

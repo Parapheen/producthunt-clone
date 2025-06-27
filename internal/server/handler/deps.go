@@ -17,7 +17,7 @@ type AuthService interface {
 
 type UserService interface {
 	GetBySession(ctx context.Context, session string) (*user.User, error)
-	GetByID(ctx context.Context, id string) (*user.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*user.User, error)
 }
 
 type ProductService interface {
@@ -32,4 +32,5 @@ type LaunchService interface {
 	GetBySlug(ctx context.Context, slug string) (*launch.Launch, error)
 	GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error)
 	Update(ctx context.Context, launch *launch.Launch) error
+	GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error)
 }
