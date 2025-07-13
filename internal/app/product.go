@@ -53,3 +53,7 @@ func (s *ProductService) GetBySlug(ctx context.Context, slug string) (*product.P
 func (s *ProductService) GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error) {
 	return s.productRepo.GetByOwner(ctx, owner)
 }
+
+func (s *ProductService) GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error) {
+	return s.productRepo.GetByID(ctx, id)
+}

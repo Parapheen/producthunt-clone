@@ -1,35 +1,21 @@
 <!DOCTYPE html>
 <html lang="ru">
 
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>ph clone</title>
-
-	<script src="/assets/js/htmx.min.js"></script>
-	<script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
-	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
-	<script
-		src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-token-with-polyfills-latest.js"></script>
-	<link href="/assets/css/output.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.4/dist/basecoat.cdn.min.css">
-	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2/dist/js/all.min.js" defer></script>
-</head>
+{{ template "head" . }}
 
 <body>
 	{{ template "header" . }}
 
 	<div class="container mx-auto max-w-lg mt-14 flex-col gap-8">
-		<div class="bg-white p-6 rounded-2xl shadow-sm mb-8">
+		<div class="bg-white p-6 rounded-2xl border border-gray-200 mb-8">
 			<div class="flex flex-col md:flex-row items-center gap-6">
 				<div class="flex-shrink-0">
-					<img class="w-28 h-28 rounded-full object-cover ring-4 ring-gray-100" src=""
-						alt="{{ .User.Name }}">
+					<img class="w-28 h-28 rounded-full object-cover ring-4 ring-gray-100" src="https://placehold.co/80x80/e0e7ff/4338ca?text=A"
+						alt="{{ .Profile.Name }}">
 				</div>
 
 				<div class="flex-grow text-center md:text-left">
-					<h1 class="text-3xl font-bold text-gray-900">{{ .User.Name }}</h1>
+					<h1 class="text-3xl font-bold text-gray-900">{{ .Profile.Name }}</h1>
 
 					<p class="text-gray-700 mb-4">
 						bio
@@ -48,40 +34,43 @@
 								<line x1="8" x2="8" y1="2" y2="6" />
 								<line x1="3" x2="21" y1="10" y2="10" />
 							</svg>
-							Присоединился {{ .User.CreatedAt.Format "02/01/2006" }}
+							Присоединился {{ .Profile.CreatedAt.Format "02/01/2006" }}
 						</span>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-			<div class="bg-white p-4 text-center rounded-2xl shadow-sm">
+		<div class="grid grid-cols-2 gap-4 mb-8">
+			<div class="bg-white p-4 text-center rounded-2xl border border-gray-200">
 				<div
 					class="mx-auto w-10 h-10 mb-2 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
 						viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-						stroke-linecap="round" stroke-linejoin="round">
-						<path d="m8 8 4-4 4 4" />
-						<path d="M12 4v10.5" />
-						<path d="M16 14H8" />
-						<path d="M16 18H8" />
-						<path d="m14.5 10.5-2.5 2.5-2.5-2.5" />
+						stroke-linecap="round" stroke-linejoin="round"
+						class="lucide lucide-briefcase-business-icon lucide-briefcase-business">
+						<path d="M12 12h.01" />
+						<path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+						<path d="M22 13a18.15 18.15 0 0 1-20 0" />
+						<rect width="20" height="14" x="2" y="6" rx="2" />
 					</svg>
 				</div>
 				<p class="text-2xl font-bold text-gray-900">{{ .Products | len }}</p>
 				<p class="text-sm text-gray-500">Продукты</p>
 			</div>
-			<div class="bg-white p-4 text-center rounded-2xl shadow-sm">
+			<div class="bg-white p-4 text-center rounded-2xl border border-gray-200">
 				<div
 					class="mx-auto w-10 h-10 mb-2 flex items-center justify-center bg-green-100 text-green-600 rounded-full">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
 						viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-						stroke-linecap="round" stroke-linejoin="round">
+						stroke-linecap="round" stroke-linejoin="round"
+						class="lucide lucide-rocket-icon lucide-rocket">
 						<path
-							d="M18 13a6 6 0 0 1-6 5 6 6 0 0 1-6-5 6 6 0 0 1 6-5 6 6 0 0 1 6 5z" />
-						<path d="M12 13V7" />
-						<path d="M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18z" />
+							d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+						<path
+							d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+						<path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+						<path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
 					</svg>
 				</div>
 				<p class="text-2xl font-bold text-gray-900">{{ .Launches | len }}</p>
@@ -98,63 +87,7 @@
 
 			<div class="space-y-4">
 				{{ range $i, $launch := .Launches }}
-				<div class="bg-white p-4 rounded-2xl shadow-sm flex items-start gap-4">
-					<div class="flex-shrink-0 flex flex-col items-center gap-2">
-						<span class="text-sm text-gray-500 font-medium">#{{ $i }}</span>
-						<button
-							class="border border-gray-200 rounded-md p-2 w-16 text-center hover:bg-gray-50">
-							<svg class="w-4 h-4 mx-auto text-gray-500"
-								xmlns="http://www.w3.org/2000/svg" width="24"
-								height="24" viewBox="0 0 24 24" fill="none"
-								stroke="currentColor" stroke-width="2"
-								stroke-linecap="round" stroke-linejoin="round">
-								<path d="m5 15 7-7 7 7" />
-							</svg>
-							<span class="font-bold text-sm text-gray-800">{{ $launch.Upvotes
-								}}</span>
-						</button>
-					</div>
-
-					<img src="https://placehold.co/80x80/e0e7ff/4338ca?text=L" alt="{{ $launch.Name }}"
-						class="w-20 h-20 rounded-lg object-cover">
-
-					<div class="flex-grow">
-						<div class="flex justify-between items-start">
-							<div>
-								<div class="flex items-center gap-2">
-									<h3 class="font-bold text-lg text-gray-900">{{
-										$launch.Name }}</h3>
-								</div>
-							</div>
-							<a href="{{ $launch.URL }}" target="_blank"
-								class="text-gray-400 hover:text-gray-700">
-								<svg xmlns="http://www.w3.org/2000/svg" width="20"
-									height="20" viewBox="0 0 24 24" fill="none"
-									stroke="currentColor" stroke-width="2"
-									stroke-linecap="round" stroke-linejoin="round">
-									<path
-										d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-									<polyline points="15 3 21 3 21 9" />
-									<line x1="10" x2="21" y1="14" y2="3" />
-								</svg>
-							</a>
-						</div>
-
-						<p class="text-gray-800 my-2">{{ $launch.Tagline }}</p>
-						<p class="text-sm text-gray-600">{{ $launch.Description }}</p>
-
-						<div class="flex flex-wrap items-center gap-4 mt-3">
-							<div class="flex items-center gap-2">
-								<!-- NOTE: Loop through the launch's tags here -->
-								{{ range $launch.Tags }}
-								<span
-									class="text-xs font-medium text-gray-600 bg-gray-100 py-1 px-2.5 rounded-full">{{
-									.Name }}</span>
-								{{ end }}
-							</div>
-						</div>
-					</div>
-				</div>
+				{{ template "launch-card" . }}
 				{{ end }}
 			</div>
 		</div>

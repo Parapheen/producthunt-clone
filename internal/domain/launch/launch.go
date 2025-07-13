@@ -10,6 +10,7 @@ import (
 type Launch struct {
 	ID          uuid.UUID
 	ProductID   uuid.UUID
+	ProductSlug string
 	Name        string
 	Tagline     string
 	URL         string
@@ -18,6 +19,7 @@ type Launch struct {
 	Slug       string
 	LaunchDate *time.Time
 	Upvotes    int
+	UpdatedAt  time.Time
 
 	Tags []Tag
 }

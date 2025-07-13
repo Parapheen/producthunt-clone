@@ -32,3 +32,15 @@ func (s *LaunchService) Update(ctx context.Context, launch *launch.Launch) error
 func (s *LaunchService) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error) {
 	return s.launchRepo.GetByOwner(ctx, ownerID)
 }
+
+func (s *LaunchService) GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error) {
+	return s.launchRepo.GetByProduct(ctx, productID)
+}
+
+func (s *LaunchService) GetFeed(ctx context.Context) ([]*launch.Launch, error) {
+	return s.launchRepo.GetFeed(ctx, "all_time", 100, 0)
+}
+
+func (s *LaunchService) Delete(ctx context.Context, launchID uuid.UUID) error {
+	return s.launchRepo.Delete(ctx, launchID)
+}

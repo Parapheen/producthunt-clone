@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
@@ -46,7 +47,7 @@ func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider strin
 	}
 
 	existingUser, err := a.userRepository.GetByProvider(ctx, userInfo.Provider, userInfo.ProviderID)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 

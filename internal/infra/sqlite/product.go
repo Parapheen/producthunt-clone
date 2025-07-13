@@ -146,3 +146,34 @@ func (r *ProductRepository) GetByOwner(ctx context.Context, owner uuid.UUID) ([]
 
 	return products, nil
 }
+
+func (r *ProductRepository) GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error) {
+	query := `SELECT p.id, p.name, p.url, p.slug, m.user_id, m.role
+		FROM products p
+		LEFT JOIN product_members m ON p.id = m.product_id
+		WHERE p.id = $1`
+
+	p := &product.Product{}
+
+	rows, err := r.db.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var memberUserID uuid.UUID
+		var memberRole string
+		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &memberUserID, &memberRole)
+		if err != nil {
+			return nil, err
+		}
+
+		member := &product.Member{
+			UserID: memberUserID,
+			Role:   product.ParseRole(memberRole),
+		}
+		p.Members = append(p.Members, member)
+	}
+
+	return p, nil
+}

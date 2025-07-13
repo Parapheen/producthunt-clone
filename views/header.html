@@ -1,29 +1,83 @@
 {{define "header"}}
 
-<header>
-	<nav class="navbar rounded-box flex w-full items-center justify-between gap-2 shadow-base-300/20 shadow-sm p-4">
-		<div class="navbar-start max-md:w-1/4">
-			<a class="link text-base-content link-neutral text-xl font-bold no-underline" href="/">
-				ph
-			</a>
-		</div>
-		<div class="navbar-end items-center gap-4">
-			<a class="btn rounded-full" href="/new-product">
-				Добавить продукт
-			</a>
-			{{ if .User }}
-			<a class="btn rounded-full border-rose-400" href="/u/{{ .User.ID }}">
-				{{ .User.Name }}
-			</a>
-			<a class="btn-outline rounded-full border-rose-400" href="/api/logout">Выйти</a>
-			{{ else }}
-			<button class="btn rounded-full bg-rose-400 text-white" hx-get="/api/login" hx-target="body"
-				hx-swap="beforeend">
-				Войти
-			</button>
-			{{end}}
-		</div>
-	</nav>
+<header class="w-full bg-white shadow-sm">
+  <nav
+    class="container mx-auto navbar rounded-box flex items-center justify-between gap-2 py-4 sm:p-4"
+  >
+    <div class="navbar-start">
+      <a
+        class="link text-base-content link-neutral text-xl font-bold no-underline"
+        href="/"
+      >
+        justlaunch 🚀
+      </a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1">
+      </ul>
+    </div>
+    <div class="navbar-end flex items-center gap-4">
+      {{ if .User }}
+      <a class="btn btn-primary rounded-full bg-indigo-600 text-white" href="/new-product">
+        Новый продукт
+      </a>
+      <div id="user-menu" class="dropdown-menu">
+        <button
+          type="button"
+          id="user-menu-trigger"
+          aria-haspopup="menu"
+          aria-controls="user-menu-menu"
+          aria-expanded="false"
+        >
+          <img
+            class="size-8 shrink-0 object-cover rounded-full"
+            alt="{{ .User.Name }}"
+            src="https://avatar.iran.liara.run/public"
+          />
+        </button>
+        <div
+          id="user-menu-popover"
+          data-popover
+          data-align="end"
+          aria-hidden="true"
+        >
+          <div
+            role="menu"
+            id="user-menu-menu"
+            aria-labelledby="user-menu-trigger"
+          >
+            <div role="group" aria-labelledby="account-options">
+              <div role="heading" id="account-options">Аккаунт</div>
+              <div role="menuitem">
+                <a href="/u/{{ .User.ID }}"> Профиль </a>
+              </div>
+              <div role="menuitem">
+                <a href="/my/launches"> Мои запуски </a>
+              </div>
+            </div>
+            <hr role="separator" />
+            <div role="menuitem">
+              <a href="https://github.com/Parapheen/producthunt-clone" target="_blank">GitHub</a>
+            </div>
+            <hr role="separator" />
+            <div role="menuitem">
+              <a class="btn-ghost rounded-full" href="/api/logout">Выйти</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {{ else }}
+      <button
+        class="btn rounded-full bg-indigo-600 text-white"
+        hx-get="/api/login"
+        hx-target="body"
+        hx-swap="beforeend"
+      >
+        Войти
+      </button>
+      {{end}}
+    </div>
+  </nav>
 </header>
 
 {{end}}

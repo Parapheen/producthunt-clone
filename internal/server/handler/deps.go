@@ -26,6 +26,7 @@ type ProductService interface {
 	URLExists(ctx context.Context, u string) (bool, error)
 	GetBySlug(ctx context.Context, slug string) (*product.Product, error)
 	GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error)
 }
 
 type LaunchService interface {
@@ -33,4 +34,7 @@ type LaunchService interface {
 	GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error)
 	Update(ctx context.Context, launch *launch.Launch) error
 	GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error)
+	GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error)
+	GetFeed(ctx context.Context) ([]*launch.Launch, error)
+	Delete(ctx context.Context, launchID uuid.UUID) error
 }

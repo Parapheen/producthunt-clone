@@ -5,11 +5,14 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/google/uuid"
 )
 
 func (h *Handler) UserProfile(w http.ResponseWriter, r *http.Request) {
 	userID := r.PathValue("userID")
+
+	loggedUser := user.GetUserFromContext(r.Context())
 
 	u, err := h.UserService.GetByID(r.Context(), uuid.MustParse(userID))
 	if err != nil {
@@ -32,14 +35,20 @@ func (h *Handler) UserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("views/profile.html", "views/header.html")
+	t, err := template.ParseFiles(
+		"views/profile.html",
+		"views/header.html",
+		"views/partials/head.html",
+		"views/partials/launch-card.html",
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = t.Execute(w, map[string]interface{}{
-		"User":     u,
+		"User":     loggedUser,
+		"Profile":  u,
 		"Products": products,
 		"Launches": launches,
 	})

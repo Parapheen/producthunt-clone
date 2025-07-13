@@ -1,21 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>ph clone</title>
-
-	<script src="/assets/js/htmx.min.js"></script>
-	<script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
-	<script src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-with-polyfills-latest.js"></script>
-	<script
-		src="https://yastatic.net/s3/passport-sdk/autofill/v1/sdk-suggest-token-with-polyfills-latest.js"></script>
-	<link href="/assets/css/output.css" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.4/dist/basecoat.cdn.min.css">
-	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2/dist/js/all.min.js" defer></script>
-</head>
+{{ template "head" . }}
 
 <body>
 	{{ template "header" . }}
@@ -41,7 +27,7 @@
 				<div id="errors"></div>
 			</section>
 			<footer>
-				<button class="btn btn-primary w-full rounded-full" type="submit"
+				<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
 					form="create-product-form">
 					Создать
 				</button>
