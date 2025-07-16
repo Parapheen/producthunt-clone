@@ -84,7 +84,7 @@ func (r *ProductRepository) ExistsByURL(ctx context.Context, url string) (bool, 
 }
 
 func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*product.Product, error) {
-	query := `SELECT p.id, p.name, p.url, p.slug, m.user_id, m.role
+	query := `SELECT p.id, p.name, p.url, p.slug, p.created_at, m.user_id, m.role
 		FROM products p
 		LEFT JOIN product_members m ON p.id = m.product_id
 		WHERE p.slug = $1`
@@ -98,7 +98,7 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*produc
 	for rows.Next() {
 		var memberUserID uuid.UUID
 		var memberRole string
-		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &memberUserID, &memberRole)
+		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &p.CreatedAt, &memberUserID, &memberRole)
 		if err != nil {
 			return nil, err
 		}
@@ -114,10 +114,11 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*produc
 }
 
 func (r *ProductRepository) GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error) {
-	query := `SELECT p.id, p.name, p.url, p.slug, m.user_id, m.role
+	query := `SELECT p.id, p.name, p.url, p.slug, p.created_at, m.user_id, m.role
 		FROM products p
 		LEFT JOIN product_members m ON p.id = m.product_id
-		WHERE m.user_id = $1`
+		WHERE m.user_id = $1
+		ORDER BY p.created_at DESC`
 	var products []*product.Product
 
 	rows, err := r.db.QueryContext(ctx, query, owner)
@@ -130,7 +131,7 @@ func (r *ProductRepository) GetByOwner(ctx context.Context, owner uuid.UUID) ([]
 		var memberRole string
 		p := &product.Product{}
 
-		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &memberUserID, &memberRole)
+		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &p.CreatedAt, &memberUserID, &memberRole)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +149,7 @@ func (r *ProductRepository) GetByOwner(ctx context.Context, owner uuid.UUID) ([]
 }
 
 func (r *ProductRepository) GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error) {
-	query := `SELECT p.id, p.name, p.url, p.slug, m.user_id, m.role
+	query := `SELECT p.id, p.name, p.url, p.slug, p.created_at, m.user_id, m.role
 		FROM products p
 		LEFT JOIN product_members m ON p.id = m.product_id
 		WHERE p.id = $1`
@@ -163,7 +164,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id uuid.UUID) (*product
 	for rows.Next() {
 		var memberUserID uuid.UUID
 		var memberRole string
-		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &memberUserID, &memberRole)
+		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &p.CreatedAt, &memberUserID, &memberRole)
 		if err != nil {
 			return nil, err
 		}

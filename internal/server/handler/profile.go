@@ -39,7 +39,7 @@ func (h *Handler) UserProfile(w http.ResponseWriter, r *http.Request) {
 		"views/profile.html",
 		"views/header.html",
 		"views/partials/head.html",
-		"views/partials/launch-card.html",
+		"views/partials/product-card.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -30,7 +30,9 @@ func NewServer(h *handler.Handler, m *mw.Middleware) *Server {
 	r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
 	r.Get("/products/{productSlug}", h.GetProduct)
 	r.Get("/products/u/{productID}", h.GetProductByID)
-	r.Get("/my/launches", h.MyLaunches)
+	r.Get("/my/products", h.MyProducts)
+	r.Get("/products/{productSlug}/launches", h.ProductLaunches)
+	r.Get("/products/{productID}/new-launch", h.GetNewLaunch)
 
 	r.Get("/auth/yandex", h.YandexAuth)
 	r.Get("/auth/yandex/callback", h.YandexAuthCallback)
@@ -38,8 +40,9 @@ func NewServer(h *handler.Handler, m *mw.Middleware) *Server {
 	r.Get("/api/login", h.LoginModal)
 	r.Get("/api/logout", h.Logout)
 	r.Post("/api/new-product", h.NewProduct)
+	r.Post("/api/new-launch", h.NewLaunch)
 	r.Post("/api/update-launch", h.UpdateLaunch)
-	r.Get("/api/launches/{launchID}", h.DeleteLaunch) // TODO: POST OR DELETE HANDLE CSRF
+	r.Get("/api/launches/{launchID}", h.DeleteLaunch)
 
 	fileServer(r, "/assets")
 

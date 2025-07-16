@@ -126,6 +126,33 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
 	return toDomain(l, tags), nil
 }
 
+func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
+	query := `SELECT
+			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date,
+			COUNT(lu.launch_id) as upvote_count
+		FROM launches l
+		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
+		WHERE l.id = ?
+		GROUP BY l.id`
+
+	query = r.db.Rebind(query)
+	l := &LaunchModel{}
+	if err := r.db.GetContext(ctx, l, query, id); err != nil {
+		if err == sql.ErrNoRows {
+			// Consider defining a domain-specific error, e.g., launch.ErrNotFound
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
+
+	tags, err := r.getTagsForLaunch(ctx, l.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return toDomain(l, tags), nil
+}
+
 // Update modifies an existing launch in the database.
 func (r *LaunchRepository) Update(ctx context.Context, l *launch.Launch) error {
 	model := fromDomain(l)
@@ -175,7 +202,7 @@ func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([
 // GetByProduct retrieves all launches for a given product.
 func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error) {
 	query := `SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date,
+			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at,
 			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
 		FROM launches l
 		WHERE l.product_id = ?

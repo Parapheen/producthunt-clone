@@ -21,6 +21,10 @@ func (s *LaunchService) GetBySlug(ctx context.Context, slug string) (*launch.Lau
 	return s.launchRepo.GetBySlug(ctx, slug)
 }
 
+func (s *LaunchService) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
+	return s.launchRepo.GetByID(ctx, id)
+}
+
 func (s *LaunchService) GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error) {
 	return s.launchRepo.GetLatestByProduct(ctx, productID)
 }
@@ -43,4 +47,8 @@ func (s *LaunchService) GetFeed(ctx context.Context) ([]*launch.Launch, error) {
 
 func (s *LaunchService) Delete(ctx context.Context, launchID uuid.UUID) error {
 	return s.launchRepo.Delete(ctx, launchID)
+}
+
+func (s *LaunchService) Create(ctx context.Context, launch *launch.Launch) error {
+	return s.launchRepo.Create(ctx, launch)
 }

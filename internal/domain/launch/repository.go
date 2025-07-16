@@ -12,6 +12,8 @@ type LaunchRepository interface {
 	Update(ctx context.Context, launch *Launch) error
 	GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*Launch, error)
 	GetByProduct(ctx context.Context, productID uuid.UUID) ([]*Launch, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*Launch, error)
 	GetFeed(ctx context.Context, period string, limit, offset int) ([]*Launch, error)
+	Create(ctx context.Context, launch *Launch) error
 	Delete(ctx context.Context, launchID uuid.UUID) error
 }

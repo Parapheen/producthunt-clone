@@ -1,6 +1,8 @@
 package product
 
 import (
+	"time"
+
 	"github.com/Machiel/slugify"
 	"github.com/google/uuid"
 )
@@ -10,6 +12,8 @@ type Product struct {
 	Name string
 	URL  string
 	Slug string
+
+	CreatedAt time.Time
 
 	Members []*Member
 }

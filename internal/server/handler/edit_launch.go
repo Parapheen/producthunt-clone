@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
-	"github.com/goforj/godump"
 	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
 )
@@ -78,8 +77,6 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	godump.Dump(p)
-
 	if !p.IsOwner(u.ID) {
 		http.Error(w, "Вы не автор этого продукта", http.StatusForbidden)
 		return
@@ -107,16 +104,35 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteLaunch(w http.ResponseWriter, r *http.Request) {
+	user := user.GetUserFromContext(r.Context())
+
 	launchID := uuid.MustParse(r.PathValue("launchID"))
 
-	// TODO: check if user is owner of the launch's product
+	launch, err := h.LaunchService.GetByID(r.Context(), launchID)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	err := h.LaunchService.Delete(r.Context(), launchID)
+	product, err := h.ProductService.GetByID(r.Context(), launch.ProductID)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !product.IsOwner(user.ID) {
+		http.Error(w, "Вы не автор этого продукта", http.StatusForbidden)
+		return
+	}
+
+	err = h.LaunchService.Delete(r.Context(), launchID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error deleting launch", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Add("HX-Redirect", "/my/launches")
+	w.Write([]byte(""))
 }

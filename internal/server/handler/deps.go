@@ -35,6 +35,8 @@ type LaunchService interface {
 	Update(ctx context.Context, launch *launch.Launch) error
 	GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error)
 	GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error)
 	GetFeed(ctx context.Context) ([]*launch.Launch, error)
+	Create(ctx context.Context, launch *launch.Launch) error
 	Delete(ctx context.Context, launchID uuid.UUID) error
 }

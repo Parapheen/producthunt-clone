@@ -9,10 +9,10 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-func (s *Handler) MyLaunches(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
 	user := user.GetUserFromContext(r.Context())
 
-	launches, err := s.LaunchService.GetByOwner(r.Context(), user.ID)
+	products, err := s.ProductService.GetByOwner(r.Context(), user.ID)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -20,11 +20,10 @@ func (s *Handler) MyLaunches(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t, err := template.ParseFiles(
-		"views/my-launches.html",
-		"views/partials/launch-state.html",
+		"views/my-products.html",
 		"views/header.html",
 		"views/partials/head.html",
-		"views/partials/launch-edit-card.html",
+		"views/partials/product-edit-card.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -33,7 +32,7 @@ func (s *Handler) MyLaunches(w http.ResponseWriter, r *http.Request) {
 
 	err = t.Execute(w, map[string]interface{}{
 		"User":     user,
-		"Launches": launches,
+		"Products": products,
 		"token":    nosurf.Token(r),
 	})
 	if err != nil {
