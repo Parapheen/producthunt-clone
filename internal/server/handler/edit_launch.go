@@ -4,7 +4,9 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"time"
 
+	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
@@ -44,8 +46,10 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles(
 		"views/edit-launch.html",
 		"views/partials/launch-state.html",
-		"views/header.html",
-		"views/partials/head.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -82,25 +86,62 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	launch, err := h.LaunchService.GetBySlug(r.Context(), launchSlug)
+	l, err := h.LaunchService.GetBySlug(r.Context(), launchSlug)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	launch.Name = r.FormValue("name")
-	launch.URL = r.FormValue("url")
-	launch.Tagline = r.FormValue("tagline")
-	launch.Description = r.FormValue("description")
+	l.Name = r.FormValue("name")
+	l.URL = r.FormValue("url")
+	l.Tagline = r.FormValue("tagline")
+	l.Description = r.FormValue("description")
 
-	err = h.LaunchService.Update(r.Context(), launch)
+	launchDate, err := time.Parse("2006-01-02", r.FormValue("launch-date"))
+
 	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "error parsing launch date", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Add("HX-Redirect", "/products/"+p.Slug)
+	l.LaunchDate = &launchDate
+
+	errors := make([]string, 0)
+
+	err = h.LaunchService.Update(r.Context(), l)
+
+	switch err {
+	case nil:
+		w.Header().Add("HX-Redirect", "/products/"+p.Slug+"/launches")
+		return
+	case launch.InvalidURLSchemeError, launch.InvalidURL:
+		errors = append(errors, "Невалидный URL")
+	case launch.LaunchDateInPast:
+		errors = append(errors, "Дата запуска не может быть в прошлом")
+	default:
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if len(errors) > 0 {
+		t, err := template.ParseFiles("views/partials/errors.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = t.Execute(w, map[string]interface{}{
+			"Errors": errors,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 func (h *Handler) DeleteLaunch(w http.ResponseWriter, r *http.Request) {

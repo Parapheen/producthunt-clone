@@ -35,8 +35,10 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		},
 	}).ParseFiles(
 		"views/product.html",
-		"views/header.html",
-		"views/partials/head.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
 		"views/partials/launch-card.html",
 	)
 	if err != nil {
@@ -68,3 +70,4 @@ func (h *Handler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/products/"+p.Slug, http.StatusFound)
 }
+

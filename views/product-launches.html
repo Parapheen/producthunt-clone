@@ -1,29 +1,22 @@
-<!DOCTYPE html>
-<html lang="ru">
+{{ template "layout" . }}
 
-{{ template "head" . }}
-
-<body class="min-h-screen">
-	{{ template "header" . }}
-
-	<main class="container mx-auto my-8 flex flex-col">
-		<h1 class="text-3xl font-bold">{{ .Product.Name }}: запуски</h1>
-		{{if .Launches}}
-		<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
-			{{ range .Launches }}
-			{{ template "launch-edit-card" . }}
-			{{ end }}
-		</div>
-		{{else}}
-		<div class="bg-white p-4 text-center">
-			<p class="text-gray-900 text-xl">Пока нет запусков</p>
-			<a class="btn btn-primary rounded-full bg-indigo-600 text-white mt-3"
-				href="/products/{{ .Product.ID }}/new-launch">
-				Создать запуск
-			</a>
-		</div>
-		{{end}}
-	</main>
-</body>
-
-</html>
+{{ define "content" }}
+<section class="container mx-auto flex flex-col">
+	<h1 class="text-3xl font-bold">{{ .Product.Name }}: запуски</h1>
+	{{if .Launches}}
+	<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
+		{{ range .Launches }}
+		{{ template "launch-edit-card" (dict "Launch" . "token" $.token) }}
+		{{ end }}
+	</div>
+	{{else}}
+	<div class="bg-white p-4 text-center">
+		<p class="text-gray-900 text-xl">Пока нет запусков</p>
+		<a class="btn btn-primary rounded-full bg-indigo-600 text-white mt-3"
+			href="/products/{{ .Product.ID }}/new-launch">
+			Создать запуск
+		</a>
+	</div>
+	{{end}}
+</section>
+{{ end }}

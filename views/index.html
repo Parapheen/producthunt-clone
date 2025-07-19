@@ -1,19 +1,13 @@
-<!DOCTYPE html>
-<html lang="ru">
+{{ template "layout" . }}
 
-{{ template "head" . }}
+{{ define "content" }}
+<div class="container my-8 mx-4 flex flex-col gap-8">
+	<h1 class="text-3xl font-bold">Последние запуски</h1>
+	<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
+		{{ range .Launches }}
+		{{ template "launch-card" . }}
+		{{ end }}
+	</div>
 
-<body class="min-h-screen">
-	{{ template "header" . }}
-
-	<main class="container my-8 mx-4 flex flex-col gap-8">
-		<h1 class="text-3xl font-bold">Последние запуски</h1>
-		<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
-			{{ range .Launches }}
-			{{ template "launch-card" . }}
-			{{ end }}
-		</div>
-	</main>
-</body>
-
-</html>
+</div>
+{{ end }}

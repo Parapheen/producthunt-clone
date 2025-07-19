@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
-	"github.com/goforj/godump"
 )
 
 func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
@@ -19,12 +18,12 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	godump.Dump(launches)
-
 	t, err := template.ParseFiles(
 		"views/index.html",
-		"views/header.html",
-		"views/partials/head.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
 		"views/partials/launch-card.html",
 	)
 	if err != nil {

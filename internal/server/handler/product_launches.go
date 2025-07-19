@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/Parapheen/ph-clone/internal/pkg/tmpl"
 	"github.com/justinas/nosurf"
 )
 
@@ -33,13 +34,19 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles(
-		"views/product-launches.html",
-		"views/partials/launch-state.html",
-		"views/header.html",
-		"views/partials/head.html",
-		"views/partials/launch-edit-card.html",
-	)
+	t, err := template.New("product-launches.html").
+		Funcs(template.FuncMap{
+			"dict": tmpl.Dict,
+		}).
+		ParseFiles(
+			"views/product-launches.html",
+			"views/partials/launch-state.html",
+			"views/layout/layout.html",
+			"views/layout/header.html",
+			"views/layout/footer.html",
+			"views/layout/head.html",
+			"views/partials/launch-edit-card.html",
+		)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

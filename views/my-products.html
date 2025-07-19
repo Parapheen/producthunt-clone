@@ -1,42 +1,36 @@
-<!DOCTYPE html>
-<html lang="ru">
+{{ template "layout" . }}
 
-{{ template "head" . }}
+{{ define "content" }}
 
-<body class="min-h-screen">
-	{{ template "header" . }}
+<section class="container mx-auto flex flex-col">
+	<h1 class="text-3xl font-bold">Мои продукты</h1>
 
-	<main class="container mx-auto my-8 flex flex-col">
-		<h1 class="text-3xl font-bold">Мои продукты</h1>
-
-		{{ if .Products }}
-		<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
-			{{ range .Products }}
-			{{ template "product-edit-card" . }}
-			{{ end }}
-		</div>
-		{{ else }}
-		<div class="bg-white p-4 text-center">
-			<div
-				class="mx-auto w-10 h-10 mb-2 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-					fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-					stroke-linejoin="round"
-					class="lucide lucide-briefcase-business-icon lucide-briefcase-business">
-					<path d="M12 12h.01" />
-					<path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-					<path d="M22 13a18.15 18.15 0 0 1-20 0" />
-					<rect width="20" height="14" x="2" y="6" rx="2" />
-					<line x1="9" x2="15" y1="6" y2="6" />
-				</svg>
-			</div>
-			<p class="text-gray-900 text-xl mt-5">Нет продуктов</p>
-			<a class="btn btn-primary rounded-full bg-indigo-600 text-white mt-3" href="/new-product">
-				Создать продукт
-			</a>
-		</div>
+	{{ if .Products }}
+	<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
+		{{ range .Products }}
+		{{ template "product-edit-card" . }}
 		{{ end }}
-	</main>
-</body>
+	</div>
+	{{ else }}
+	<div class="bg-white p-4 text-center">
+		<div
+			class="mx-auto w-10 h-10 mb-2 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full">
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+				stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+				class="lucide lucide-briefcase-business-icon lucide-briefcase-business">
+				<path d="M12 12h.01" />
+				<path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+				<path d="M22 13a18.15 18.15 0 0 1-20 0" />
+				<rect width="20" height="14" x="2" y="6" rx="2" />
+				<line x1="9" x2="15" y1="6" y2="6" />
+			</svg>
+		</div>
+		<p class="text-gray-900 text-xl mt-5">Нет продуктов</p>
+		<a class="btn btn-primary rounded-full bg-indigo-600 text-white mt-3" href="/new-product">
+			Создать продукт
+		</a>
+	</div>
+	{{ end }}
+</section>
 
-</html>
+{{ end }}

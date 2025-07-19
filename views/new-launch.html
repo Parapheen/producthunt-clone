@@ -1,64 +1,56 @@
-<!DOCTYPE html>
-<html lang="ru">
+{{ template "layout" . }}
 
-{{ template "head" . }}
 
-<body>
-	{{ template "header" . }}
-
-	<div class="container mx-auto max-w-lg mt-32">
-		<div class="card">
-			<header>
-				<h2>Новый запуск для {{ .Product.Name }}</h2>
-			</header>
-			<section>
-				<form id="new-launch-form" class="form grid gap-6" hx-post="/api/new-launch"
-					hx-swap="none" hx-disable-elt="button">
-					<input type="hidden" name="csrf_token" value="{{ .token }}">
-					<input type="hidden" name="product_id" value="{{ .Product.ID }}">
-					<div class="grid gap-2">
-						<label for="name">Название запуска</label>
-						<input name="name" type="text" id="name" value="{{ .Launch.Name }}"
-							placeholder="product hunt">
-					</div>
-					<div class="grid gap-2">
-						<label for="url">Ссылка</label>
-						<input name="url" type="text" id="url" value="{{ .Launch.URL }}"
-							placeholder="https://my-product">
-					</div>
-					<div class="grid gap-2">
-						<label for="tagline">Oneliner</label>
-						<input name="tagline" type="text" id="tagline"
-							value="{{ .Launch.Tagline }}"
-							placeholder="Лучшее место для запуска">
-						<p class="text-gray-500 text-sm">Однострочный описание запуска. Не более
-							140
-							символов.</p>
-					</div>
-					<div class="grid gap-2">
-						<label for="description">Описание</label>
-						<textarea name="description" id="description"
-							placeholder="product hunt">{{ .Launch.Description }}</textarea>
-						<p class="text-gray-500 text-sm">Описание запуска. Не более 250
-							символов.</p>
-					</div>
-					<div class="grid gap-2">
-						<label for="launch-date">Дата запуска</label>
-						<input name="launch-date" type="date" id="launch-date"
-							value="{{ .Launch.LaunchDate }}">
-					</div>
-				</form>
-				<div id="errors"></div>
-			</section>
-			<footer>
-				<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
-					form="new-launch-form">
-					Создать
-				</button>
-			</footer>
-		</div>
+{{ define "content" }}
+<section class="container mx-auto max-w-lg mt-32">
+	<div class="card">
+		<header>
+			<h2>Новый запуск для {{ .Product.Name }}</h2>
+		</header>
+		<section>
+			<form id="new-launch-form" class="form grid gap-6" hx-post="/api/new-launch" hx-swap="none"
+				hx-disable-elt="button">
+				<input type="hidden" name="csrf_token" value="{{ .token }}">
+				<input type="hidden" name="product_id" value="{{ .Product.ID }}">
+				<div class="grid gap-2">
+					<label for="name">Название запуска</label>
+					<input name="name" type="text" id="name" value="{{ .Launch.Name }}"
+						placeholder="product hunt">
+				</div>
+				<div class="grid gap-2">
+					<label for="url">Ссылка</label>
+					<input name="url" type="text" id="url" value="{{ .Launch.URL }}"
+						placeholder="https://my-product">
+				</div>
+				<div class="grid gap-2">
+					<label for="tagline">Oneliner</label>
+					<input name="tagline" type="text" id="tagline" value="{{ .Launch.Tagline }}"
+						placeholder="Лучшее место для запуска">
+					<p class="text-gray-500 text-sm">Однострочный описание запуска. Не более
+						140
+						символов.</p>
+				</div>
+				<div class="grid gap-2">
+					<label for="description">Описание</label>
+					<textarea name="description" id="description" placeholder="product hunt">{{
+						.Launch.Description }}</textarea>
+					<p class="text-gray-500 text-sm">Описание запуска. Не более 250
+						символов.</p>
+				</div>
+				<div class="grid gap-2">
+					<label for="launch-date">Дата запуска</label>
+					<input name="launch-date" type="date" id="launch-date"
+						value="{{ .Launch.LaunchDate }}">
+				</div>
+			</form>
+			<div id="errors"></div>
+		</section>
+		<footer>
+			<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
+				form="new-launch-form">
+				Создать
+			</button>
+		</footer>
 	</div>
-
-</body>
-
-</html>
+</section>
+{{ end }}

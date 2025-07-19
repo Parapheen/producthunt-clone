@@ -1,0 +1,20 @@
+{{ define "layout" }}
+
+<!DOCTYPE html>
+<html lang="ru">
+
+{{ template "head" . }}
+
+<body class="flex flex-col min-h-screen">
+	{{ template "header" . }}
+
+	<main class="flex-grow my-8 mx-4 flex flex-col gap-8">
+		{{ template "content" . }}
+	</main>
+
+	{{ template "footer" . }}
+</body>
+
+</html>
+
+{{ end }}

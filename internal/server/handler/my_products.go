@@ -21,8 +21,10 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFiles(
 		"views/my-products.html",
-		"views/header.html",
-		"views/partials/head.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
 		"views/partials/product-edit-card.html",
 	)
 	if err != nil {

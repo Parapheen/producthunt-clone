@@ -5,7 +5,7 @@
 {{ else if eq .State.String "draft" }}
 <span class="text-blue-600 bg-blue-100 text-xs p-1.5 rounded-full">Черновик</span>
 {{ else if eq .State.String "review" }}
-<span class="text-yellow-600">На ревью</span>
+<span class="text-yellow-600 bg-yellow-100 text-xs p-1.5 rounded-full">На ревью</span>
 {{ else if eq .State.String "declined" }}
 <span class="text-red-600">Отклонено</span>
 {{ else if eq .State.String "archived" }}

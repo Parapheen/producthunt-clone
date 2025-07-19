@@ -1,40 +1,33 @@
-<!DOCTYPE html>
-<html lang="ru">
+{{ template "layout" . }}
 
-{{ template "head" . }}
-
-<body>
-	{{ template "header" . }}
-
-	<div class="container mx-auto max-w-lg mt-32">
-		<div class="card">
-			<header>
-				<h2>Добавьте свой продукт</h2>
-			</header>
-			<section>
-				<form id="create-product-form" class="form grid gap-6" hx-post="/api/new-product"
-					hx-swap="none" hx-disable-elt="button">
-					<input type="hidden" name="csrf_token" value="{{ .token }}">
-					<div class="grid gap-2">
-						<label for="name">Название продукта</label>
-						<input name="name" type="text" id="name" placeholder="product hunt">
-					</div>
-					<div class="grid gap-2">
-						<label for="url">Ссылка</label>
-						<input name="url" type="text" id="url" placeholder="https://my-product">
-					</div>
-				</form>
-				<div id="errors"></div>
-			</section>
-			<footer>
-				<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
-					form="create-product-form">
-					Создать
-				</button>
-			</footer>
-		</div>
+{{ define "content" }}
+<section class="container mx-auto max-w-lg mt-32">
+	<div class="card">
+		<header>
+			<h2>Добавьте свой продукт</h2>
+		</header>
+		<section>
+			<form id="create-product-form" class="form grid gap-6" hx-post="/api/new-product" hx-swap="none"
+				hx-disable-elt="button">
+				<input type="hidden" name="csrf_token" value="{{ .token }}">
+				<div class="grid gap-2">
+					<label for="name">Название продукта</label>
+					<input name="name" type="text" id="name" placeholder="product hunt">
+				</div>
+				<div class="grid gap-2">
+					<label for="url">Ссылка</label>
+					<input name="url" type="text" id="url" placeholder="https://my-product">
+				</div>
+			</form>
+			<div id="errors" class="mt-5"></div>
+		</section>
+		<footer>
+			<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
+				form="create-product-form">
+				Создать
+			</button>
+		</footer>
 	</div>
+</section>
 
-</body>
-
-</html>
+{{ end }}

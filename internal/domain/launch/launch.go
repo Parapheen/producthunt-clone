@@ -50,3 +50,11 @@ func (l *Launch) Publish() {
 func (l *Launch) IsDraft() bool {
 	return l.State == Draft
 }
+
+func (l *Launch) ProceedState() {
+	if l.State == Draft {
+		l.State = Review
+	}
+
+	l.UpdatedAt = time.Now()
+}

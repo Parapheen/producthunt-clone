@@ -13,7 +13,13 @@ import (
 func (h *Handler) NewProductForm(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
 
-	t, err := template.ParseFiles("views/new-product.html", "views/header.html", "views/partials/head.html")
+	t, err := template.ParseFiles(
+		"views/new-product.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,6 +130,7 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		err = t.Execute(w, map[string]interface{}{
 			"Errors": errors,
 		})
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -31,8 +31,10 @@ func (h *Handler) GetNewLaunch(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFiles(
 		"views/new-launch.html",
-		"views/header.html",
-		"views/partials/head.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -100,4 +102,3 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-

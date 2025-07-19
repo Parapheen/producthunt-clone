@@ -157,7 +157,14 @@ func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.L
 func (r *LaunchRepository) Update(ctx context.Context, l *launch.Launch) error {
 	model := fromDomain(l)
 	query := `UPDATE launches
-		SET name = :name, url = :url, tagline = :tagline, description = :description, state = :state, launch_date = :launch_date
+		SET 
+			name = :name,
+			url = :url,
+			tagline = :tagline,
+			description = :description,
+			state = :state,
+			launch_date = :launch_date,
+			updated_at = current_timestamp
 		WHERE id = :id`
 
 	result, err := r.db.NamedExecContext(ctx, query, model)

@@ -30,6 +30,11 @@ func (s *LaunchService) GetLatestByProduct(ctx context.Context, productID uuid.U
 }
 
 func (s *LaunchService) Update(ctx context.Context, launch *launch.Launch) error {
+	err := launch.Validate()
+	if err != nil {
+		return err
+	}
+
 	return s.launchRepo.Update(ctx, launch)
 }
 
