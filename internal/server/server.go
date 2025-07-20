@@ -44,6 +44,8 @@ func NewServer(h *handler.Handler, m *mw.Middleware) *Server {
 	r.Post("/api/update-launch", h.UpdateLaunch)
 	r.Delete("/api/launches/{launchID}", h.DeleteLaunch)
 	r.Post("/api/proceed-launch", h.ProceedLaunch)
+	r.Get("/api/products/{productID}/launches", h.ProductLaunchesPartial)
+	r.Get("/api/products/{productID}/members", h.ProductMembersPartial)
 
 	fileServer(r, "/assets")
 

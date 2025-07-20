@@ -46,3 +46,7 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*user.User, er
 		return nil, err
 	}
 }
+
+func (s *UserService) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*user.User, error) {
+	return s.UserRepository.GetByIDs(ctx, ids)
+}

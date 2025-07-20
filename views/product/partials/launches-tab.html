@@ -1,0 +1,27 @@
+{{ define "launches-tab" }}
+<div class="flex flex-col gap-4">
+  {{ if .Launches }}
+  <h2 class="text-xl font-bold text-gray-900">Запуски</h2>
+  <div class="flex flex-col max-w-2xl gap-4">
+    {{ range .Launches }}
+    {{ template "launch-card" . }}
+    {{ end }}
+  </div>
+  {{ else }}
+  <div class="bg-white p-6 text-center rounded-2xl shadow-sm border">
+    <div
+      class="mx-auto w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 12h.01" />
+        <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+        <path d="M22 13a18.15 18.15 0 0 1-20 0" />
+        <rect width="20" height="14" x="2" y="6" rx="2" />
+      </svg>
+    </div>
+    <h3 class="text-xl font-bold text-gray-900">Нет запусков</h3>
+    <p class="text-gray-500 mt-1">Для этого продукта еще не было запусков.</p>
+  </div>
+  {{ end }}
+</div>
+{{ end }}

@@ -178,3 +178,34 @@ func (r *ProductRepository) GetByID(ctx context.Context, id uuid.UUID) (*product
 
 	return p, nil
 }
+
+func (r *ProductRepository) GetMembers(ctx context.Context, productID uuid.UUID) ([]*product.Member, error) {
+	query := `SELECT user_id, role
+		FROM product_members m
+		WHERE m.product_id = ?`
+
+	query = r.db.Rebind(query)
+
+	rows, err := r.db.QueryContext(ctx, query, productID)
+	if err != nil {
+		return nil, err
+	}
+
+	members := make([]*product.Member, 0)
+	for rows.Next() {
+		var memberUserID uuid.UUID
+		var memberRole string
+		err := rows.Scan(&memberUserID, &memberRole)
+		if err != nil {
+			return nil, err
+		}
+
+		member := &product.Member{
+			UserID: memberUserID,
+			Role:   product.ParseRole(memberRole),
+		}
+		members = append(members, member)
+	}
+
+	return members, nil
+}

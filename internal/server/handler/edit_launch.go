@@ -56,7 +56,7 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, map[string]interface{}{
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
 		"User":    u,
 		"Product": p,
 		"Launch":  launch,

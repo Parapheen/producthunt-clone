@@ -11,6 +11,7 @@ type UserRepository interface {
 	GetBySession(ctx context.Context, session string) (*User, error)
 	GetByProvider(ctx context.Context, provider, providerID string) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*User, error)
 
 	CreateSession(ctx context.Context, user *User) error
 	RefreshSession(ctx context.Context, session *Session) error

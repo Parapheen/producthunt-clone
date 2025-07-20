@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
@@ -131,7 +132,10 @@ func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID
 func (r *UserRepository) CreateSession(ctx context.Context, user *user.User) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO sessions (id, token, user_id, expires_at) VALUES ($1, $2, $3, $4)`,
+		`INSERT INTO sessions (id, token, user_id, expires_at) 
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (id) DO UPDATE SET token = $2, expires_at = $4, updated_at = current_timestamp;
+		`,
 		user.Session.ID,
 		user.Session.Token,
 		user.ID,
@@ -159,10 +163,34 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User,
 	return r.loadSocialAccounts(ctx, u)
 }
 
+func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*user.User, error) {
+	query := `SELECT id, email, name, created_at FROM users WHERE id IN (?)`
+
+	query, args, err := sqlx.In(query, ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct query for GetByIDs: %w", err)
+	}
+
+	// Rebind the query to use the correct placeholder format for SQLite
+	query = r.db.Rebind(query)
+
+	var users []*UserModel
+	if err := r.db.SelectContext(ctx, &users, query, args...); err != nil {
+		return nil, fmt.Errorf("failed to get users by IDs: %w", err)
+	}
+
+	domainUsers := make([]*user.User, 0, len(users))
+	for _, u := range users {
+		domainUsers = append(domainUsers, toDomainUser(u))
+	}
+
+	return domainUsers, nil
+}
+
 func (r *UserRepository) RefreshSession(ctx context.Context, session *user.Session) error {
 	_, err := r.db.ExecContext(
 		ctx,
-		`UPDATE sessions SET token = $1, expires_at = $2 WHERE id = $3`,
+		`UPDATE sessions SET token = $1, expires_at = $2, updated_at = current_timestamp WHERE id = $3`,
 		session.Token,
 		session.ExpiresAt,
 		session.ID,

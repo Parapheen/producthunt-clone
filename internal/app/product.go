@@ -57,3 +57,7 @@ func (s *ProductService) GetByOwner(ctx context.Context, owner uuid.UUID) ([]*pr
 func (s *ProductService) GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error) {
 	return s.productRepo.GetByID(ctx, id)
 }
+
+func (s *ProductService) GetMembers(ctx context.Context, productID uuid.UUID) ([]*product.Member, error) {
+	return s.productRepo.GetMembers(ctx, productID)
+}

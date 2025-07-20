@@ -32,7 +32,7 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, map[string]interface{}{
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
 		"User":     user,
 		"Products": products,
 		"token":    nosurf.Token(r),

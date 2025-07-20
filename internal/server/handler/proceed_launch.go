@@ -54,7 +54,7 @@ func (h *Handler) ProceedLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, map[string]interface{}{
+	err = t.ExecuteTemplate(w, "launch-edit-card", map[string]interface{}{
 		"Launch": l,
 		"token":  nosurf.Token(r),
 	})

@@ -71,6 +71,15 @@ func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider strin
 		return existingUser, nil
 	}
 
+	if existingUser.Session.IsExpired() {
+		existingUser.Session.Refresh()
+		err = a.userRepository.RefreshSession(ctx, existingUser.Session)
+		if err != nil {
+			return nil, fmt.Errorf("error refreshing session: %w", err)
+		}
+		return existingUser, nil
+	}
+
 	return existingUser, nil
 }
 

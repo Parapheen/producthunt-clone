@@ -31,7 +31,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.Execute(w, map[string]interface{}{
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
 		"User":     user,
 		"Launches": launches,
 	})

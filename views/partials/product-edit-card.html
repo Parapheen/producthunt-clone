@@ -10,30 +10,20 @@
 			</h3>
 		</div>
 
-		<p class="text-sm text-gray-600">Создано: {{ .CreatedAt.Format "02.01.2006" }}</p>
+		<p class="text-sm text-gray-600">
+			<i class="bi bi-calendar-date"></i>
+			{{ .CreatedAt.Format "02.01.2006" }}
+		</p>
 
 		<div class="flex items-center gap-4 mt-5">
 			<a class="btn btn-primary rounded-full bg-indigo-600 text-white"
-				href="/products/{{ .Slug }}/new-launch">
+				href="/products/{{ .ID }}/new-launch">
 				Новый запуск
 			</a>
 			<a class="text-sm text-blue-600 underline" href="/products/{{ .Slug }}/launches">
 				Запуски
 			</a>
 		</div>
-	</div>
-
-	<div class="flex-shrink-0 flex items-center gap-2">
-		<button class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
-			hx-get="/products/{{ .ID }}/delete" type="submit">
-			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-				stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-				class="lucide lucide-trash-icon lucide-trash">
-				<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-				<path d="M3 6h18" />
-				<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-			</svg>
-		</button>
 	</div>
 </div>
 

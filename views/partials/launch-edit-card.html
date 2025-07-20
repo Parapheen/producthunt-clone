@@ -1,6 +1,6 @@
 {{ define "launch-edit-card" }}
 
-<div id="{{ .Launch.ID }}" class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4" hx-swap-oob="true">
+<div id="{{ .Launch.ID }}" class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
 	<img src="https://avatar.iran.liara.run/public" alt="{{ .Launch.Name }}"
 		class="w-20 h-20 rounded-lg object-cover">
 
@@ -21,7 +21,7 @@
 
 		{{ if eq .Launch.State.String "draft" }}
 		{{ if .Launch.LaunchDate }}
-		<form class="mt-5" hx-post="/api/proceed-launch" hx-swap="none" hx-disable-elt="button">
+		<form class="mt-5" hx-post="/api/proceed-launch" hx-target="#{{ .Launch.ID }}" hx-swap="outerHTML">
 			<input type="hidden" name="csrf_token" value="{{ .token }}">
 			<input type="hidden" name="product_id" value="{{ .Launch.ProductID }}">
 			<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
@@ -38,6 +38,7 @@
 	</div>
 
 	<div class="flex-shrink-0 flex items-center gap-2">
+		{{ if eq .Launch.State.String "draft" }}
 		<a class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-50 hover:text-gray-900"
 			href="/products/{{ .Launch.ProductID }}/launches/{{ .Launch.Slug }}/edit">
 			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -48,7 +49,8 @@
 				<path d="m15 5 4 4" />
 			</svg>
 		</a>
-		<form hx-delete="/api/launches/{{ .Launch.ID }}">
+		{{ end }}
+		<form hx-delete="/api/launches/{{ .Launch.ID }}" hx-confirm="Вы уверены?">
 			<input type="hidden" name="csrf_token" value="{{ .token }}">
 			<button class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
 				type="submit">
