@@ -1,5 +1,5 @@
 {{ define "content" }}
-<section class="container mx-auto">
+<section class="container max-w-4xl mx-auto">
   <div class="bg-white p-8 rounded-2xl border border-gray-200 mb-8">
     <div class="flex flex-col md:flex-row items-center gap-8">
       <div class="flex-shrink-0">
@@ -20,20 +20,19 @@
   <div class="mb-4 border-b border-gray-200">
     <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="product-tabs">
       <li class="mr-2">
-        <button hx-get="/api/products/{{.Product.ID}}/launches" hx-target="#tab-content" hx-push-url="true"
-          class="tab-button inline-block p-4 border-b-2 rounded-t-lg text-indigo-600 border-indigo-600"
-          aria-current="page">
+        <button hx-get="/products/{{.Product.Slug}}/launches" hx-target="#tab-content" hx-push-url="true"
+          class="tab-button inline-flex items-center p-4 border-b-2 rounded-t-lg">
           Запуски
-          <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium text-indigo-800 bg-indigo-100 rounded-full">
+          <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium text-gray-800 bg-gray-200 rounded-full">
             {{ len .Launches }}
           </span>
         </button>
       </li>
       <li class="mr-2">
-        <button hx-get="/api/products/{{.Product.ID}}/members" hx-target="#tab-content" hx-push-url="true"
-          class="tab-button inline-block p-4 border-b-2 rounded-t-lg border-transparent hover:text-gray-600 hover:border-gray-300">
+        <button hx-get="/products/{{.Product.Slug}}/members" hx-target="#tab-content" hx-push-url="true"
+          class="tab-button inline-flex items-center p-4 border-b-2 rounded-t-lg">
           Участники
-          <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium text-indigo-800 bg-indigo-100 rounded-full">
+          <span class="inline-block ml-2 px-2 py-0.5 text-xs font-medium text-gray-800 bg-gray-200 rounded-full">
             {{ len .Product.Members }}
           </span>
         </button>
@@ -42,30 +41,76 @@
   </div>
 
   <div id="tab-content">
+    {{ if eq .ActiveTab "launches" }}
     {{ template "launches-tab" . }}
+    {{ else if eq .ActiveTab "members" }}
+    {{ template "members-tab" . }}
+    {{ end }}
   </div>
 
 </section>
 
 <script>
-  // This script handles the "active" state styling for the tabs.
-  document.addEventListener('htmx:beforeRequest', function (evt) {
+  function syncActiveTabState() {
+    const currentPath = window.location.pathname;
     const tabContainer = document.getElementById('product-tabs');
-    if (tabContainer && tabContainer.contains(evt.detail.elt)) {
-      const tabs = tabContainer.querySelectorAll('.tab-button');
+    if (!tabContainer) return;
 
-      tabs.forEach(tab => {
-        tab.classList.remove('text-indigo-600', 'border-indigo-600');
-        tab.classList.add('border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
+    const tabs = tabContainer.querySelectorAll('.tab-button');
+    let activeTabFound = false;
+
+    tabs.forEach(tab => {
+      const tabPath = tab.getAttribute('hx-get');
+      // Check if the browser's path ends with the tab's hx-get path
+      const isActive = tabPath && currentPath.endsWith(tabPath);
+
+      // Toggle classes for the tab button
+      tab.classList.toggle('text-indigo-600', isActive);
+      tab.classList.toggle('border-indigo-600', isActive);
+      tab.classList.toggle('border-transparent', !isActive);
+      tab.classList.toggle('hover:text-gray-600', !isActive);
+      tab.classList.toggle('hover:border-gray-300', !isActive);
+
+      // Toggle classes for the counter span inside the button
+      const counter = tab.querySelector('span');
+      if (counter) {
+        counter.classList.toggle('bg-indigo-100', isActive);
+        counter.classList.toggle('text-indigo-800', isActive);
+        counter.classList.toggle('bg-gray-200', !isActive);
+        counter.classList.toggle('text-gray-800', !isActive);
+      }
+
+      if (isActive) {
+        tab.setAttribute('aria-current', 'page');
+        activeTabFound = true;
+      } else {
         tab.removeAttribute('aria-current');
-      });
+      }
+    });
 
-      const clickedTab = evt.detail.elt;
-      clickedTab.classList.add('text-indigo-600', 'border-indigo-600');
-      clickedTab.classList.remove('border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
-      clickedTab.setAttribute('aria-current', 'page');
+    // If no tab matches the URL (e.g., on the base product page), default to the first tab.
+    if (!activeTabFound && tabs.length > 0) {
+      const firstTab = tabs[0];
+      firstTab.classList.add('text-indigo-600', 'border-indigo-600');
+      firstTab.classList.remove('border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
+      firstTab.setAttribute('aria-current', 'page');
+
+      const firstCounter = firstTab.querySelector('span');
+      if (firstCounter) {
+        firstCounter.classList.add('bg-indigo-100', 'text-indigo-800');
+        firstCounter.classList.remove('bg-gray-200', 'text-gray-800');
+      }
     }
-  });
+  }
+
+  // Run when the page first loads
+  document.addEventListener('DOMContentLoaded', syncActiveTabState);
+
+  // Run after HTMX swaps content and the URL has been updated
+  document.body.addEventListener('htmx:pushedIntoHistory', syncActiveTabState);
+
+  // Run when using the browser's back/forward buttons
+  window.addEventListener('popstate', syncActiveTabState);
 </script>
 
 {{ end }}

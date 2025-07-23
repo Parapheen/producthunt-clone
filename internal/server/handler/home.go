@@ -25,6 +25,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		"views/layout/footer.html",
 		"views/layout/head.html",
 		"views/partials/launch-card.html",
+		"views/partials/launch-state.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

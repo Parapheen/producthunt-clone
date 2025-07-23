@@ -23,7 +23,7 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	launches, err := h.LaunchService.GetByProduct(r.Context(), p.ID)
+	launches, err := h.LaunchService.GetPublishedByProduct(r.Context(), p.ID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -44,6 +44,7 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		"views/layout/footer.html",
 		"views/layout/head.html",
 		"views/partials/launch-card.html",
+		"views/partials/launch-state.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -51,10 +52,11 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":     u,
-		"Product":  p,
-		"Launches": launches,
-		"token":    nosurf.Token(r),
+		"User":      u,
+		"Product":   p,
+		"Launches":  launches,
+		"ActiveTab": "launches",
+		"token":     nosurf.Token(r),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -75,54 +77,24 @@ func (h *Handler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/products/"+p.Slug, http.StatusFound)
 }
 
-func (h *Handler) ProductLaunchesPartial(w http.ResponseWriter, r *http.Request) {
-	user := user.GetUserFromContext(r.Context())
-
-	productID := uuid.MustParse(r.PathValue("productID"))
-
-	launches, err := h.LaunchService.GetByProduct(r.Context(), productID)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	t, err := template.New("product-launches.html").
-		Funcs(template.FuncMap{
-			"dict": tmpl.Dict,
-		}).
-		ParseFiles(
-			"views/product/partials/launches-tab.html",
-			"views/partials/launch-state.html",
-			"views/partials/launch-card.html",
-		)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":     user,
-		"Launches": launches,
-		"token":    nosurf.Token(r),
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 type MemberView struct {
 	Name string
 	Role string
 }
 
-func (h *Handler) ProductMembersPartial(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
 
-	productID := uuid.MustParse(r.PathValue("productID"))
+	productSlug := r.PathValue("productSlug")
 
-	members, err := h.ProductService.GetMembers(r.Context(), productID)
+	p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	members, err := h.ProductService.GetMembers(r.Context(), p.ID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting members", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -163,23 +135,68 @@ func (h *Handler) ProductMembersPartial(w http.ResponseWriter, r *http.Request) 
 		})
 	}
 
-	t, err := template.New("product-members.html").
-		Funcs(template.FuncMap{
-			"dict": tmpl.Dict,
-		}).
-		ParseFiles(
-			"views/product/partials/members-tab.html",
-		)
+	if r.Header.Get("HX-Request") == "true" {
+		t, err := template.New("product-members.html").
+			Funcs(template.FuncMap{
+				"dict": tmpl.Dict,
+			}).
+			ParseFiles(
+				"views/product/partials/members-tab.html",
+			)
+		if err != nil {
+			h.Logger.ErrorContext(r.Context(), "error parsing template", slog.Any("error", err))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = t.ExecuteTemplate(w, "members-tab", map[string]interface{}{
+			"User":    u,
+			"Members": membersView,
+			"token":   nosurf.Token(r),
+		})
+		if err != nil {
+			h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
+	launches, err := h.LaunchService.GetByProduct(r.Context(), p.ID)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	t, err := template.New("product.html").Funcs(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"dict": tmpl.Dict,
+	}).ParseFiles(
+		"views/product/product.html",
+		"views/product/partials/launches-tab.html",
+		"views/product/partials/members-tab.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
+		"views/partials/launch-card.html",
+	)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error parsing template", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = t.ExecuteTemplate(w, "members-tab", map[string]interface{}{
-		"User":    u,
-		"Members": membersView,
-		"token":   nosurf.Token(r),
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+		"User":      u,
+		"Members":   membersView,
+		"Product":   p,
+		"Launches":  launches,
+		"ActiveTab": "members",
+		"token":     nosurf.Token(r),
 	})
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
@@ -188,3 +205,86 @@ func (h *Handler) ProductMembersPartial(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
+	user := user.GetUserFromContext(r.Context())
+
+	productSlug := r.PathValue("productSlug")
+
+	p, err := s.ProductService.GetBySlug(r.Context(), productSlug)
+	if err != nil {
+		s.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !p.IsOwner(user.ID) {
+		http.Error(w, "Вы не автор этого продукта", http.StatusForbidden)
+		return
+	}
+
+	launches, err := s.LaunchService.GetPublishedByProduct(r.Context(), p.ID)
+	if err != nil {
+		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if r.Header.Get("HX-Request") == "true" {
+		t, err := template.New("product-launches.html").
+			Funcs(template.FuncMap{
+				"dict": tmpl.Dict,
+			}).
+			ParseFiles(
+				"views/product/partials/launches-tab.html",
+				"views/partials/launch-state.html",
+				"views/partials/launch-card.html",
+			)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = t.ExecuteTemplate(w, "launches-tab", map[string]interface{}{
+			"User":     user,
+			"Launches": launches,
+			"token":    nosurf.Token(r),
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
+	t, err := template.New("product-launches.html").
+		Funcs(template.FuncMap{
+			"dict": tmpl.Dict,
+		}).
+		ParseFiles(
+			"views/product/product.html",
+			"views/product/partials/launches-tab.html",
+			"views/product/partials/members-tab.html",
+			"views/layout/layout.html",
+			"views/layout/header.html",
+			"views/layout/footer.html",
+			"views/layout/head.html",
+			"views/partials/launch-card.html",
+			"views/partials/launch-state.html",
+		)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+		"User":      user,
+		"Launches":  launches,
+		"Product":   p,
+		"ActiveTab": "launches",
+		"token":     nosurf.Token(r),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

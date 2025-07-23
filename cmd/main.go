@@ -8,6 +8,7 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/app"
 	"github.com/Parapheen/ph-clone/internal/infra/sqlite"
+	"github.com/Parapheen/ph-clone/internal/infra/telegram"
 	"github.com/Parapheen/ph-clone/internal/server"
 	"github.com/Parapheen/ph-clone/internal/server/handler"
 	mw "github.com/Parapheen/ph-clone/internal/server/middleware"
@@ -33,6 +34,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	telegramClient := telegram.NewTelegramClient(os.Getenv("TELEGRAM_BOT_TOKEN"), logger)
+
 	userRepository := sqlite.NewUserRepository(db)
 	productRepository := sqlite.NewProductRepository(db)
 	launchRepository := sqlite.NewLaunchRepository(db)
@@ -40,7 +43,7 @@ func main() {
 	authService := app.NewAuthService(userRepository)
 	userService := app.NewUserService(userRepository)
 	productService := app.NewProductService(productRepository)
-	launchService := app.NewLaunchService(launchRepository)
+	launchService := app.NewLaunchService(launchRepository, telegramClient)
 
 	m := mw.NewMiddleware(userService)
 

@@ -1,0 +1,46 @@
+{{ define "launch-moderation-card" }}
+
+<div id="{{ .Launch.ID }}" class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
+	<img src="https://avatar.iran.liara.run/public" alt="{{ .Launch.Name }}"
+		class="w-20 h-20 rounded-lg object-cover">
+
+	<div class="flex-grow">
+		<div class="flex items-center gap-4">
+			<h3 class="font-bold text-lg text-gray-900">
+				{{ .Launch.Name }}
+			</h3>
+		</div>
+
+		<p class="text-gray-800 my-2">
+			{{ template "launch-state" .Launch }}
+		</p>
+		<p class="text-sm text-gray-600">Последнее обновление: {{ .Launch.UpdatedAt.Format "02.01.2006" }}</p>
+		{{ if .Launch.LaunchDate }}
+		<p class="text-sm text-gray-600">Дата запуска: {{ .Launch.LaunchDate.Format "02.01.2006" }}</p>
+		{{ end }}
+
+		<div class="flex gap-2">
+			<form class="mt-5" hx-post="/api/proceed-launch" hx-target="#{{ .Launch.ID }}"
+				hx-swap="outerHTML">
+				<input type="hidden" name="csrf_token" value="{{ .token }}">
+				<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
+
+				<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
+					type="submit">
+					Опубликовать
+				</button>
+			</form>
+			<form class="mt-5" hx-post="/api/decline-launch" hx-target="#{{ .Launch.ID }}"
+				hx-swap="outerHTML">
+				<input type="hidden" name="csrf_token" value="{{ .token }}">
+				<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
+
+				<button class="btn btn-primary w-full rounded-full bg-red-600 text-white" type="submit">
+					Отклонить
+				</button>
+			</form>
+		</div>
+	</div>
+</div>
+
+{{ end }}

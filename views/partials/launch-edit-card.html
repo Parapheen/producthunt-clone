@@ -21,7 +21,7 @@
 
 		{{ if eq .Launch.State.String "draft" }}
 		{{ if .Launch.LaunchDate }}
-		<form class="mt-5" hx-post="/api/proceed-launch" hx-target="#{{ .Launch.ID }}" hx-swap="outerHTML">
+		<form class="mt-5" hx-post="/api/send-launch-to-moderation" hx-target="#{{ .Launch.ID }}" hx-swap="outerHTML">
 			<input type="hidden" name="csrf_token" value="{{ .token }}">
 			<input type="hidden" name="product_id" value="{{ .Launch.ProductID }}">
 			<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">

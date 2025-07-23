@@ -1,0 +1,16 @@
+{{ define "content" }}
+<section class="container mx-auto flex flex-col">
+	<h1 class="text-3xl font-bold">Запуски в модерации</h1>
+	{{if .Launches}}
+	<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
+		{{ range .Launches }}
+		{{ template "launch-moderation-card" (dict "Launch" . "token" $.token) }}
+		{{ end }}
+	</div>
+	{{else}}
+	<div class="bg-white p-4 text-center">
+		<p class="text-gray-900 text-xl">Пока нет запусков</p>
+	</div>
+	{{end}}
+</section>
+{{ end }}

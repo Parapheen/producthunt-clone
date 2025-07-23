@@ -10,7 +10,7 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 	user := user.GetUserFromContext(r.Context())
 
 	productSlug := r.PathValue("productSlug")
@@ -27,7 +27,10 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	launches, err := s.LaunchService.GetByProduct(r.Context(), p.ID)
+	launches, err := s.LaunchService.GetByProduct(
+		r.Context(),
+		p.ID,
+	)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -53,10 +56,11 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":     user,
-		"Launches": launches,
-		"Product":  p,
-		"token":    nosurf.Token(r),
+		"User":      user,
+		"Launches":  launches,
+		"Product":   p,
+		"ActiveTab": "launches",
+		"token":     nosurf.Token(r),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

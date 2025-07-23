@@ -32,7 +32,16 @@ func NewServer(h *handler.Handler, m *mw.Middleware) *Server {
 	r.Get("/products/u/{productID}", h.GetProductByID)
 	r.Get("/my/products", h.MyProducts)
 	r.Get("/products/{productSlug}/launches", h.ProductLaunches)
+	r.Get("/products/{productSlug}/launches/edit", h.EditProductLaunches)
+	r.Get("/products/{productSlug}/members", h.ProductMembers)
 	r.Get("/products/{productID}/new-launch", h.GetNewLaunch)
+
+	r.Group(func(r chi.Router) {
+		r.Use(m.AdminMiddleware)
+		r.Get("/admin/moderation/launches", h.ModLaunches)
+		r.Post("/api/decline-launch", h.DeclineLaunch)
+		r.Post("/api/proceed-launch", h.ProceedLaunch)
+	})
 
 	r.Get("/auth/yandex", h.YandexAuth)
 	r.Get("/auth/yandex/callback", h.YandexAuthCallback)
@@ -43,9 +52,7 @@ func NewServer(h *handler.Handler, m *mw.Middleware) *Server {
 	r.Post("/api/new-launch", h.NewLaunch)
 	r.Post("/api/update-launch", h.UpdateLaunch)
 	r.Delete("/api/launches/{launchID}", h.DeleteLaunch)
-	r.Post("/api/proceed-launch", h.ProceedLaunch)
-	r.Get("/api/products/{productID}/launches", h.ProductLaunchesPartial)
-	r.Get("/api/products/{productID}/members", h.ProductMembersPartial)
+	r.Post("/api/send-launch-to-moderation", h.SendLaunchToModeration)
 
 	fileServer(r, "/assets")
 

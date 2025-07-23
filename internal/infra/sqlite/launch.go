@@ -256,6 +256,48 @@ func (r *LaunchRepository) GetLatestByProduct(ctx context.Context, productID uui
 	return toDomain(l, tags), nil
 }
 
+func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State) ([]*launch.Launch, error) {
+	var query string
+
+	if len(states) == 0 {
+		query = `
+			SELECT
+				l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at
+			FROM launches l
+			GROUP BY l.id
+			ORDER BY l.launch_date DESC
+		`
+	} else {
+		query = `
+			SELECT
+				l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at
+			FROM launches l
+			WHERE l.state IN (?)
+			GROUP BY l.id
+			ORDER BY l.launch_date DESC
+		`
+	}
+
+	query = r.db.Rebind(query)
+	args := []interface{}{}
+
+	for _, state := range states {
+		args = append(args, state.String())
+	}
+
+	var dbLaunches []*LaunchModel
+	if err := r.db.SelectContext(ctx, &dbLaunches, query, args...); err != nil {
+		return nil, err
+	}
+
+	result := make([]*launch.Launch, 0, len(dbLaunches))
+	for _, l := range dbLaunches {
+		result = append(result, toDomain(l, []launch.Tag{}))
+	}
+
+	return result, nil
+}
+
 // GetFeed retrieves a paginated and ordered feed of launches based on a time period.
 // Valid periods are "daily", "weekly", "monthly", and "all_time".
 func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, offset int) ([]*launch.Launch, error) {
@@ -285,7 +327,8 @@ func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, of
 		startDate := now.AddDate(0, -1, 0)
 		args = append(args, startDate)
 	case "all_time":
-		// No additional time filter needed.
+		whereClause += " AND l.launch_date <= ?"
+		args = append(args, now)
 	default: // Default to "daily"
 		whereClause += " AND date(l.launch_date) = date(?)"
 		args = append(args, now)
