@@ -19,8 +19,6 @@ type Launch struct {
 	LaunchDate *time.Time
 	Upvotes    int
 	UpdatedAt  time.Time
-
-	Tags []Tag
 }
 
 func NewLaunch(productID uuid.UUID, name, url string) *Launch {
@@ -32,10 +30,6 @@ func NewLaunch(productID uuid.UUID, name, url string) *Launch {
 		State:     Draft,
 		Slug:      slugify.Slugify(name),
 	}
-}
-
-func (l *Launch) AddTag(tag *Tag) {
-	l.Tags = append(l.Tags, *tag)
 }
 
 func (l *Launch) Publish() {

@@ -1,30 +1,58 @@
 {{ define "product-edit-card" }}
 
-<div class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
-	<img src="https://avatar.iran.liara.run/public" alt="{{ .Name }}" class="w-20 h-20 rounded-lg object-cover">
+<div class="card">
+	<header class="flex justify-between items-start gap-4">
+		<img src="https://avatar.iran.liara.run/public" alt="{{ .Name }}"
+			class="w-20 h-20 rounded-lg object-cover">
 
-	<div class="flex-grow">
-		<div class="flex items-center gap-4">
+		<div class="flex-grow">
 			<h3 class="font-bold text-lg text-blue-500 underline">
 				<a href="/products/{{ .Slug }}">{{ .Name }}</a>
 			</h3>
+
+			<p class="text-sm text-gray-600">
+				Category
+			</p>
 		</div>
+	</header>
 
-		<p class="text-sm text-gray-600">
-			<i class="bi bi-calendar-date"></i>
-			{{ .CreatedAt.Format "02.01.2006" }}
-		</p>
-
-		<div class="flex items-center gap-4 mt-5">
+	<section class="flex flex-col gap-4">
+		<div class="flex justify-between items-center">
+			<h3>
+				Запуски ({{ .Launches | len }})
+			</h3>
 			<a class="btn btn-primary rounded-full bg-indigo-600 text-white"
 				href="/products/{{ .ID }}/new-launch">
+				<i class="bi bi-plus-circle"></i>
 				Новый запуск
 			</a>
-			<a class="text-sm text-blue-600 underline" href="/products/{{ .Slug }}/launches/edit">
-				Запуски
-			</a>
 		</div>
-	</div>
+		<div class="flex flex-col w-full gap-2">
+			{{ range .Launches }}
+			<a href="/products/{{ $.Slug }}/launches/{{ .Slug }}/edit"
+				class="flex justify-between w-full gap-2 rounded-md border border-gray-200 p-4 hover:bg-gray-50">
+				<div class="flex gap-2 items-center">
+					{{ if .LaunchDate }}
+					<span class="flex gap-2 items-center">
+						<i class="bi bi-calendar"></i>
+						<span class="text-sm text-gray-600">{{ .LaunchDate.Format "02.01.2006"
+							}}</span>
+					</span>
+					{{ end }}
+					<span class="text-sm text-gray-600">{{ .Tagline }}</span>
+				</div>
+				{{ template "launch-state" . }}
+			</a>
+			{{ end }}
+		</div>
+	</section>
+	<footer>
+		<a class="text-sm text-blue-600 underline" href="/products/{{ .Slug }}/launches/edit">
+			Все запуски
+		</a>
+	</footer>
+</div>
+</div>
 </div>
 
 {{ end }}

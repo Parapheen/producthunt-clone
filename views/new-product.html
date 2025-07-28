@@ -16,7 +16,17 @@
 					<label for="url">Ссылка</label>
 					<input name="url" type="text" id="url" placeholder="https://my-product">
 				</div>
+
+				<div class="grid gap-2">
+					<label for="select-categories">Категории</label>
+					{{ template "select-categories" . }}
+					<p class="text-gray-500 text-sm">Не более 3 категорий</p>
+					<p class="text-gray-500 text-sm">
+						Чего-то не хватает? <a href="" class="underline">Напишите нам</a>
+					</p>
+				</div>
 			</form>
+
 			<div id="errors" class="mt-5"></div>
 		</section>
 		<footer>
@@ -27,5 +37,17 @@
 		</footer>
 	</div>
 </section>
+
+
+<script defer>
+	new TomSelect("#select-categories", {
+		plugins: {
+			remove_button: {
+				title: 'Удалить',
+			}
+		},
+		maxItems: 3,
+	});
+</script>
 
 {{ end }}

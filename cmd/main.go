@@ -39,10 +39,11 @@ func main() {
 	userRepository := sqlite.NewUserRepository(db)
 	productRepository := sqlite.NewProductRepository(db)
 	launchRepository := sqlite.NewLaunchRepository(db)
+	categoryRepository := sqlite.NewCategoryRepository(db)
 
 	authService := app.NewAuthService(userRepository)
 	userService := app.NewUserService(userRepository)
-	productService := app.NewProductService(productRepository)
+	productService := app.NewProductService(productRepository, categoryRepository)
 	launchService := app.NewLaunchService(launchRepository, telegramClient)
 
 	m := mw.NewMiddleware(userService)

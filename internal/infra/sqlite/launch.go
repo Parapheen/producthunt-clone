@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
@@ -27,21 +26,6 @@ type LaunchModel struct {
 	UpvoteCount int            `db:"upvote_count"` // For aggregate queries
 }
 
-// TagModel represents the database schema for a tag.
-type TagModel struct {
-	ID   int64  `db:"id"`
-	Name string `db:"name"`
-	Slug string `db:"slug"`
-}
-
-// launchTagModel is a helper struct for fetching tags for multiple launches efficiently.
-type launchTagModel struct {
-	LaunchID uuid.UUID `db:"launch_id"`
-	TagID    int64     `db:"id"`
-	TagName  string    `db:"name"`
-	TagSlug  string    `db:"slug"`
-}
-
 // LaunchRepository handles database operations for launches.
 type LaunchRepository struct {
 	db *sqlx.DB
@@ -54,8 +38,7 @@ func NewLaunchRepository(db *sqlx.DB) *LaunchRepository {
 	}
 }
 
-// toDomain converts a LaunchModel and its tags to a domain.Launch object.
-func toDomain(l *LaunchModel, tags []launch.Tag) *launch.Launch {
+func toDomain(l *LaunchModel) *launch.Launch {
 	return &launch.Launch{
 		ID:          l.ID,
 		ProductID:   l.ProductID,
@@ -67,7 +50,6 @@ func toDomain(l *LaunchModel, tags []launch.Tag) *launch.Launch {
 		Slug:        l.Slug,
 		LaunchDate:  l.LaunchDate,
 		Upvotes:     l.UpvoteCount,
-		Tags:        tags,
 		UpdatedAt:   l.UpdatedAt,
 	}
 }
@@ -118,12 +100,7 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
 		return nil, err
 	}
 
-	tags, err := r.getTagsForLaunch(ctx, l.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return toDomain(l, tags), nil
+	return toDomain(l), nil
 }
 
 func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
@@ -145,12 +122,7 @@ func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.L
 		return nil, err
 	}
 
-	tags, err := r.getTagsForLaunch(ctx, l.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return toDomain(l, tags), nil
+	return toDomain(l), nil
 }
 
 // Update modifies an existing launch in the database.
@@ -200,7 +172,7 @@ func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([
 	for _, l := range dbLaunches {
 		// In a list view, we pass an empty slice for tags to avoid N+1 queries.
 		// A more advanced implementation might fetch tags for all launches at once.
-		result = append(result, toDomain(l, []launch.Tag{}))
+		result = append(result, toDomain(l))
 	}
 
 	return result, nil
@@ -223,7 +195,7 @@ func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID
 
 	result := make([]*launch.Launch, 0, len(dbLaunches))
 	for _, l := range dbLaunches {
-		result = append(result, toDomain(l, []launch.Tag{}))
+		result = append(result, toDomain(l))
 	}
 
 	return result, nil
@@ -248,12 +220,7 @@ func (r *LaunchRepository) GetLatestByProduct(ctx context.Context, productID uui
 		return nil, err
 	}
 
-	tags, err := r.getTagsForLaunch(ctx, l.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return toDomain(l, tags), nil
+	return toDomain(l), nil
 }
 
 func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State) ([]*launch.Launch, error) {
@@ -292,7 +259,7 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 
 	result := make([]*launch.Launch, 0, len(dbLaunches))
 	for _, l := range dbLaunches {
-		result = append(result, toDomain(l, []launch.Tag{}))
+		result = append(result, toDomain(l))
 	}
 
 	return result, nil
@@ -354,71 +321,13 @@ func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, of
 		launchIDs[i] = l.ID
 	}
 
-	tagsByLaunchID, err := r.getTagsForLaunches(ctx, launchIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tags for launches: %w", err)
-	}
-
 	result := make([]*launch.Launch, 0, len(dbLaunches))
 	for _, l := range dbLaunches {
 		// Use the pre-fetched tags, defaulting to an empty slice if none exist.
-		tags := tagsByLaunchID[l.ID]
-		if tags == nil {
-			tags = []launch.Tag{}
-		}
-		result = append(result, toDomain(l, tags))
+		result = append(result, toDomain(l))
 	}
 
 	return result, nil
-}
-
-// getTagsForLaunch retrieves all tags associated with a specific launch.
-func (r *LaunchRepository) getTagsForLaunch(ctx context.Context, launchID uuid.UUID) ([]launch.Tag, error) {
-	query := `SELECT t.id, t.name
-		FROM tags t
-		JOIN launch_tags lt ON t.id = lt.tag_id
-		WHERE lt.launch_id = ?`
-
-	query = r.db.Rebind(query)
-	var dbTags []*TagModel
-	if err := r.db.SelectContext(ctx, &dbTags, query, launchID); err != nil {
-		return nil, err
-	}
-
-	tags := make([]launch.Tag, 0, len(dbTags))
-	for _, t := range dbTags {
-		tags = append(tags, launch.Tag{ID: t.ID, Name: t.Name})
-	}
-
-	return tags, nil
-}
-
-// getTagsForLaunches fetches all tags for a given slice of launch IDs to prevent N+1 queries.
-func (r *LaunchRepository) getTagsForLaunches(ctx context.Context, launchIDs []uuid.UUID) (map[uuid.UUID][]launch.Tag, error) {
-	query, args, err := sqlx.In(`
-		SELECT lt.launch_id, t.id, t.name
-		FROM tags t
-		JOIN launch_tags lt ON t.id = lt.tag_id
-		WHERE lt.launch_id IN (?)`, launchIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build IN query: %w", err)
-	}
-
-	query = r.db.Rebind(query)
-
-	var launchTags []launchTagModel
-	if err := r.db.SelectContext(ctx, &launchTags, query, args...); err != nil {
-		return nil, fmt.Errorf("failed to execute select for launch tags: %w", err)
-	}
-
-	// Group tags by launch ID for easy lookup.
-	tagsByLaunchID := make(map[uuid.UUID][]launch.Tag)
-	for _, lt := range launchTags {
-		tag := launch.Tag{ID: lt.TagID, Name: lt.TagName}
-		tagsByLaunchID[lt.LaunchID] = append(tagsByLaunchID[lt.LaunchID], tag)
-	}
-
-	return tagsByLaunchID, nil
 }
 
 // Delete deletes a launch from the database.

@@ -41,10 +41,20 @@ func (r *ProductRepository) Create(ctx context.Context, product *product.Product
 			}
 		}
 
+		for _, category := range product.Categories {
+			_, err := tx.ExecContext(context.WithoutCancel(ctx), `
+				INSERT INTO product_categories (product_id, category_id)
+				VALUES ($1, $2)
+			`, product.ID, category.ID)
+			if err != nil {
+				return err
+			}
+		}
+
 		_, err = tx.ExecContext(context.WithoutCancel(ctx), `
 				INSERT INTO launches (id, product_id, name, url, state, slug)
 				VALUES ($1, $2, $3, $4, $5, $6)
-			`, uuid.New(), product.ID, product.Name, product.URL, launch.Draft, product.Slug)
+			`, uuid.New(), product.ID, product.Name, product.URL, launch.Draft.String(), product.Slug)
 		if err != nil {
 			return err
 		}
@@ -84,31 +94,37 @@ func (r *ProductRepository) ExistsByURL(ctx context.Context, url string) (bool, 
 }
 
 func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*product.Product, error) {
-	query := `SELECT p.id, p.name, p.url, p.slug, p.created_at, m.user_id, m.role
+	query := `
+		SELECT p.id, p.name, p.url, p.slug, p.created_at
 		FROM products p
-		LEFT JOIN product_members m ON p.id = m.product_id
 		WHERE p.slug = $1`
-	p := &product.Product{}
 
-	rows, err := r.db.QueryContext(ctx, query, slug)
+	p := &product.Product{}
+	err := r.db.GetContext(ctx, p, query, slug)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, product.ErrNotFound
+		}
 		return nil, err
 	}
 
-	for rows.Next() {
-		var memberUserID uuid.UUID
-		var memberRole string
-		err := rows.Scan(&p.ID, &p.Name, &p.URL, &p.Slug, &p.CreatedAt, &memberUserID, &memberRole)
-		if err != nil {
-			return nil, err
-		}
-
-		member := &product.Member{
-			UserID: memberUserID,
-			Role:   product.ParseRole(memberRole),
-		}
-		p.Members = append(p.Members, member)
+	members, err := r.GetMembers(ctx, p.ID)
+	if err != nil {
+		return nil, err
 	}
+	p.Members = members
+
+	categoryQuery := `
+		SELECT c.id, c.name, c.slug
+		FROM categories c
+		JOIN product_categories pc ON c.id = pc.category_id
+		WHERE pc.product_id = $1`
+
+	var categories []*product.Category
+	if err := r.db.SelectContext(ctx, &categories, categoryQuery, p.ID); err != nil {
+		return nil, err
+	}
+	p.Categories = categories
 
 	return p, nil
 }

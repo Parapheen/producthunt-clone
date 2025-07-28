@@ -3,7 +3,7 @@
 	<h1 class="text-3xl font-bold">Мои продукты</h1>
 
 	{{ if .Products }}
-	<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
+	<div class="flex flex-col justify-start gap-5 mt-8 max-w-2xl">
 		{{ range .Products }}
 		{{ template "product-edit-card" . }}
 		{{ end }}

@@ -15,22 +15,36 @@ type Product struct {
 
 	CreatedAt time.Time
 
-	Members []*Member
+	Members    []*Member
+	Categories []*Category
 }
 
-func NewProduct(name, url string) *Product {
-	id := uuid.New()
-
-	return &Product{
-		ID:   id,
-		Name: name,
-		URL:  url,
-		Slug: slugify.Slugify(name),
+func NewProduct(name, url string, categories []*Category, ownerID uuid.UUID) *Product {
+	product := &Product{
+		ID:         uuid.New(),
+		Name:       name,
+		URL:        url,
+		Slug:       slugify.Slugify(name),
+		CreatedAt:  time.Now(),
+		Categories: categories,
+		Members:    []*Member{},
 	}
+	product.AddMember(&Member{
+		UserID: ownerID,
+		Role:   Owner,
+	})
+	return product
 }
 
 func (p *Product) AddMember(member *Member) {
 	p.Members = append(p.Members, member)
+}
+
+func (p *Product) AddCategory(category *Category) {
+	if len(p.Categories) == 3 {
+		return
+	}
+	p.Categories = append(p.Categories, category)
 }
 
 func (p *Product) IsOwner(userID uuid.UUID) bool {

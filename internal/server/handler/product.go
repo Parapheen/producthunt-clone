@@ -94,15 +94,8 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, err := h.ProductService.GetMembers(r.Context(), p.ID)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting members", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	memberRoles := make(map[uuid.UUID]string)
-	for _, member := range members {
+	for _, member := range p.Members {
 		memberRoles[member.UserID] = member.Role.String()
 	}
 
@@ -123,8 +116,8 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 		userMap[u.ID] = u
 	}
 
-	membersView := make([]*MemberView, 0, len(members))
-	for _, member := range members {
+	membersView := make([]*MemberView, 0, len(p.Members))
+	for _, member := range p.Members {
 		user, ok := userMap[member.UserID]
 		if !ok {
 			continue

@@ -22,13 +22,14 @@ type UserService interface {
 }
 
 type ProductService interface {
-	Create(ctx context.Context, name, url string, owner uuid.UUID) (*product.Product, error)
+	Create(ctx context.Context, product *product.Product) error
 	NameExists(ctx context.Context, name string) (bool, error)
 	URLExists(ctx context.Context, u string) (bool, error)
 	GetBySlug(ctx context.Context, slug string) (*product.Product, error)
 	GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error)
 	GetMembers(ctx context.Context, productID uuid.UUID) ([]*product.Member, error)
+	GetCategoryBySlug(ctx context.Context, slug string) (*product.Category, error)
 }
 
 type LaunchService interface {

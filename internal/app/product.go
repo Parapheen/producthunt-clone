@@ -8,34 +8,32 @@ import (
 )
 
 type ProductService struct {
-	productRepo product.ProductRepository
+	productRepo  product.ProductRepository
+	categoryRepo product.CategoryRepository
 }
 
-func NewProductService(productRepo product.ProductRepository) *ProductService {
+func NewProductService(
+	productRepo product.ProductRepository,
+	categoryRepo product.CategoryRepository,
+) *ProductService {
 	return &ProductService{
-		productRepo: productRepo,
+		productRepo:  productRepo,
+		categoryRepo: categoryRepo,
 	}
 }
 
-func (s *ProductService) Create(ctx context.Context, name, url string, owner uuid.UUID) (*product.Product, error) {
-	p := product.NewProduct(name, url)
-
-	p.AddMember(&product.Member{
-		UserID: owner,
-		Role:   product.Owner,
-	})
-
+func (s *ProductService) Create(ctx context.Context, p *product.Product) error {
 	err := p.Validate()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = s.productRepo.Create(ctx, p)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return p, nil
+	return nil
 }
 
 func (s *ProductService) NameExists(ctx context.Context, name string) (bool, error) {
@@ -60,4 +58,8 @@ func (s *ProductService) GetByID(ctx context.Context, id uuid.UUID) (*product.Pr
 
 func (s *ProductService) GetMembers(ctx context.Context, productID uuid.UUID) ([]*product.Member, error) {
 	return s.productRepo.GetMembers(ctx, productID)
+}
+
+func (s *ProductService) GetCategoryBySlug(ctx context.Context, slug string) (*product.Category, error) {
+	return s.categoryRepo.GetBySlug(ctx, slug)
 }

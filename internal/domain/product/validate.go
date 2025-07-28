@@ -1,7 +1,6 @@
 package product
 
 import (
-	"errors"
 	"net/url"
 	"strings"
 )
@@ -11,47 +10,46 @@ const (
 	ProductURLMaxLength  = 255
 )
 
-var (
-	InvalidURLSchemeError = errors.New("invalid url scheme")
-	InvalidURL            = errors.New("invalid url")
-	ProductNameTooLong    = errors.New("product name is too long")
-	ProductURLTooLong     = errors.New("product url is too long")
-	ProductNameEmpty      = errors.New("product name is empty")
-	ProductURLEmpty       = errors.New("product url is empty")
-)
-
 func (p *Product) Validate() error {
 	if p.Name == "" {
-		return ProductNameEmpty
+		return ErrProductNameEmpty
 	}
 
 	if p.URL == "" {
-		return ProductURLEmpty
+		return ErrProductURLEmpty
 	}
 
 	if len(p.Name) > ProductNameMaxLength {
-		return ProductNameTooLong
+		return ErrProductNameTooLong
 	}
 
 	if len(p.URL) > ProductURLMaxLength {
-		return ProductURLTooLong
+		return ErrProductURLTooLong
 	}
 
 	u, err := url.Parse(p.URL)
 	if err != nil {
-		return InvalidURL
+		return ErrInvalidURL
 	}
 
 	if u.Scheme == "" {
-		return InvalidURLSchemeError
+		return ErrInvalidURLScheme
 	}
 
 	if strings.HasPrefix(p.URL, "http://") {
-		return InvalidURLSchemeError
+		return ErrInvalidURLScheme
 	}
 
 	if !strings.HasPrefix(p.URL, "https://") {
-		return InvalidURLSchemeError
+		return ErrInvalidURLScheme
+	}
+
+	if len(p.Categories) == 0 {
+		return ErrNoCategories
+	}
+
+	if len(p.Categories) > 3 {
+		return ErrTooManyCategories
 	}
 
 	return nil

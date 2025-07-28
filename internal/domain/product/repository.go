@@ -15,3 +15,7 @@ type ProductRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*Product, error)
 	GetMembers(ctx context.Context, productID uuid.UUID) ([]*Member, error)
 }
+
+type CategoryRepository interface {
+	GetBySlug(ctx context.Context, slug string) (*Category, error)
+}

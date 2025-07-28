@@ -15,6 +15,7 @@ func (h *Handler) NewProductForm(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFiles(
 		"views/new-product.html",
+		"views/partials/select-categories.html",
 		"views/layout/layout.html",
 		"views/layout/header.html",
 		"views/layout/footer.html",
@@ -69,29 +70,28 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(errors) > 0 {
-		t, err := template.ParseFiles("views/partials/errors.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		err = t.Execute(w, map[string]interface{}{
-			"Errors": errors,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		h.renderErrors(w, errors)
 		return
 	}
 
 	h.Logger.InfoContext(r.Context(), "creating product", slog.Any("name", name), slog.Any("url", url))
 
-	p, err := h.ProductService.Create(
+	categories := make([]*product.Category, 0)
+	for _, category := range r.PostForm["categories"] {
+		c, err := h.ProductService.GetCategoryBySlug(r.Context(), category)
+		if err != nil {
+			h.Logger.ErrorContext(r.Context(), "error getting category", slog.Any("error", err))
+			errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
+			continue
+		}
+		categories = append(categories, c)
+	}
+
+	p := product.NewProduct(name, url, categories, u.ID)
+
+	err = h.ProductService.Create(
 		r.Context(),
-		name,
-		url,
-		u.ID,
+		p,
 	)
 
 	switch err {
@@ -105,35 +105,46 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		redirectTo := "/products/" + p.Slug + "/launches/" + createdFirstLaunch.Slug + "/edit"
 		w.Header().Add("HX-Redirect", redirectTo)
 		return
-	case product.ProductNameTooLong:
+	case product.ErrProductNameTooLong:
 		errors = append(errors, "Название продукта слишком длинное")
-	case product.ProductURLTooLong:
+	case product.ErrProductURLTooLong:
 		errors = append(errors, "URL продукта слишком длинный")
-	case product.InvalidURLSchemeError, product.InvalidURL:
+	case product.ErrInvalidURLScheme, product.ErrInvalidURL:
 		errors = append(errors, "Невалидный URL")
-	case product.ProductNameEmpty:
+	case product.ErrProductNameEmpty:
 		errors = append(errors, "Название продукта не может быть пустым")
-	case product.ProductURLEmpty:
+	case product.ErrProductURLEmpty:
 		errors = append(errors, "URL продукта не может быть пустым")
+	case product.ErrCategoryNotFound:
+		errors = append(errors, "Категория не найдена")
+	case product.ErrNoCategories:
+		errors = append(errors, "Необходимо добавить хотя бы одну категорию")
+	case product.ErrTooManyCategories:
+		errors = append(errors, "Не более 3 категорий")
 	default:
 		h.Logger.ErrorContext(r.Context(), "error creating product", slog.Any("error", err))
 		errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
 	}
 
 	if len(errors) > 0 {
-		t, err := template.ParseFiles("views/partials/errors.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		h.renderErrors(w, errors)
+		return
+	}
+}
 
-		err = t.Execute(w, map[string]interface{}{
-			"Errors": errors,
-		})
+func (h *Handler) renderErrors(w http.ResponseWriter, errors []string) {
+	t, err := template.ParseFiles("views/partials/errors.html")
+	if err != nil {
+		h.Logger.Error("failed to parse errors template", slog.Any("error", err))
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	err = t.Execute(w, map[string]interface{}{
+		"Errors": errors,
+	})
+	if err != nil {
+		h.Logger.Error("failed to execute errors template", slog.Any("error", err))
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
