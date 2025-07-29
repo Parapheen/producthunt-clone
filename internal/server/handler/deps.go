@@ -28,7 +28,6 @@ type ProductService interface {
 	GetBySlug(ctx context.Context, slug string) (*product.Product, error)
 	GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error)
-	GetMembers(ctx context.Context, productID uuid.UUID) ([]*product.Member, error)
 	GetCategoryBySlug(ctx context.Context, slug string) (*product.Category, error)
 }
 

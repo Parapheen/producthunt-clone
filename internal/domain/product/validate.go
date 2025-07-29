@@ -52,5 +52,9 @@ func (p *Product) Validate() error {
 		return ErrTooManyCategories
 	}
 
+	if len(p.Tagline) > 140 {
+		return ErrProductTaglineTooLong
+	}
+
 	return nil
 }

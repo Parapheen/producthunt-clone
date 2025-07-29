@@ -5,14 +5,23 @@
 		<img src="https://avatar.iran.liara.run/public" alt="{{ .Name }}"
 			class="w-20 h-20 rounded-lg object-cover">
 
-		<div class="flex-grow">
-			<h3 class="font-bold text-lg text-blue-500 underline">
-				<a href="/products/{{ .Slug }}">{{ .Name }}</a>
-			</h3>
+		<div class="flex-grow flex flex-col gap-2">
+			<div>
+				<h3 class="font-bold text-lg">
+					<a href="/products/{{ .Slug }}">{{ .Name }}</a>
+				</h3>
 
-			<p class="text-sm text-gray-600">
-				Category
-			</p>
+				<p class="text-sm text-gray-600">{{ .Tagline }}</p>
+			</div>
+
+			<div class="flex gap-2">
+				{{ range .Categories }}
+				<span class="text-sm bg-gray-100 text-gray-600 rounded-md px-2 py-1">
+					{{ .Name }}
+				</span>
+				{{ end }}
+			</div>
+
 		</div>
 	</header>
 
@@ -21,15 +30,14 @@
 			<h3>
 				Запуски ({{ .Launches | len }})
 			</h3>
-			<a class="btn btn-primary rounded-full bg-indigo-600 text-white"
-				href="/products/{{ .ID }}/new-launch">
+			<a class="btn-outline rounded-full" href="/products/{{ .ID }}/new-launch">
 				<i class="bi bi-plus-circle"></i>
-				Новый запуск
+				Создать
 			</a>
 		</div>
 		<div class="flex flex-col w-full gap-2">
 			{{ range .Launches }}
-			<a href="/products/{{ $.Slug }}/launches/{{ .Slug }}/edit"
+			<a href="/products/{{ $.ID }}/launches/{{ .Slug }}/edit"
 				class="flex justify-between w-full gap-2 rounded-md border border-gray-200 p-4 hover:bg-gray-50">
 				<div class="flex gap-2 items-center">
 					{{ if .LaunchDate }}
@@ -39,7 +47,7 @@
 							}}</span>
 					</span>
 					{{ end }}
-					<span class="text-sm text-gray-600">{{ .Tagline }}</span>
+					<span class="text-sm text-gray-600">{{ .Name }}</span>
 				</div>
 				{{ template "launch-state" . }}
 			</a>
@@ -51,8 +59,6 @@
 			Все запуски
 		</a>
 	</footer>
-</div>
-</div>
 </div>
 
 {{ end }}

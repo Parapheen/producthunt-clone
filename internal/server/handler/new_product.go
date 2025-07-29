@@ -48,6 +48,7 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 
 	name := r.FormValue("name")
 	url := r.FormValue("url")
+	tagline := r.FormValue("tagline")
 
 	nameExists, err := h.ProductService.NameExists(r.Context(), name)
 	if err != nil {
@@ -87,7 +88,7 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		categories = append(categories, c)
 	}
 
-	p := product.NewProduct(name, url, categories, u.ID)
+	p := product.NewProduct(name, url, tagline, categories, u.ID)
 
 	err = h.ProductService.Create(
 		r.Context(),
@@ -102,7 +103,7 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 			errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
 		}
 
-		redirectTo := "/products/" + p.Slug + "/launches/" + createdFirstLaunch.Slug + "/edit"
+		redirectTo := "/products/" + p.ID.String() + "/launches/" + createdFirstLaunch.Slug + "/edit"
 		w.Header().Add("HX-Redirect", redirectTo)
 		return
 	case product.ErrProductNameTooLong:

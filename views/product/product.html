@@ -6,13 +6,22 @@
         <img class="w-32 h-32 rounded-lg object-cover ring-4 ring-indigo-100"
           src="https://placehold.co/128x128/e0e7ff/4338ca?text=P" alt="{{ .Product.Name }}" />
       </div>
-      <div class="flex-grow text-center md:text-left">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          {{ .Product.Name }}
-        </h1>
-        <p class="text-gray-700 mb-4">A great tagline for an amazing product.</p>
-        <a href="{{ .Product.URL }}" target="_blank" class="text-indigo-600 hover:underline break-all">{{ .Product.URL
-          }}</a>
+      <div class="flex-grow flex flex-col gap-5">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            {{ .Product.Name }}
+          </h1>
+          <p class="text-gray-700">{{ .Product.Tagline }}</p>
+          <a href="{{ .Product.URL }}" target="_blank" class="text-indigo-600 hover:underline break-all">{{ .Product.URL
+            }}</a>
+        </div>
+        <div class="flex gap-2">
+          {{ range .Product.Categories }}
+          <span class="text-sm bg-gray-100 text-gray-600 rounded-md px-2 py-1">
+            {{ .Name }}
+          </span>
+          {{ end }}
+        </div>
       </div>
     </div>
   </div>

@@ -8,10 +8,11 @@ import (
 )
 
 type Product struct {
-	ID   uuid.UUID
-	Name string
-	URL  string
-	Slug string
+	ID      uuid.UUID
+	Name    string
+	URL     string
+	Slug    string
+	Tagline string
 
 	CreatedAt time.Time
 
@@ -19,12 +20,13 @@ type Product struct {
 	Categories []*Category
 }
 
-func NewProduct(name, url string, categories []*Category, ownerID uuid.UUID) *Product {
+func NewProduct(name, url, tagline string, categories []*Category, ownerID uuid.UUID) *Product {
 	product := &Product{
 		ID:         uuid.New(),
 		Name:       name,
 		URL:        url,
 		Slug:       slugify.Slugify(name),
+		Tagline:    tagline,
 		CreatedAt:  time.Now(),
 		Categories: categories,
 		Members:    []*Member{},

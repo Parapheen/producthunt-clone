@@ -13,7 +13,6 @@ type ProductRepository interface {
 	GetBySlug(ctx context.Context, slug string) (*Product, error)
 	GetByOwner(ctx context.Context, owner uuid.UUID) ([]*Product, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Product, error)
-	GetMembers(ctx context.Context, productID uuid.UUID) ([]*Member, error)
 }
 
 type CategoryRepository interface {

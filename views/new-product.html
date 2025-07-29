@@ -16,7 +16,11 @@
 					<label for="url">Ссылка</label>
 					<input name="url" type="text" id="url" placeholder="https://my-product">
 				</div>
-
+				<div class="grid gap-2">
+					<label for="tagline">Короткое описание</label>
+					<input name="tagline" type="text" id="tagline" placeholder="Лучший продукт">
+					<p class="text-gray-500 text-sm">Не более 140 символов.</p>
+				</div>
 				<div class="grid gap-2">
 					<label for="select-categories">Категории</label>
 					{{ template "select-categories" . }}

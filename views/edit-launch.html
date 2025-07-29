@@ -43,24 +43,29 @@
 				</div>
 				<div class="grid gap-2">
 					<label for="launch-date">Дата запуска</label>
-					<input 
-						name="launch-date"
-						type="date" 
-						id="launch-date"
-						value="
-						{{ if .Launch.LaunchDate }}
-						{{ .Launch.LaunchDate.Format "2006-01-02" }}
-						{{ end }}
-						"
+					<input name="launch-date" type="date" id="launch-date" value="{{ if .Launch.LaunchDate }}{{ .Launch.LaunchDate.Format "2006-01-02" }}{{ end }}"
 					>
 				</div>
 			</form>
 			<div id="errors" class="mt-5"></div>
 		</section>
 		<footer>
-			<button class="btn btn-primary w-full rounded-full" type="submit" form="update-launch-form">
-				Сохранить
-			</button>
+			<div class="flex flex-col w-full gap-5" id="actions">
+				<button class="btn btn-primary w-full rounded-full" type="submit" form="update-launch-form">
+					Сохранить
+				</button>
+				{{ if and .Launch.IsDraft .Launch.LaunchDate }}
+				<form hx-post="/api/send-launch-to-moderation" hx-target="#actions" hx-swap="outerHTML">
+					<input type="hidden" name="csrf_token" value="{{ .token }}">
+					<input type="hidden" name="product_id" value="{{ .Launch.ProductID }}">
+					<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
+
+					<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white" type="submit">
+						Отправить на модерацию
+					</button>
+				</form>
+				{{ end }}
+			</div>
 		</footer>
 	</div>
 </section>

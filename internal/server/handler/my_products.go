@@ -6,17 +6,20 @@ import (
 	"net/http"
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
+	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
 )
 
 type ProductView struct {
-	Name string
-	Slug string
-	ID   uuid.UUID
+	Name    string
+	Slug    string
+	Tagline string
+	ID      uuid.UUID
 
-	Launches []*launch.Launch
+	Launches   []*launch.Launch
+	Categories []*product.Category
 }
 
 func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
@@ -39,10 +42,12 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
 		}
 
 		productsView = append(productsView, &ProductView{
-			Name:     p.Name,
-			Slug:     p.Slug,
-			ID:       p.ID,
-			Launches: launches,
+			Name:       p.Name,
+			Slug:       p.Slug,
+			ID:         p.ID,
+			Tagline:    p.Tagline,
+			Categories: p.Categories,
+			Launches:   launches,
 		})
 	}
 

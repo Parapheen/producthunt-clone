@@ -56,10 +56,6 @@ func (s *ProductService) GetByID(ctx context.Context, id uuid.UUID) (*product.Pr
 	return s.productRepo.GetByID(ctx, id)
 }
 
-func (s *ProductService) GetMembers(ctx context.Context, productID uuid.UUID) ([]*product.Member, error) {
-	return s.productRepo.GetMembers(ctx, productID)
-}
-
 func (s *ProductService) GetCategoryBySlug(ctx context.Context, slug string) (*product.Category, error) {
 	return s.categoryRepo.GetBySlug(ctx, slug)
 }
