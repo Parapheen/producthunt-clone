@@ -1,0 +1,130 @@
+{{ define "content" }}
+<section class="container mx-auto max-w-2xl">
+  <div class="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm">
+    <div class="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
+          Редактировать профиль
+        </h1>
+        <p class="text-gray-600 mt-2">Обновите аватар и краткое описание</p>
+      </div>
+    </div>
+
+    <form
+      hx-post="/api/users/{{ .User.ID }}/profile"
+      hx-encoding="multipart/form-data"
+      class="space-y-5"
+    >
+      <input type="hidden" name="csrf_token" value="{{ .token }}" />
+      <div
+        class="grid grid-cols-1 md:grid-cols-[auto,1fr] gap-5 md:gap-6 items-start"
+      >
+        <div class="flex flex-col items-center gap-3">
+          <img
+            id="avatar-preview"
+            class="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-gray-100"
+            src="{{ if .User.AvatarURL }}{{ .User.AvatarURL }}{{ else }}https://placehold.co/128x128/e0e7ff/4338ca?text={{ .User.Name }}{{ end }}"
+            alt="{{ .User.Name }}"
+          />
+          <label
+            for="avatar-input"
+            class="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="mr-2"
+            >
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              <path d="m15 5 4 4" />
+            </svg>
+            Загрузить аватар
+          </label>
+          <input
+            type="file"
+            name="image"
+            id="avatar-input"
+            accept="image/*"
+            class="hidden"
+          />
+          <p class="text-xs text-gray-500">PNG/JPG до 10MB</p>
+        </div>
+        <div class="space-y-3">
+          <label for="bio" class="block text-sm font-medium text-gray-700"
+            >О себе</label
+          >
+          <textarea
+            id="bio"
+            name="bio"
+            rows="5"
+            maxlength="280"
+            class="textarea"
+            placeholder="Расскажите о себе, своих интересах или проектах..."
+          >
+ {{ .User.Bio }}</textarea
+          >
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-500">
+              Краткое описание (до 280 символов)
+            </p>
+            <span id="bio-count" class="text-xs text-gray-400">0/280</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-4">
+        <a
+          href="/u/{{ .User.ID }}"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Отмена
+        </a>
+        <button
+          type="submit"
+          class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Сохранить
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const avatarInput = document.getElementById("avatar-input");
+    const avatarPreview = document.getElementById("avatar-preview");
+
+    avatarInput.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      // Preview immediately
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        avatarPreview.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Bio counter
+    const bio = document.getElementById("bio");
+    const counter = document.getElementById("bio-count");
+    const max = 280;
+    const updateCounter = () => {
+      const len = bio.value.trim().length;
+      counter.textContent = `${len}/${max}`;
+      counter.className =
+        len > max ? "text-xs text-red-500" : "text-xs text-gray-400";
+    };
+    bio.addEventListener("input", updateCounter);
+    updateCounter();
+  });
+</script>
+{{ end }}

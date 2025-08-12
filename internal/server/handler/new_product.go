@@ -7,6 +7,7 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/Parapheen/ph-clone/internal/pkg/validation"
 	"github.com/justinas/nosurf"
 )
 
@@ -44,13 +45,30 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errors := make([]string, 0)
+    errors := make([]string, 0)
 
-	name := r.FormValue("name")
-	url := r.FormValue("url")
-	tagline := r.FormValue("tagline")
+    name := r.FormValue("name")
+    url := r.FormValue("url")
+    tagline := r.FormValue("tagline")
 
-	nameExists, err := h.ProductService.NameExists(r.Context(), name)
+    // Validate input fields early
+    v := validation.NewValidator()
+    if verr := v.ValidateMultiple(
+        v.ValidateString(name, "name", 1, product.ProductNameMaxLength, true),
+        v.ValidateURL(url, "url", true),
+        v.ValidateString(tagline, "tagline", 0, 140, false),
+    ); verr != nil {
+        switch ve := verr.(type) {
+        case validation.ValidationErrors:
+            for _, e := range ve {
+                errors = append(errors, e.Error())
+            }
+        default:
+            errors = append(errors, verr.Error())
+        }
+    }
+
+    nameExists, err := h.ProductService.NameExists(r.Context(), name)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error checking if product name exists", slog.Any("error", err))
 		errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
@@ -70,7 +88,7 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		errors = append(errors, "Продукт с таким URL уже существует")
 	}
 
-	if len(errors) > 0 {
+    if len(errors) > 0 {
 		h.renderErrors(w, errors)
 		return
 	}
@@ -88,9 +106,9 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		categories = append(categories, c)
 	}
 
-	p := product.NewProduct(name, url, tagline, categories, u.ID)
+    p := product.NewProduct(name, url, tagline, categories, u.ID)
 
-	err = h.ProductService.Create(
+    err = h.ProductService.Create(
 		r.Context(),
 		p,
 	)
@@ -100,12 +118,14 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 		createdFirstLaunch, errLaunch := h.LaunchService.GetLatestByProduct(r.Context(), p.ID)
 		if errLaunch != nil {
 			h.Logger.ErrorContext(r.Context(), "error getting latest launch", slog.Any("error", errLaunch))
-			errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
-		}
+			h.renderErrors(w, []string{"Что-то пошло не так. Пожалуйста, попробуйте еще раз."})
+			return
+        } else {
+            redirectTo := "/products/" + p.ID.String() + "/launches/" + createdFirstLaunch.Slug + "/edit"
+            w.Header().Add("HX-Redirect", redirectTo)
+            return
+        }
 
-		redirectTo := "/products/" + p.ID.String() + "/launches/" + createdFirstLaunch.Slug + "/edit"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
 	case product.ErrProductNameTooLong:
 		errors = append(errors, "Название продукта слишком длинное")
 	case product.ErrProductURLTooLong:

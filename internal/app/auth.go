@@ -7,46 +7,82 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/Parapheen/ph-clone/internal/infra/oauth"
+	"golang.org/x/oauth2"
 )
 
 type AuthService struct {
 	userRepository      user.UserRepository
 	yandexOauthProvider *oauth.YandexOauthProvider
+    googleOauthProvider *oauth.GoogleOauthProvider
+    vkOauthProvider     *oauth.VKOauthProvider
 }
 
 func NewAuthService(userRepository user.UserRepository) *AuthService {
 	yandexOauthProvider := oauth.NewYandexOauthProvider()
+    googleOauthProvider := oauth.NewGoogleOauthProvider()
+    vkOauthProvider := oauth.NewVKOauthProvider()
 
 	return &AuthService{
 		userRepository:      userRepository,
 		yandexOauthProvider: yandexOauthProvider,
+        googleOauthProvider: googleOauthProvider,
+        vkOauthProvider:     vkOauthProvider,
 	}
 }
 
 func (a *AuthService) GetSocialRedirectURL(provider, state string) string {
-	if provider != "yandex" {
-		return ""
-	}
-
-	return a.yandexOauthProvider.GetAuthCodeURL(state)
+    switch provider {
+    case "yandex":
+        return a.yandexOauthProvider.GetAuthCodeURL(state)
+    case "google":
+        return a.googleOauthProvider.GetAuthCodeURL(state)
+    case "vk":
+        return a.vkOauthProvider.GetAuthCodeURL(state)
+    default:
+        return ""
+    }
 }
 
 func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider string, code string) (*user.User, error) {
-	if provider != "yandex" {
-		return nil, fmt.Errorf("provider %s is not supported", provider)
-	}
+    var (
+        token   *oauth2.Token
+        account *user.SocialAccount
+        err     error
+    )
 
-	token, err := a.yandexOauthProvider.Exchange(ctx, code)
-	if err != nil {
-		return nil, fmt.Errorf("error exchanging code: %w", err)
-	}
+    switch provider {
+    case "yandex":
+        token, err = a.yandexOauthProvider.Exchange(ctx, code)
+        if err != nil {
+            return nil, fmt.Errorf("error exchanging code: %w", err)
+        }
+        account, err = a.yandexOauthProvider.GetUserInfo(ctx, token)
+        if err != nil {
+            return nil, fmt.Errorf("error getting user info: %w", err)
+        }
+    case "google":
+        token, err = a.googleOauthProvider.Exchange(ctx, code)
+        if err != nil {
+            return nil, fmt.Errorf("error exchanging code: %w", err)
+        }
+        account, err = a.googleOauthProvider.GetUserInfo(ctx, token)
+        if err != nil {
+            return nil, fmt.Errorf("error getting user info: %w", err)
+        }
+    case "vk":
+        token, err = a.vkOauthProvider.Exchange(ctx, code)
+        if err != nil {
+            return nil, fmt.Errorf("error exchanging code: %w", err)
+        }
+        account, err = a.vkOauthProvider.GetUserInfo(ctx, token)
+        if err != nil {
+            return nil, fmt.Errorf("error getting user info: %w", err)
+        }
+    default:
+        return nil, fmt.Errorf("provider %s is not supported", provider)
+    }
 
-	userInfo, err := a.yandexOauthProvider.GetUserInfo(ctx, token)
-	if err != nil {
-		return nil, fmt.Errorf("error getting user info: %w", err)
-	}
-
-	existingUser, err := a.userRepository.GetByProvider(ctx, userInfo.Provider, userInfo.ProviderID)
+    existingUser, err := a.userRepository.GetByProvider(ctx, account.Provider, account.ProviderID)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -54,7 +90,7 @@ func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider strin
 	isNewUser := existingUser == nil
 
 	if isNewUser {
-		newUser := user.NewUserFromSocialAccount(userInfo)
+        newUser := user.NewUserFromSocialAccount(account)
 		err = a.userRepository.Create(ctx, newUser)
 		if err != nil {
 			return nil, fmt.Errorf("error creating user: %w", err)

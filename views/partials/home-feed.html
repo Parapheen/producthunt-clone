@@ -1,0 +1,41 @@
+{{ define "home-feed" }}
+<div id="home-feed-root" class="mt-4">
+  <div class="flex items-center gap-2 text-sm">
+    <span class="text-gray-500">Период:</span>
+    <a href="/?period=daily" 
+       hx-get="/?period=daily" 
+       hx-target="#home-feed-root" 
+       hx-swap="outerHTML"
+       hx-push-url="true"
+       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "daily" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Сегодня</a>
+    <a href="/?period=weekly" 
+       hx-get="/?period=weekly" 
+       hx-target="#home-feed-root" 
+       hx-swap="outerHTML"
+       hx-push-url="true"
+       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "weekly" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Неделя</a>
+    <a href="/?period=monthly" 
+       hx-get="/?period=monthly" 
+       hx-target="#home-feed-root" 
+       hx-swap="outerHTML"
+       hx-push-url="true"
+       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "monthly" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Месяц</a>
+    <a href="/?period=all_time" 
+       hx-get="/?period=all_time" 
+       hx-target="#home-feed-root" 
+       hx-swap="outerHTML"
+       hx-push-url="true"
+       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "all_time" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">За всё время</a>
+  </div>
+
+  <div id="feed-list" class="flex flex-col justify-start gap-5 mt-6 max-w-xl">
+    {{ range .Items }}
+      {{ template "launch-card" . }}
+    {{ else }}
+      <div class="text-sm text-gray-500">Пока нет запусков за выбранный период.</div>
+    {{ end }}
+  </div>
+</div>
+{{ end }}
+
+

@@ -10,6 +10,8 @@ type User struct {
 	ID        uuid.UUID
 	Email     string
 	Name      string
+    AvatarURL string
+	Bio        string
 	CreatedAt time.Time
 
 	Session        *Session

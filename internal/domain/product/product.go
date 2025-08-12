@@ -13,6 +13,7 @@ type Product struct {
 	URL     string
 	Slug    string
 	Tagline string
+    ImageURL string
 
 	CreatedAt time.Time
 
@@ -27,6 +28,7 @@ func NewProduct(name, url, tagline string, categories []*Category, ownerID uuid.
 		URL:        url,
 		Slug:       slugify.Slugify(name),
 		Tagline:    tagline,
+        ImageURL:   "",
 		CreatedAt:  time.Now(),
 		Categories: categories,
 		Members:    []*Member{},

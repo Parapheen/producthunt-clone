@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -11,11 +12,13 @@ import (
 )
 
 type UserModel struct {
-	ID        uuid.UUID `db:"id"`
-	Email     string    `db:"email"`
-	Name      string    `db:"name"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID        uuid.UUID      `db:"id"`
+	Email     string         `db:"email"`
+	Name      string         `db:"name"`
+	AvatarURL sql.NullString `db:"avatar_url"`
+	Bio        sql.NullString `db:"bio"`
+	CreatedAt time.Time      `db:"created_at"`
+	UpdatedAt time.Time      `db:"updated_at"`
 
 	SessionID        *uuid.UUID `db:"session_id"`
 	SessionToken     *string    `db:"session_token"`
@@ -43,10 +46,22 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 	return runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
-		_, err := tx.NamedExecContext(ctx, `
-			INSERT INTO users (id, email, name)
-			VALUES (:id, :email, :name)
-		`, u)
+        userInsert := struct {
+            ID        uuid.UUID `db:"id"`
+            Email     string    `db:"email"`
+            Name      string    `db:"name"`
+            AvatarURL string    `db:"avatar_url"`
+        }{
+            ID:        u.ID,
+            Email:     u.Email,
+            Name:      u.Name,
+            AvatarURL: u.AvatarURL,
+        }
+
+        _, err := tx.NamedExecContext(ctx, `
+            INSERT INTO users (id, email, name, avatar_url)
+            VALUES (:id, :email, :name, :avatar_url)
+        `, userInsert)
 		if err != nil {
 			return err
 		}
@@ -93,7 +108,7 @@ func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 func (r *UserRepository) GetBySession(ctx context.Context, sessionToken string) (*user.User, error) {
 	query := `
 		SELECT
-			u.id, u.email, u.name, u.created_at,
+            u.id, u.email, u.name, u.avatar_url, u.bio, u.created_at,
 			s.id as session_id, s.token as session_token, s.expires_at as session_expires_at
 		FROM users u
 		INNER JOIN sessions s ON u.id = s.user_id
@@ -112,7 +127,7 @@ func (r *UserRepository) GetBySession(ctx context.Context, sessionToken string) 
 func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*user.User, error) {
 	query := `
 		SELECT
-			u.id, u.email, u.name, u.created_at,
+            u.id, u.email, u.name, u.avatar_url, u.bio, u.created_at,
 			ss.id as session_id, ss.token as session_token, ss.expires_at as session_expires_at
 		FROM users u
 		INNER JOIN social_accounts s ON u.id = s.user_id
@@ -147,7 +162,7 @@ func (r *UserRepository) CreateSession(ctx context.Context, user *user.User) err
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
 	query := `
 		SELECT
-			u.id, u.email, u.name, u.created_at,
+            u.id, u.email, u.name, u.avatar_url, u.bio, u.created_at,
 			s.id as session_id, s.token as session_token, s.expires_at as session_expires_at
 		FROM users u
 		LEFT JOIN sessions s ON u.id = s.user_id
@@ -164,7 +179,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*user.User,
 }
 
 func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*user.User, error) {
-	query := `SELECT id, email, name, created_at FROM users WHERE id IN (?)`
+	query := `SELECT id, email, name, avatar_url, bio, created_at FROM users WHERE id IN (?)`
 
 	query, args, err := sqlx.In(query, ids)
 	if err != nil {
@@ -195,6 +210,16 @@ func (r *UserRepository) RefreshSession(ctx context.Context, session *user.Sessi
 		session.ExpiresAt,
 		session.ID,
 	)
+	return err
+}
+
+func (r *UserRepository) UpdateAvatarURL(ctx context.Context, userID uuid.UUID, avatarURL string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET avatar_url = $1, updated_at = current_timestamp WHERE id = $2`, avatarURL, userID)
+	return err
+}
+
+func (r *UserRepository) UpdateBio(ctx context.Context, userID uuid.UUID, bio string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE users SET bio = $1, updated_at = current_timestamp WHERE id = $2`, bio, userID)
 	return err
 }
 
@@ -237,6 +262,8 @@ func toDomainUser(uData *UserModel) *user.User {
 		ID:        uData.ID,
 		Email:     uData.Email,
 		Name:      uData.Name,
+		AvatarURL: uData.AvatarURL.String,
+		Bio:       uData.Bio.String,
 		CreatedAt: uData.CreatedAt,
 	}
 

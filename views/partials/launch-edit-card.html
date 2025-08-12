@@ -1,69 +1,102 @@
 {{ define "launch-edit-card" }}
 
-<div id="{{ .Launch.ID }}" class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
-	<img src="https://avatar.iran.liara.run/public" alt="{{ .Launch.Name }}"
-		class="w-20 h-20 rounded-lg object-cover">
+<div
+  id="l-{{ .Launch.ID }}"
+  class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4"
+>
+  <img
+    src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Launch.Name }}{{ end }}"
+    alt="{{ .Launch.Name }}"
+    class="w-20 h-20 rounded-lg object-cover"
+  />
 
-	<div class="flex-grow">
-		<div class="flex items-center gap-4">
-			<h3 class="font-bold text-lg text-gray-900">
-				{{ .Launch.Name }}
-			</h3>
-		</div>
+  <div class="flex-grow">
+    <div class="flex items-center gap-4">
+      <h3 class="font-bold text-lg text-gray-900">{{ .Launch.Name }}</h3>
+    </div>
 
-		<p class="text-gray-800 my-2">
-			{{ template "launch-state" .Launch }}
-		</p>
-		<p class="text-sm text-gray-600">Последнее обновление: {{ .Launch.UpdatedAt.Format "02.01.2006" }}</p>
-		{{ if .Launch.LaunchDate }}
-		<p class="text-sm text-gray-600">Дата запуска: {{ .Launch.LaunchDate.Format "02.01.2006" }}</p>
-		{{ end }}
+    <p class="text-gray-800 my-2">{{ template "launch-state" .Launch }}</p>
+    <p class="text-sm text-gray-600">
+      Последнее обновление: {{ .Launch.UpdatedAt.Format "02.01.2006" }}
+    </p>
+    {{ if .Launch.LaunchDate }}
+    <p class="text-sm text-gray-600">
+      Дата запуска: {{ .Launch.LaunchDate.Format "02.01.2006" }}
+    </p>
+    {{ end }} {{ if eq .Launch.State.String "draft" }} {{ if .Launch.LaunchDate
+    }}
+    <form
+      class="mt-5"
+      hx-post="/api/send-launch-to-moderation"
+      hx-target="#l-{{ .Launch.ID }}"
+      hx-swap="outerHTML"
+    >
+      <input type="hidden" name="csrf_token" value="{{ .token }}" />
+      <input type="hidden" name="product_id" value="{{ .Launch.ProductID }}" />
+      <input type="hidden" name="launch_id" value="{{ .Launch.ID }}" />
 
-		{{ if eq .Launch.State.String "draft" }}
-		{{ if .Launch.LaunchDate }}
-		<form class="mt-5" hx-post="/api/send-launch-to-moderation" hx-target="#{{ .Launch.ID }}" hx-swap="outerHTML">
-			<input type="hidden" name="csrf_token" value="{{ .token }}">
-			<input type="hidden" name="product_id" value="{{ .Launch.ProductID }}">
-			<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
+      <button
+        class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
+        type="submit"
+      >
+        Отправить на модерацию
+      </button>
+    </form>
+    {{ else }}
+    <p class="text-sm text-red-600 mt-2">Пожалуйста, укажите дату запуска</p>
+    {{ end }} {{ end }}
+  </div>
 
-			<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white" type="submit">
-				Отправить на модерацию
-			</button>
-		</form>
-		{{ else }}
-		<p class="text-sm text-red-600 mt-2">Пожалуйста, укажите дату запуска</p>
-		{{ end }}
-
-		{{ end }}
-	</div>
-
-	<div class="flex-shrink-0 flex items-center gap-2">
-		{{ if eq .Launch.State.String "draft" }}
-		<a class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-50 hover:text-gray-900"
-			href="/products/{{ .Launch.ProductID }}/launches/{{ .Launch.Slug }}/edit">
-			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-				stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-				class="lucide lucide-pencil-icon lucide-pencil">
-				<path
-					d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-				<path d="m15 5 4 4" />
-			</svg>
-		</a>
-		{{ end }}
-		<form hx-delete="/api/launches/{{ .Launch.ID }}" hx-confirm="Вы уверены?">
-			<input type="hidden" name="csrf_token" value="{{ .token }}">
-			<button class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
-				type="submit">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-					fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-					stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash">
-					<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-					<path d="M3 6h18" />
-					<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-				</svg>
-			</button>
-		</form>
-	</div>
+  <div class="flex-shrink-0 flex items-center gap-2">
+    {{ if eq .Launch.State.String "draft" }}
+    <a
+      class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-50 hover:text-gray-900"
+      href="/products/{{ .Launch.ProductID }}/launches/{{ .Launch.Slug }}/edit"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="lucide lucide-pencil-icon lucide-pencil"
+      >
+        <path
+          d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+        />
+        <path d="m15 5 4 4" />
+      </svg>
+    </a>
+    {{ end }}
+    <form hx-delete="/api/launches/{{ .Launch.ID }}" hx-confirm="Вы уверены?">
+      <input type="hidden" name="csrf_token" value="{{ .token }}" />
+      <button
+        class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
+        type="submit"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="lucide lucide-trash-icon lucide-trash"
+        >
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M3 6h18" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+      </button>
+    </form>
+  </div>
 </div>
 
 {{ end }}

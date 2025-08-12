@@ -16,4 +16,4 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.28
 )
 
-require github.com/goforj/godump v1.2.0 // indirect
+require cloud.google.com/go/compute/metadata v0.3.0 // indirect

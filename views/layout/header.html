@@ -13,12 +13,14 @@
       </a>
     </div>
     <div class="navbar-center hidden lg:flex">
-      <ul class="menu menu-horizontal px-1">
-      </ul>
+      <ul class="menu menu-horizontal px-1"></ul>
     </div>
     <div class="navbar-end flex items-center gap-4">
       {{ if .User }}
-      <a class="btn btn-primary rounded-full bg-indigo-600 text-white" href="/new-product">
+      <a
+        class="btn btn-primary rounded-full bg-indigo-600 text-white"
+        href="/new-product"
+      >
         Новый продукт
       </a>
       <div id="user-menu" class="dropdown-menu">
@@ -32,7 +34,7 @@
           <img
             class="size-8 shrink-0 object-cover rounded-full"
             alt="{{ .User.Name }}"
-            src="https://avatar.iran.liara.run/public"
+            src="{{ if .User.AvatarURL }}{{ .User.AvatarURL }}{{ else }}https://avatar.iran.liara.run/public{{ end }}"
           />
         </button>
         <div
@@ -57,7 +59,11 @@
             </div>
             <hr role="separator" />
             <div role="menuitem">
-              <a href="https://github.com/Parapheen/producthunt-clone/issues" target="_blank">Поддержка</a>
+              <a
+                href="https://github.com/Parapheen/producthunt-clone/issues"
+                target="_blank"
+                >Поддержка</a
+              >
             </div>
             <hr role="separator" />
             <div role="menuitem">

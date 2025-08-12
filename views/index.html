@@ -1,11 +1,7 @@
 {{ define "content" }}
 <section class="container mx-auto flex-col gap-8">
-	<h1 class="text-3xl font-bold">Последние запуски</h1>
-	<div class="flex flex-col justify-start gap-5 mt-8 max-w-xl">
-		{{ range .Launches }}
-		{{ template "launch-card" . }}
-		{{ end }}
-	</div>
+  <h1 class="text-3xl font-bold">Последние запуски</h1>
 
+  {{ template "home-feed" . }}
 </section>
 {{ end }}

@@ -19,6 +19,7 @@ type LaunchModel struct {
 	URL         string         `db:"url"`
 	Description sql.NullString `db:"description"`
 	Tagline     sql.NullString `db:"tagline"`
+    ImageURL    sql.NullString `db:"image_url"`
 	State       string         `db:"state"`
 	Slug        string         `db:"slug"`
 	LaunchDate  *time.Time     `db:"launch_date"`
@@ -46,6 +47,8 @@ func toDomain(l *LaunchModel) *launch.Launch {
 		URL:         l.URL,
 		Description: l.Description.String,
 		Tagline:     l.Tagline.String,
+        ImageURL:    l.ImageURL.String,
+        Media:       []string{},
 		State:       launch.ParseState(l.State),
 		Slug:        l.Slug,
 		LaunchDate:  l.LaunchDate,
@@ -63,6 +66,7 @@ func fromDomain(l *launch.Launch) *LaunchModel {
 		URL:         l.URL,
 		Description: sql.NullString{String: l.Description, Valid: l.Description != ""},
 		Tagline:     sql.NullString{String: l.Tagline, Valid: l.Tagline != ""},
+        ImageURL:    sql.NullString{String: l.ImageURL, Valid: l.ImageURL != ""},
 		State:       l.State.String(),
 		Slug:        l.Slug,
 		LaunchDate:  l.LaunchDate,
@@ -73,8 +77,8 @@ func fromDomain(l *launch.Launch) *LaunchModel {
 // Create inserts a new launch into the database.
 func (r *LaunchRepository) Create(ctx context.Context, l *launch.Launch) error {
 	model := fromDomain(l)
-	query := `INSERT INTO launches (id, product_id, name, url, description, tagline, state, slug, launch_date)
-		VALUES (:id, :product_id, :name, :url, :description, :tagline, :state, :slug, :launch_date)`
+    query := `INSERT INTO launches (id, product_id, name, url, description, tagline, image_url, state, slug, launch_date)
+        VALUES (:id, :product_id, :name, :url, :description, :tagline, :image_url, :state, :slug, :launch_date)`
 
 	_, err := r.db.NamedExecContext(ctx, query, model)
 	return err
@@ -82,8 +86,8 @@ func (r *LaunchRepository) Create(ctx context.Context, l *launch.Launch) error {
 
 // GetBySlug retrieves a launch by its slug, including its upvote count and tags.
 func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.Launch, error) {
-	query := `SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date,
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
 			COUNT(lu.launch_id) as upvote_count
 		FROM launches l
 		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
@@ -100,12 +104,20 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
 		return nil, err
 	}
 
-	return toDomain(l), nil
+	domainLaunch := toDomain(l)
+	
+	// Load media for this launch
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+	if err == nil {
+		domainLaunch.Media = mediaMap[domainLaunch.ID]
+	}
+
+	return domainLaunch, nil
 }
 
 func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
-	query := `SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date,
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
 			COUNT(lu.launch_id) as upvote_count
 		FROM launches l
 		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
@@ -122,7 +134,15 @@ func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.L
 		return nil, err
 	}
 
-	return toDomain(l), nil
+	domainLaunch := toDomain(l)
+	
+	// Load media for this launch
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+	if err == nil {
+		domainLaunch.Media = mediaMap[domainLaunch.ID]
+	}
+
+	return domainLaunch, nil
 }
 
 // Update modifies an existing launch in the database.
@@ -154,8 +174,8 @@ func (r *LaunchRepository) Update(ctx context.Context, l *launch.Launch) error {
 
 // GetByOwner retrieves all launches for a given owner.
 func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error) {
-	query := `SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at,
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at,
 			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
 		FROM launches l
 		JOIN product_members pm ON l.product_id = pm.product_id
@@ -180,8 +200,8 @@ func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([
 
 // GetByProduct retrieves all launches for a given product.
 func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error) {
-	query := `SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at,
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at,
 			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
 		FROM launches l
 		WHERE l.product_id = ?
@@ -198,13 +218,21 @@ func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID
 		result = append(result, toDomain(l))
 	}
 
+    // Attach media in bulk
+    mediaMap, err := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
+    if err == nil {
+        for _, dl := range result {
+            dl.Media = mediaMap[dl.ID]
+        }
+    }
+
 	return result, nil
 }
 
 // GetLatestByProduct retrieves the most recent launch for a given product.
 func (r *LaunchRepository) GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error) {
-	query := `SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date,
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
 			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
 		FROM launches l
 		WHERE l.product_id = ?
@@ -220,24 +248,32 @@ func (r *LaunchRepository) GetLatestByProduct(ctx context.Context, productID uui
 		return nil, err
 	}
 
-	return toDomain(l), nil
+	domainLaunch := toDomain(l)
+	
+	// Load media for this launch
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+	if err == nil {
+		domainLaunch.Media = mediaMap[domainLaunch.ID]
+	}
+
+	return domainLaunch, nil
 }
 
 func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State) ([]*launch.Launch, error) {
 	var query string
 
 	if len(states) == 0 {
-		query = `
+        query = `
 			SELECT
-				l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at
+                l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at
 			FROM launches l
 			GROUP BY l.id
 			ORDER BY l.launch_date DESC
 		`
 	} else {
-		query = `
+        query = `
 			SELECT
-				l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date, l.updated_at
+                l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at
 			FROM launches l
 			WHERE l.state IN (?)
 			GROUP BY l.id
@@ -268,9 +304,9 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 // GetFeed retrieves a paginated and ordered feed of launches based on a time period.
 // Valid periods are "daily", "weekly", "monthly", and "all_time".
 func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, offset int) ([]*launch.Launch, error) {
-	baseQuery := `
+    baseQuery := `
 		SELECT
-			l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.state, l.slug, l.launch_date,
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
 			COUNT(lu.launch_id) as upvote_count
 		FROM launches l
 		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id`
@@ -286,13 +322,15 @@ func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, of
 
 	switch period {
 	case "weekly":
-		whereClause += " AND l.launch_date >= ?"
+		whereClause += " AND l.launch_date >= ? AND l.launch_date <= ?"
 		startDate := now.AddDate(0, 0, -7)
 		args = append(args, startDate)
+		args = append(args, now)
 	case "monthly":
-		whereClause += " AND l.launch_date >= ?"
+		whereClause += " AND l.launch_date >= ? AND l.launch_date <= ?"
 		startDate := now.AddDate(0, -1, 0)
 		args = append(args, startDate)
+		args = append(args, now)
 	case "all_time":
 		whereClause += " AND l.launch_date <= ?"
 		args = append(args, now)
@@ -327,6 +365,14 @@ func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, of
 		result = append(result, toDomain(l))
 	}
 
+    // Attach media in bulk
+    mediaMap, err := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
+    if err == nil {
+        for _, dl := range result {
+            dl.Media = mediaMap[dl.ID]
+        }
+    }
+
 	return result, nil
 }
 
@@ -335,4 +381,124 @@ func (r *LaunchRepository) Delete(ctx context.Context, launchID uuid.UUID) error
 	query := `DELETE FROM launches WHERE id = ?`
 	_, err := r.db.ExecContext(ctx, query, launchID)
 	return err
+}
+
+// --- Media ---
+
+func (r *LaunchRepository) AddMedia(ctx context.Context, launchID uuid.UUID, url string) error {
+    _, err := r.db.ExecContext(ctx, `INSERT INTO launch_media (id, launch_id, url) VALUES (?, ?, ?)`, uuid.New(), launchID, url)
+    return err
+}
+
+func (r *LaunchRepository) ReplaceMedia(ctx context.Context, launchID uuid.UUID, urls []string) error {
+    tx, err := r.db.BeginTx(ctx, nil)
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+    
+    // Delete existing media
+    if _, err := tx.ExecContext(ctx, `DELETE FROM launch_media WHERE launch_id = ?`, launchID); err != nil {
+        return err
+    }
+    
+    // Insert new media
+    for _, url := range urls {
+        if _, err := tx.ExecContext(ctx, `INSERT INTO launch_media (id, launch_id, url) VALUES (?, ?, ?)`, uuid.New(), launchID, url); err != nil {
+            return err
+        }
+    }
+    
+    return tx.Commit()
+}
+
+func (r *LaunchRepository) GetMediaByLaunchIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]string, error) {
+    if len(ids) == 0 {
+        return map[uuid.UUID][]string{}, nil
+    }
+    query, args, err := sqlx.In(`SELECT launch_id, url FROM launch_media WHERE launch_id IN (?) ORDER BY created_at ASC`, ids)
+    if err != nil {
+        return nil, err
+    }
+    query = r.db.Rebind(query)
+    type row struct {
+        LaunchID uuid.UUID `db:"launch_id"`
+        URL      string    `db:"url"`
+    }
+    var rows []row
+    if err := r.db.SelectContext(ctx, &rows, query, args...); err != nil {
+        return nil, err
+    }
+    result := make(map[uuid.UUID][]string)
+    for _, r := range rows {
+        result[r.LaunchID] = append(result[r.LaunchID], r.URL)
+    }
+    return result, nil
+}
+
+func extractLaunchIDs(launches []*launch.Launch) []uuid.UUID {
+    ids := make([]uuid.UUID, 0, len(launches))
+    for _, l := range launches {
+        ids = append(ids, l.ID)
+    }
+    return ids
+}
+
+// UpdateImageURL sets the avatar image URL for a launch
+func (r *LaunchRepository) UpdateImageURL(ctx context.Context, launchID uuid.UUID, imageURL string) error {
+    _, err := r.db.ExecContext(ctx, `UPDATE launches SET image_url = ?, updated_at = current_timestamp WHERE id = ?`, imageURL, launchID)
+    return err
+}
+
+// ToggleUpvote toggles the upvote for a user and returns whether it's upvoted now and the new count.
+func (r *LaunchRepository) ToggleUpvote(ctx context.Context, launchID uuid.UUID, userID uuid.UUID) (bool, int, error) {
+    upvoted := false
+    var count int
+    err := runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
+        var exists int
+        if err := tx.GetContext(ctx, &exists, r.db.Rebind(`SELECT 1 FROM launch_upvotes WHERE launch_id = ? AND user_id = ?`), launchID, userID); err != nil && err != sql.ErrNoRows {
+            return err
+        }
+
+        if exists == 1 {
+            if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM launch_upvotes WHERE launch_id = ? AND user_id = ?`), launchID, userID); err != nil {
+                return err
+            }
+        } else {
+            if _, err := tx.ExecContext(ctx, r.db.Rebind(`INSERT INTO launch_upvotes(launch_id, user_id) VALUES(?, ?)`), launchID, userID); err != nil {
+                return err
+            }
+            upvoted = true
+        }
+
+        if err := tx.GetContext(ctx, &count, r.db.Rebind(`SELECT COUNT(*) FROM launch_upvotes WHERE launch_id = ?`), launchID); err != nil {
+            return err
+        }
+        return nil
+    })
+    if err != nil {
+        return false, 0, err
+    }
+    return upvoted, count, nil
+}
+
+// GetUpvotedByUserForLaunchIDs returns a map of launchID->true for the IDs upvoted by the user
+func (r *LaunchRepository) GetUpvotedByUserForLaunchIDs(ctx context.Context, userID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]bool, error) {
+    result := make(map[uuid.UUID]bool)
+    if len(ids) == 0 {
+        return result, nil
+    }
+    query, args, err := sqlx.In(`SELECT launch_id FROM launch_upvotes WHERE user_id = ? AND launch_id IN (?)`, userID, ids)
+    if err != nil {
+        return nil, err
+    }
+    query = r.db.Rebind(query)
+    var upvotedIDs []uuid.UUID
+    if err := r.db.SelectContext(ctx, &upvotedIDs, query, args...); err != nil {
+        return nil, err
+    }
+    for _, id := range upvotedIDs {
+        result[id] = true
+    }
+    return result, nil
 }

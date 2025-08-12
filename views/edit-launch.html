@@ -1,72 +1,265 @@
 {{ define "content" }}
 <section class="container mx-auto max-w-xl flex flex-col gap-y-4">
-	<div class="flex flex-col gap-y-2">
-		<h1 class="text-3xl font-bold">Расскажите подробнее о запуске</h1>
-		<p class="text-muted">Нам понадобятся название, oneliner, описание и ссылка.</p>
-	</div>
+  <nav class="mb-4 text-sm text-gray-600" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-2">
+      <li>
+        <a href="/my/products" class="hover:underline">Мои продукты</a>
+      </li>
+      <li class="text-gray-400">/</li>
+      <li>
+        <a href="/products/{{ .Product.Slug }}" class="hover:underline"
+          >{{ .Product.Name }}</a
+        >
+      </li>
+      <li class="text-gray-400">/</li>
+      <li>
+        <a href="/products/{{ .Product.Slug }}/launches" class="hover:underline"
+          >Запуски</a
+        >
+      </li>
+      <li class="text-gray-400">/</li>
+      <li class="text-gray-800">{{ .Launch.Name }}</li>
+    </ol>
+  </nav>
+  <div class="flex flex-col gap-y-2">
+    <h1 class="text-3xl font-bold">Расскажите подробнее о запуске</h1>
+    <p class="text-muted">
+      Нам понадобятся название, oneliner, описание и ссылка.
+    </p>
+  </div>
 
-	<div class="card">
-		<header class="flex justify-between items-center">
-			<h2 class="text-xl font-bold">Общая информация</h2>
-			{{ template "launch-state" .Launch }}
-		</header>
-		<section>
-			<form id="update-launch-form" class="form grid gap-6" hx-post="/api/update-launch"
-				hx-swap="none" hx-disable-elt="button">
-				<input type="hidden" name="csrf_token" value="{{ .token }}">
-				<input type="hidden" name="product_slug" value="{{ .Product.Slug }}">
-				<input type="hidden" name="launch_slug" value="{{ .Launch.Slug }}">
-				<div class="grid gap-2">
-					<label for="name">Название запуска</label>
-					<input name="name" type="text" id="name" value="{{ .Launch.Name }}"
-						placeholder="product hunt">
-				</div>
-				<div class="grid gap-2">
-					<label for="url">Ссылка</label>
-					<input name="url" type="text" id="url" value="{{ .Launch.URL }}"
-						placeholder="https://my-product">
-				</div>
-				<div class="grid gap-2">
-					<label for="tagline">Oneliner</label>
-					<input name="tagline" type="text" id="tagline" value="{{ .Launch.Tagline }}"
-						placeholder="Лучшее место для запуска">
-					<p class="text-gray-500 text-sm">Однострочный описание запуска. Не более
-						140
-						символов.</p>
-				</div>
-				<div class="grid gap-2">
-					<label for="description">Описание</label>
-					<textarea name="description" id="description" placeholder="product hunt">{{
-						.Launch.Description }}</textarea>
-					<p class="text-gray-500 text-sm">Описание запуска. Не более 250
-						символов.</p>
-				</div>
-				<div class="grid gap-2">
-					<label for="launch-date">Дата запуска</label>
-					<input name="launch-date" type="date" id="launch-date" value="{{ if .Launch.LaunchDate }}{{ .Launch.LaunchDate.Format "2006-01-02" }}{{ end }}"
-					>
-				</div>
-			</form>
-			<div id="errors" class="mt-5"></div>
-		</section>
-		<footer>
-			<div class="flex flex-col w-full gap-5" id="actions">
-				<button class="btn btn-primary w-full rounded-full" type="submit" form="update-launch-form">
-					Сохранить
-				</button>
-				{{ if and .Launch.IsDraft .Launch.LaunchDate }}
-				<form hx-post="/api/send-launch-to-moderation" hx-target="#actions" hx-swap="outerHTML">
-					<input type="hidden" name="csrf_token" value="{{ .token }}">
-					<input type="hidden" name="product_id" value="{{ .Launch.ProductID }}">
-					<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
+  <div class="card">
+    <header class="flex justify-between items-center">
+      <h2 class="text-xl font-bold">Общая информация</h2>
+      {{ template "launch-state" .Launch }}
+    </header>
+    <section>
+      <form
+        id="update-launch-form"
+        class="form grid gap-6"
+        hx-post="/api/update-launch"
+        hx-swap="none"
+        hx-disable-elt="button"
+        hx-encoding="multipart/form-data"
+      >
+        <input type="hidden" name="csrf_token" value="{{ .token }}" />
+        <input type="hidden" name="product_slug" value="{{ .Product.Slug }}" />
+        <input type="hidden" name="launch_slug" value="{{ .Launch.Slug }}" />
+        <div class="grid gap-2">
+          <label for="name">Название запуска</label>
+          <input
+            name="name"
+            type="text"
+            id="name"
+            value="{{ .Launch.Name }}"
+            placeholder="product hunt"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label for="url">Ссылка</label>
+          <input
+            name="url"
+            type="text"
+            id="url"
+            value="{{ .Launch.URL }}"
+            placeholder="https://my-product"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label for="tagline">Oneliner</label>
+          <input
+            name="tagline"
+            type="text"
+            id="tagline"
+            value="{{ .Launch.Tagline }}"
+            placeholder="Лучшее место для запуска"
+          />
+          <p class="text-gray-500 text-sm">
+            Однострочный описание запуска. Не более 140 символов.
+          </p>
+        </div>
+        <div class="grid gap-2">
+          <label for="description">Описание</label>
+          <textarea
+            name="description"
+            id="description"
+            placeholder="product hunt"
+          >
+{{
+						.Launch.Description }}</textarea
+          >
+          <p class="text-gray-500 text-sm">
+            Описание запуска. Не более 250 символов.
+          </p>
+        </div>
+        <div class="grid gap-2">
+          <label for="image">Аватар запуска (опционально)</label>
+          <div class="flex items-center gap-4">
+            <img
+              id="image-preview"
+              class="w-16 h-16 rounded-lg object-cover ring-2 ring-gray-200"
+              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Launch.Name }}{{ end }}"
+              alt="preview"
+            />
+            <input type="file" id="image" name="image" accept="image/*" />
+          </div>
+          <p class="text-gray-500 text-sm">
+            PNG/JPG до 10MB. Рекомендуется минимум 256×256 px.
+          </p>
+        </div>
+        <div class="grid gap-2">
+          <label for="media">Изображения (опционально)</label>
+          <input
+            type="file"
+            id="media"
+            name="media"
+            accept="image/*"
+            multiple
+          />
+          <p class="text-gray-500 text-sm">
+            Можно загрузить до 4 изображений. До 20 МБ суммарно.
+          </p>
+          <div class="mt-2">
+            <p class="text-xs text-gray-500 mb-2">
+              Рекомендуем горизонтальный формат 16:9.
+            </p>
+            {{ if .Launch.Media }}
+            <div class="mb-3" id="existing-media">
+              <p class="text-xs text-gray-600 mb-2">Текущие изображения:</p>
+              <div class="grid grid-cols-3 md:grid-cols-4 gap-2">
+                {{ range .Launch.Media }}
+                <div
+                  class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200"
+                >
+                  <img
+                    src="{{ . }}"
+                    alt="Launch media"
+                    class="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+                {{ end }}
+              </div>
+            </div>
+            {{ end }}
+            <div
+              id="media-previews"
+              class="grid grid-cols-3 md:grid-cols-4 gap-2 py-1"
+            ></div>
+          </div>
+        </div>
+        <div class="grid gap-2">
+          <label for="launch-date">Дата запуска</label>
+          <input name="launch-date" type="date" id="launch-date" value="{{ if
+          .Launch.LaunchDate }}{{ .Launch.LaunchDate.Format "2006-01-02" }}{{
+          end }}" >
+        </div>
+      </form>
+      <div id="errors" class="mt-5"></div>
+    </section>
+    <footer>
+      <div class="flex flex-col w-full gap-5" id="actions">
+        <button
+          class="btn btn-primary w-full rounded-full"
+          type="submit"
+          form="update-launch-form"
+        >
+          Сохранить
+        </button>
+        {{ if and .Launch.IsDraft .Launch.LaunchDate }}
+        <form
+          hx-post="/api/send-launch-to-moderation"
+          hx-target="#actions"
+          hx-swap="outerHTML"
+        >
+          <input type="hidden" name="csrf_token" value="{{ .token }}" />
+          <input
+            type="hidden"
+            name="product_id"
+            value="{{ .Launch.ProductID }}"
+          />
+          <input type="hidden" name="launch_id" value="{{ .Launch.ID }}" />
 
-					<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white" type="submit">
-						Отправить на модерацию
-					</button>
-				</form>
-				{{ end }}
-			</div>
-		</footer>
-	</div>
+          <button
+            class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
+            type="submit"
+          >
+            Отправить на модерацию
+          </button>
+        </form>
+        {{ end }}
+      </div>
+    </footer>
+  </div>
 </section>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const avatarInput = document.getElementById("image");
+    const avatarPreview = document.getElementById("image-preview");
+    if (avatarInput && avatarPreview) {
+      avatarInput.addEventListener("change", () => {
+        const file = avatarInput.files && avatarInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          avatarPreview.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    const input = document.getElementById("media");
+    const previews = document.getElementById("media-previews");
+    const existingMedia = document.getElementById("existing-media");
+    if (!input || !previews) return;
+
+    input.addEventListener("change", () => {
+      previews.innerHTML = "";
+      const files = input.files ? Array.from(input.files).slice(0, 4) : [];
+
+      // Hide existing media if new files are selected, show if no files
+      if (existingMedia) {
+        if (files.length > 0) {
+          existingMedia.style.display = "none";
+        } else {
+          existingMedia.style.display = "block";
+        }
+      }
+
+      files.forEach((file) => {
+        if (!file.type.startsWith("image/")) return;
+        const url = URL.createObjectURL(file);
+        const wrapper = document.createElement("div");
+        wrapper.className =
+          "relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200";
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = file.name;
+        img.className = "absolute inset-0 w-full h-full object-cover";
+        wrapper.appendChild(img);
+
+        const badge = document.createElement("span");
+        badge.textContent = "Портрет";
+        badge.className =
+          "absolute bottom-1 right-1 hidden text-[9px] px-1 py-0.5 rounded bg-black/60 text-white";
+        img.onload = () => {
+          if (img.naturalHeight > img.naturalWidth) {
+            badge.classList.remove("hidden");
+          }
+        };
+        wrapper.appendChild(badge);
+
+        previews.appendChild(wrapper);
+      });
+
+      // Show warning if more than 4 files selected
+      if (input.files && input.files.length > 4) {
+        const warning = document.createElement("p");
+        warning.textContent = "Показаны только первые 4 изображения";
+        warning.className = "text-xs text-orange-600 mt-1";
+        previews.parentNode.appendChild(warning);
+        setTimeout(() => warning.remove(), 3000);
+      }
+    });
+  });
+</script>
 {{ end }}

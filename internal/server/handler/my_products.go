@@ -17,6 +17,7 @@ type ProductView struct {
 	Slug    string
 	Tagline string
 	ID      uuid.UUID
+    ImageURL string
 
 	Launches   []*launch.Launch
 	Categories []*product.Category
@@ -46,6 +47,7 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
 			Slug:       p.Slug,
 			ID:         p.ID,
 			Tagline:    p.Tagline,
+            ImageURL:   p.ImageURL,
 			Categories: p.Categories,
 			Launches:   launches,
 		})

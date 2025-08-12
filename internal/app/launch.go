@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sort"
@@ -14,6 +15,7 @@ import (
 type LaunchService struct {
 	launchRepo     launch.LaunchRepository
 	telegramCleint TelegramClient
+    storage        Storage
 }
 
 func NewLaunchService(
@@ -98,8 +100,29 @@ func (s *LaunchService) GetByProduct(ctx context.Context, productID uuid.UUID) (
 	return s.launchRepo.GetByProduct(ctx, productID)
 }
 
+// GetUpvotedMap returns a map of launchID->bool indicating whether the user has upvoted each launch ID
+func (s *LaunchService) GetUpvotedMap(ctx context.Context, userID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]bool, error) {
+    return s.launchRepo.GetUpvotedByUserForLaunchIDs(ctx, userID, ids)
+}
+
 func (s *LaunchService) GetFeed(ctx context.Context) ([]*launch.Launch, error) {
 	return s.launchRepo.GetFeed(ctx, "all_time", 100, 0)
+}
+
+// GetFeedByPeriod returns the feed filtered by the given period.
+// Valid periods: "daily", "weekly", "monthly", "all_time". Defaults to "daily".
+func (s *LaunchService) GetFeedByPeriod(ctx context.Context, period string) ([]*launch.Launch, error) {
+    normalized := normalizePeriod(period)
+    return s.launchRepo.GetFeed(ctx, normalized, 100, 0)
+}
+
+func normalizePeriod(period string) string {
+    switch period {
+    case "daily", "weekly", "monthly", "all_time":
+        return period
+    default:
+        return "daily"
+    }
 }
 
 func (s *LaunchService) Delete(ctx context.Context, launchID uuid.UUID) error {
@@ -107,9 +130,112 @@ func (s *LaunchService) Delete(ctx context.Context, launchID uuid.UUID) error {
 }
 
 func (s *LaunchService) Create(ctx context.Context, launch *launch.Launch) error {
+	err := launch.Validate()
+	if err != nil {
+		return err
+	}
 	return s.launchRepo.Create(ctx, launch)
 }
 
 func (s *LaunchService) GetByState(ctx context.Context, states []launch.State) ([]*launch.Launch, error) {
 	return s.launchRepo.GetByState(ctx, states)
+}
+
+func (s *LaunchService) WithStorage(storage Storage) *LaunchService {
+    s.storage = storage
+    return s
+}
+
+// AddMedia uploads a launch media image and appends URL to Launch.Media.
+func (s *LaunchService) AddMedia(ctx context.Context, l *launch.Launch, originalFilename string, content io.Reader) (string, error) {
+    if s.storage == nil {
+        return "", fmt.Errorf("storage not configured")
+    }
+    
+    // Check if adding this media would exceed the limit
+    if len(l.Media) >= 4 {
+        return "", launch.TooManyMediaFiles
+    }
+    
+    url, err := s.storage.Save(ctx, fmt.Sprintf("launches/%s", l.ID.String()), originalFilename, content)
+    if err != nil {
+        return "", err
+    }
+    // Persist media reference in repository and update in-memory entity
+    if err := s.launchRepo.AddMedia(ctx, l.ID, url); err != nil {
+        return "", err
+    }
+    l.Media = append(l.Media, url)
+    
+    // Validate after adding
+    if err := l.Validate(); err != nil {
+        return "", err
+    }
+    
+    return url, nil
+}
+
+// UpdateImage uploads a launch avatar image and persists its URL
+func (s *LaunchService) UpdateImage(ctx context.Context, launchID uuid.UUID, originalFilename string, content io.Reader) (string, error) {
+    if s.storage == nil {
+        return "", fmt.Errorf("storage not configured")
+    }
+    url, err := s.storage.Save(ctx, fmt.Sprintf("launches/%s/avatar", launchID.String()), originalFilename, content)
+    if err != nil {
+        return "", err
+    }
+    if err := s.launchRepo.UpdateImageURL(ctx, launchID, url); err != nil {
+        return "", err
+    }
+    return url, nil
+}
+
+// ReplaceMedia replaces all existing media with new uploaded files.
+func (s *LaunchService) ReplaceMedia(ctx context.Context, l *launch.Launch, files []FileUpload) error {
+    if s.storage == nil {
+        return fmt.Errorf("storage not configured")
+    }
+    
+    // Validate media count before processing
+    if len(files) > 4 {
+        return launch.TooManyMediaFiles
+    }
+    
+    // Delete old media from storage
+    for _, oldURL := range l.Media {
+        if err := s.storage.Delete(ctx, oldURL); err != nil {
+            // Log error but continue - we don't want to fail the whole operation
+            slog.Error("failed to delete old media", slog.String("url", oldURL), slog.Any("error", err))
+        }
+    }
+    
+    // Upload new files
+    newURLs := make([]string, 0, len(files))
+    for _, file := range files {
+        url, err := s.storage.Save(ctx, fmt.Sprintf("launches/%s", l.ID.String()), file.Filename, file.Content)
+        if err != nil {
+            return fmt.Errorf("failed to upload %s: %w", file.Filename, err)
+        }
+        newURLs = append(newURLs, url)
+    }
+    
+    // Update database
+    if err := s.launchRepo.ReplaceMedia(ctx, l.ID, newURLs); err != nil {
+        return err
+    }
+    
+    // Update in-memory entity and validate
+    l.Media = newURLs
+    return l.Validate()
+}
+
+// FileUpload represents a file to be uploaded
+type FileUpload struct {
+    Filename string
+    Content  io.Reader
+}
+
+// ToggleUpvote toggles the upvote and returns the new upvoted state and total count.
+func (s *LaunchService) ToggleUpvote(ctx context.Context, launchID, userID uuid.UUID) (bool, int, error) {
+    return s.launchRepo.ToggleUpvote(ctx, launchID, userID)
 }

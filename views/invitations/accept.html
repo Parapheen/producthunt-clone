@@ -1,0 +1,24 @@
+{{ define "content" }}
+<section class="container max-w-lg mx-auto">
+  <div class="bg-white p-6 rounded-2xl border border-gray-200">
+    <h1 class="text-2xl font-bold mb-2">Вы приглашены в команду продукта</h1>
+    <p class="text-gray-700">
+      Чтобы принять приглашение, пожалуйста, войдите или зарегистрируйтесь.
+    </p>
+    <p class="text-gray-700 mt-2">
+      После входа мы автоматически добавим вас к продукту и перенаправим на
+      вкладку «Участники».
+    </p>
+    <div class="mt-4 flex gap-2">
+      <a class="btn btn-primary" href="/auth/yandex">Войти через Яндекс</a>
+      <a class="btn btn-primary" href="/auth/google">Войти через Google</a>
+      <a class="btn btn-primary" href="/auth/vk">Войти через ВКонтакте</a>
+      <a class="btn-secondary" href="/">На главную</a>
+    </div>
+    <p class="text-xs text-gray-500 mt-4">
+      Если что-то пошло не так, вы можете снова открыть ссылку из письма с
+      приглашением.
+    </p>
+  </div>
+</section>
+{{ end }}

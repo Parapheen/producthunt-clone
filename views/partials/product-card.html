@@ -1,33 +1,33 @@
 {{ define "product-card" }}
 
-<div class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
-	<img src="https://avatar.iran.liara.run/public" alt="{{ .Name }}"
-		class="w-20 h-20 rounded-lg object-cover">
-
-	<div class="flex-grow">
-		<div class="flex justify-between items-start">
-			<div class="flex items-center gap-4">
-				<h3 class="font-bold text-lg text-gray-900">
-					{{ .Name }}
-				</h3>
-				<a href="/products/u/{{ .ID }}" target="_blank"
-					class="text-gray-400 hover:text-gray-700">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-						viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-						stroke-linecap="round" stroke-linejoin="round">
-						<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-						<polyline points="15 3 21 3 21 9" />
-						<line x1="10" x2="21" y1="14" y2="3" />
-					</svg>
-				</a>
-			</div>
-		</div>
-
-		<p class="text-sm text-gray-600">
-			<i class="bi bi-calendar-date"></i>
-			{{ .CreatedAt.Format "02.01.2006" }}
-		</p>
-	</div>
-</div>
+<a href="/products/u/{{ .ID }}" class="block h-full group">
+  <div
+    class="bg-white rounded-2xl border border-gray-200 overflow-hidden transition-shadow group-hover:shadow-sm h-full flex flex-col"
+  >
+    <div class="flex items-start gap-4 p-4 flex-1">
+      <img
+        src="{{ if .ImageURL }}{{ .ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Name }}{{ end }}"
+        alt="{{ .Name }}"
+        class="w-16 h-16 rounded-lg object-cover ring-1 ring-gray-200"
+      />
+      <div class="flex-1 min-w-0">
+        <h3 class="font-semibold text-gray-900 truncate">{{ .Name }}</h3>
+        {{ if .Tagline }}
+        <p class="text-sm text-gray-600 line-clamp-2">{{ .Tagline }}</p>
+        {{ end }}
+        <div class="mt-2 flex flex-wrap gap-1">
+          {{ range .Categories }}
+          <span class="text-xs bg-gray-100 text-gray-600 rounded px-2 py-0.5"
+            >{{ .Name }}</span
+          >
+          {{ end }}
+        </div>
+      </div>
+    </div>
+    <div class="px-4 pb-4 mt-auto text-xs text-gray-500">
+      {{ .CreatedAt.Format "02.01.2006" }}
+    </div>
+  </div>
+</a>
 
 {{ end }}

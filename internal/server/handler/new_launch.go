@@ -7,6 +7,7 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/Parapheen/ph-clone/internal/pkg/validation"
 	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
 )
@@ -60,27 +61,94 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errors := make([]string, 0)
+    errors := make([]string, 0)
 
-	name := r.FormValue("name")
-	url := r.FormValue("url")
-	productID := uuid.MustParse(r.FormValue("product_id"))
+    // Multipart for optional media
+    if err := r.ParseMultipartForm(20 << 20); err != nil { // 20MB
+        http.Error(w, "invalid form", http.StatusBadRequest)
+        return
+    }
+    name := r.FormValue("name")
+    url := r.FormValue("url")
+    productID := uuid.MustParse(r.FormValue("product_id"))
 
-	launch := launch.NewLaunch(productID, name, url)
+    // Field-level validation before creating domain entity
+    v := validation.NewValidator()
+    if verr := v.ValidateMultiple(
+        v.ValidateString(name, "name", 1, 255, true),
+        v.ValidateURL(url, "url", true),
+    ); verr != nil {
+        switch ve := verr.(type) {
+        case validation.ValidationErrors:
+            for _, e := range ve {
+                errors = append(errors, e.Error())
+            }
+        default:
+            errors = append(errors, verr.Error())
+        }
+    }
+
+    launch := launch.NewLaunch(productID, name, url)
 
 	launch.Tagline = r.FormValue("tagline")
 	launch.Description = r.FormValue("description")
 
-	err := h.LaunchService.Create(
+    err := h.LaunchService.Create(
 		r.Context(),
 		launch,
 	)
 
 	switch err {
 	case nil:
-		redirectTo := "/products/" + productID.String() + "/launches/"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
+        // Optional avatar image (single)
+        if fh, ok := r.MultipartForm.File["image"]; ok && len(fh) > 0 {
+            f, ferr := fh[0].Open()
+            if ferr == nil {
+                // 10MB limit sanity wrap
+                if fh[0].Size > (10 << 20) {
+                    errors = append(errors, "Аватар слишком большой (макс 10MB)")
+                } else {
+                    if _, uerr := h.LaunchService.UpdateImage(r.Context(), launch.ID, fh[0].Filename, f); uerr != nil {
+                        h.Logger.ErrorContext(r.Context(), "error saving avatar", slog.Any("error", uerr))
+                        errors = append(errors, "Ошибка при загрузке аватара")
+                    }
+                }
+                f.Close()
+            }
+        }
+
+        // Handle optional multiple media files
+        files := r.MultipartForm.File["media"]
+        
+        // Validate media count before processing
+        if len(files) > 4 {
+            errors = append(errors, "Можно загрузить не более 4 изображений")
+        } else {
+            for _, fh := range files {
+                f, ferr := fh.Open()
+                if ferr != nil {
+                    h.Logger.ErrorContext(r.Context(), "error opening file", slog.Any("error", ferr))
+                    continue
+                }
+                            // Storage handles streaming; service persists reference
+            if _, uerr := h.LaunchService.AddMedia(r.Context(), launch, fh.Filename, f); uerr != nil {
+                h.Logger.ErrorContext(r.Context(), "error saving media", slog.Any("error", uerr))
+                // Check if it's a media limit error
+                if uerr.Error() == "too many media files" {
+                    errors = append(errors, "Можно загрузить не более 4 изображений")
+                    break // Stop processing more files
+                }
+            }
+                f.Close()
+            }
+        }
+        
+        if len(errors) == 0 {
+            redirectTo := "/products/" + productID.String() + "/launches/"
+            w.Header().Add("HX-Redirect", redirectTo)
+            return
+        }
+
 	default:
 		h.Logger.ErrorContext(r.Context(), "error creating product", slog.Any("error", err))
 		errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")

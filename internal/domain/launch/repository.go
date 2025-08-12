@@ -17,4 +17,17 @@ type LaunchRepository interface {
 	GetFeed(ctx context.Context, period string, limit, offset int) ([]*Launch, error)
 	Create(ctx context.Context, launch *Launch) error
 	Delete(ctx context.Context, launchID uuid.UUID) error
+
+    // Media management
+    AddMedia(ctx context.Context, launchID uuid.UUID, url string) error
+    ReplaceMedia(ctx context.Context, launchID uuid.UUID, urls []string) error
+    GetMediaByLaunchIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]string, error)
+
+    // Avatar image
+    UpdateImageURL(ctx context.Context, launchID uuid.UUID, imageURL string) error
+
+    // Upvotes
+    ToggleUpvote(ctx context.Context, launchID uuid.UUID, userID uuid.UUID) (upvoted bool, count int, err error)
+    // GetUpvotedByUserForLaunchIDs returns map of launchID->true for items upvoted by the user
+    GetUpvotedByUserForLaunchIDs(ctx context.Context, userID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]bool, error)
 }

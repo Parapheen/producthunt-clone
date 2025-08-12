@@ -1,16 +1,161 @@
 {{ define "launches-tab" }}
-<div class="flex flex-col gap-4">
-  {{ if .Launches }}
-  <div class="flex flex-col max-w-2xl gap-4">
-    {{ range .Launches }}
-    {{ template "launch-card" . }}
-    {{ end }}
+<div class="flex flex-col gap-6">
+  {{ if .Launches }} {{ $featured := index .Launches 0 }}
+
+  <div
+    class="p-[1px] rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 mb-6"
+  >
+    <div class="bg-white rounded-2xl p-5 md:p-6">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="flex items-start gap-4 min-w-0">
+          <img
+            src="{{ if $featured.ImageURL }}{{ $featured.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ $featured.Name }}{{ end }}"
+            alt="{{ $featured.Name }}"
+            class="w-16 h-16 rounded-lg object-cover ring-2 ring-indigo-100 flex-shrink-0"
+          />
+          <div class="min-w-0">
+            <div class="inline-flex items-center gap-2 mb-2">
+              <span
+                class="text-xs font-semibold px-2 py-1 rounded-full bg-indigo-600 text-white"
+                >Последний запуск</span
+              >
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 truncate">
+              {{ $featured.Name }}
+            </h2>
+            {{ if $featured.Tagline }}
+            <p class="text-gray-700 mt-1">{{ $featured.Tagline }}</p>
+            {{ end }} {{ if $featured.URL }}
+            <a
+              href="{{ $featured.URL }}"
+              target="_blank"
+              class="text-indigo-700 hover:underline break-all"
+              >{{ $featured.URL }}</a
+            >
+            {{ end }}
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          {{ if and (not $featured.LaunchingSoon) $featured.IsPublished }} {{ if
+          $.UpvotedMap }} {{ template "launch-upvote" (dict "Launch" $featured
+          "token" $.token "Upvoted" (index $.UpvotedMap $featured.ID)) }} {{
+          else }} {{ template "launch-upvote" (dict "Launch" $featured "token"
+          $.token "Upvoted" .Upvoted) }} {{ end }} {{ end }}
+        </div>
+      </div>
+
+      <div class="mt-2">
+        {{ if and (not $featured.LaunchingSoon) (gt (len $featured.Media) 0) }}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-2xl">
+          {{ range $idx, $url := $featured.Media }}
+          <button
+            type="button"
+            class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200 thumb"
+            data-thumb-index="{{ $idx }}"
+          >
+            <img
+              src="{{ $url }}"
+              alt="media {{ $idx }}"
+              class="absolute inset-0 w-full h-full object-cover"
+            />
+          </button>
+          {{ end }}
+        </div>
+        {{ else if and (not $featured.LaunchingSoon) $featured.ImageURL }}
+        <div class="max-w-2xl">
+          <div
+            class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200"
+          >
+            <img
+              src="{{ $featured.ImageURL }}"
+              alt="{{ $featured.Name }}"
+              class="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        {{ end }}
+      </div>
+
+      <div id="featured-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/70 m-overlay"></div>
+        <div
+          class="relative h-full w-full flex items-center justify-center p-4"
+        >
+          <div class="relative w-[84vw] max-w-4xl aspect-[16/9]">
+            {{ if and (not $featured.LaunchingSoon) (gt (len $featured.Media) 0)
+            }} {{ range $idx, $url := $featured.Media }}
+            <img
+              data-m-index="{{ $idx }}"
+              src="{{ $url }}"
+              alt="media {{ $idx }}"
+              class="m-slide absolute inset-0 w-full h-full object-cover rounded-xl {{ if ne $idx 0 }}hidden{{ end }}"
+            />
+            {{ end }} {{ else if and (not $featured.LaunchingSoon)
+            $featured.ImageURL }}
+            <img
+              data-m-index="0"
+              src="{{ $featured.ImageURL }}"
+              alt="{{ $featured.Name }}"
+              class="m-slide absolute inset-0 w-full h-full object-cover rounded-xl"
+            />
+            {{ end }}
+
+            <button
+              type="button"
+              aria-label="Close"
+              class="m-close absolute -top-10 right-0 text-white/90 hover:text-white text-2xl"
+            >
+              &times;
+            </button>
+            <button
+              type="button"
+              aria-label="Prev"
+              class="m-prev absolute -left-10 top-1/2 -translate-y-1/2 text-white/90 hover:text-white text-3xl"
+            >
+              &#10094;
+            </button>
+            <button
+              type="button"
+              aria-label="Next"
+              class="m-next absolute -right-10 top-1/2 -translate-y-1/2 text-white/90 hover:text-white text-3xl"
+            >
+              &#10095;
+            </button>
+          </div>
+          <div
+            id="m-dots"
+            class="absolute bottom-6 left-0 right-0 flex justify-center gap-2"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col max-w-md gap-4">
+    {{ if gt (len .Launches) 1 }}
+    <h3 class="text-xl font-bold text-gray-900">Другие запуски</h3>
+    {{ end }} {{ range $i, $l := .Launches }} {{ if ne $i 0 }} {{ if
+    $.UpvotedMap }} {{ template "launch-card" (dict "Launch" $l "Categories"
+    $.Product.Categories "Upvoted" (index $.UpvotedMap $l.ID)) }} {{ else }} {{
+    template "launch-card" (dict "Launch" $l "Categories" $.Product.Categories)
+    }} {{ end }} {{ end }} {{ end }}
   </div>
   {{ else }}
-  <div class="bg-white p-6 text-center rounded-2xl shadow-sm border">
-    <div class="mx-auto w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="bg-white p-6 text-center rounded-2xl border">
+    <div
+      class="mx-auto w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <path d="M12 12h.01" />
         <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
         <path d="M22 13a18.15 18.15 0 0 1-20 0" />
@@ -19,7 +164,80 @@
     </div>
     <h3 class="text-xl font-bold text-gray-900">Нет запусков</h3>
     <p class="text-gray-500 mt-1">Для этого продукта еще не было запусков.</p>
+    {{ end }}
   </div>
+
+  <script>
+    (function () {
+      const thumbs = Array.from(
+        document.querySelectorAll("#featured-modal, .thumb")
+      );
+      const modal = document.getElementById("featured-modal");
+      const slides = modal
+        ? Array.from(modal.querySelectorAll(".m-slide"))
+        : [];
+      if (!modal || slides.length === 0) return;
+      const dotsWrap = modal.querySelector("#m-dots");
+      const btnPrev = modal.querySelector(".m-prev");
+      const btnNext = modal.querySelector(".m-next");
+      const btnClose = modal.querySelector(".m-close");
+      const overlay = modal.querySelector(".m-overlay");
+      const thumbBtns = Array.from(document.querySelectorAll(".thumb"));
+      let idx = 0;
+
+      function render() {
+        slides.forEach((el, i) => el.classList.toggle("hidden", i !== idx));
+        if (dotsWrap) {
+          dotsWrap.innerHTML = "";
+          slides.forEach((_, i) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className =
+              "h-2.5 w-2.5 rounded-full " +
+              (i === idx ? "bg-white" : "bg-white/40");
+            b.addEventListener("click", () => {
+              idx = i;
+              render();
+            });
+            dotsWrap.appendChild(b);
+          });
+        }
+      }
+
+      function openAt(i) {
+        idx = Math.max(0, Math.min(i, slides.length - 1));
+        modal.classList.remove("hidden");
+        render();
+      }
+      function close() {
+        modal.classList.add("hidden");
+      }
+      function next() {
+        idx = (idx + 1) % slides.length;
+        render();
+      }
+      function prev() {
+        idx = (idx - 1 + slides.length) % slides.length;
+        render();
+      }
+
+      thumbBtns.forEach((b) =>
+        b.addEventListener("click", () => {
+          const i = parseInt(b.getAttribute("data-thumb-index") || "0", 10);
+          openAt(i);
+        })
+      );
+      if (btnNext) btnNext.addEventListener("click", next);
+      if (btnPrev) btnPrev.addEventListener("click", prev);
+      if (btnClose) btnClose.addEventListener("click", close);
+      if (overlay) overlay.addEventListener("click", close);
+      document.addEventListener("keydown", (e) => {
+        if (modal.classList.contains("hidden")) return;
+        if (e.key === "Escape") close();
+        if (e.key === "ArrowRight") next();
+        if (e.key === "ArrowLeft") prev();
+      });
+    })();
+  </script>
   {{ end }}
 </div>
-{{ end }}

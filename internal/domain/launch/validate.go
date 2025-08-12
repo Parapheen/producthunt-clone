@@ -11,6 +11,7 @@ var (
 	InvalidURLSchemeError = errors.New("invalid url scheme")
 	InvalidURL            = errors.New("invalid url")
 	LaunchDateInPast      = errors.New("launch date is in past")
+	TooManyMediaFiles     = errors.New("too many media files")
 )
 
 func (l *Launch) Validate() error {
@@ -37,6 +38,11 @@ func (l *Launch) Validate() error {
 		if now.After(*l.LaunchDate) {
 			return LaunchDateInPast
 		}
+	}
+
+	// Validate media count (maximum 4 images)
+	if len(l.Media) > 4 {
+		return TooManyMediaFiles
 	}
 
 	return nil

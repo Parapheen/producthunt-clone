@@ -3,9 +3,23 @@
   {{ if .Members }}
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
     {{ range .Members }}
-    <div class="bg-white p-4 rounded-lg border text-center">
-      <p class="font-semibold text-gray-800">{{ .Name }}</p>
-      <p class="text-sm text-gray-500">{{ .Role }}</p>
+    <div class="bg-white p-4 rounded-2xl border hover:shadow-md transition">
+      <div class="flex items-center gap-3">
+        <img
+          alt="{{ .Name }}"
+          class="w-10 h-10 rounded-full ring-1 ring-gray-200 object-cover"
+          src="https://placehold.co/80x80/e0e7ff/4338ca?text={{ .Name }}"
+          loading="lazy"
+        />
+        <div class="min-w-0">
+          <p class="font-semibold text-gray-900 truncate">{{ .Name }}</p>
+          <span
+            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ if eq .Role "owner" }}bg-amber-100 text-amber-800{{ else if eq .Role "developer" }}bg-indigo-100 text-indigo-800{{ else if eq .Role "designer" }}bg-pink-100 text-pink-800{{ else }}bg-gray-100 text-gray-800{{ end }}"
+          >
+            {{ if eq .Role "owner" }}Владелец{{ else if eq .Role "developer" }}Разработчик{{ else if eq .Role "designer" }}Дизайнер{{ else }}Другое{{ end }}
+          </span>
+        </div>
+      </div>
     </div>
     {{ end }}
   </div>

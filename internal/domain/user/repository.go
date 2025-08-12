@@ -16,4 +16,7 @@ type UserRepository interface {
 	CreateSession(ctx context.Context, user *User) error
 	RefreshSession(ctx context.Context, session *Session) error
 	DeleteSession(ctx context.Context, session string) error
+
+    UpdateAvatarURL(ctx context.Context, userID uuid.UUID, avatarURL string) error
+    UpdateBio(ctx context.Context, userID uuid.UUID, bio string) error
 }

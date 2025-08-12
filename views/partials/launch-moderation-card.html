@@ -1,6 +1,6 @@
 {{ define "launch-moderation-card" }}
 
-<div id="{{ .Launch.ID }}" class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
+<div id="l-{{ .Launch.ID }}" class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4">
 	<img src="https://avatar.iran.liara.run/public" alt="{{ .Launch.Name }}"
 		class="w-20 h-20 rounded-lg object-cover">
 
@@ -20,7 +20,7 @@
 		{{ end }}
 
 		<div class="flex gap-2">
-			<form class="mt-5" hx-post="/api/proceed-launch" hx-target="#{{ .Launch.ID }}"
+			<form class="mt-5" hx-post="/api/proceed-launch" hx-target="#l-{{ .Launch.ID }}"
 				hx-swap="outerHTML">
 				<input type="hidden" name="csrf_token" value="{{ .token }}">
 				<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">
@@ -30,7 +30,7 @@
 					Опубликовать
 				</button>
 			</form>
-			<form class="mt-5" hx-post="/api/decline-launch" hx-target="#{{ .Launch.ID }}"
+			<form class="mt-5" hx-post="/api/decline-launch" hx-target="#l-{{ .Launch.ID }}"
 				hx-swap="outerHTML">
 				<input type="hidden" name="csrf_token" value="{{ .token }}">
 				<input type="hidden" name="launch_id" value="{{ .Launch.ID }}">

@@ -14,6 +14,9 @@ type Launch struct {
 	Tagline     string
 	URL         string
 	Description string
+    ImageURL    string
+    // Media contains URLs to story-like images for the launch
+    Media       []string
 	State
 	Slug       string
 	LaunchDate *time.Time
@@ -27,6 +30,7 @@ func NewLaunch(productID uuid.UUID, name, url string) *Launch {
 		ProductID: productID,
 		Name:      name,
 		URL:       url,
+        Media:     []string{},
 		State:     Draft,
 		Slug:      slugify.Slugify(name),
 	}
@@ -61,9 +65,10 @@ func (l *Launch) InModeration() bool {
 }
 
 func (l *Launch) ProceedState() {
-	if l.State == Draft {
+	switch l.State {
+case Draft:
 		l.State = Review
-	} else if l.State == Review {
+	case Review:
 		l.State = Published
 	}
 

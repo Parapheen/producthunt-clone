@@ -1,64 +1,98 @@
 {{ define "product-edit-card" }}
 
 <div class="card">
-	<header class="flex justify-between items-start gap-4">
-		<img src="https://avatar.iran.liara.run/public" alt="{{ .Name }}"
-			class="w-20 h-20 rounded-lg object-cover">
+  <header class="flex items-start gap-4">
+    <img
+      src="{{ if .ImageURL }}{{ .ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Name }}{{ end }}"
+      alt="{{ .Name }}"
+      class="w-20 h-20 rounded-lg object-cover ring-1 ring-gray-200"
+    />
 
-		<div class="flex-grow flex flex-col gap-2">
-			<div>
-				<h3 class="font-bold text-lg">
-					<a href="/products/{{ .Slug }}">{{ .Name }}</a>
-				</h3>
+    <div class="flex-1 flex flex-col gap-2 min-w-0">
+      <div>
+        <h3 class="font-bold text-lg">
+          <a href="/products/{{ .Slug }}">
+            {{ .Name }}
+            <i class="bi bi-arrow-up-right text-gray-400 ml-1 h-2 w-2"></i>
+          </a>
+        </h3>
 
-				<p class="text-sm text-gray-600">{{ .Tagline }}</p>
-			</div>
+        <p class="text-sm text-gray-600">{{ .Tagline }}</p>
+      </div>
 
-			<div class="flex gap-2">
-				{{ range .Categories }}
-				<span class="text-sm bg-gray-100 text-gray-600 rounded-md px-2 py-1">
-					{{ .Name }}
-				</span>
-				{{ end }}
-			</div>
+      <div class="flex flex-wrap gap-1">
+        {{ range .Categories }}
+        <span class="text-xs bg-gray-100 text-gray-600 rounded px-2 py-0.5">
+          {{ .Name }}
+        </span>
+        {{ end }}
+      </div>
+    </div>
 
-		</div>
-	</header>
+    <div class="flex-shrink-0">
+      <a
+        class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100"
+        href="/products/{{ .Slug }}/edit"
+        title="Редактировать продукт"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="mr-1"
+        >
+          <path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+          <path d="m15 5 4 4" />
+        </svg>
+        Редактировать
+      </a>
+    </div>
+  </header>
 
-	<section class="flex flex-col gap-4">
-		<div class="flex justify-between items-center">
-			<h3>
-				Запуски ({{ .Launches | len }})
-			</h3>
-			<a class="btn-outline rounded-full" href="/products/{{ .ID }}/new-launch">
-				<i class="bi bi-plus-circle"></i>
-				Создать
-			</a>
-		</div>
-		<div class="flex flex-col w-full gap-2">
-			{{ range .Launches }}
-			<a href="/products/{{ $.ID }}/launches/{{ .Slug }}/edit"
-				class="flex justify-between w-full gap-2 rounded-md border border-gray-200 p-4 hover:bg-gray-50">
-				<div class="flex gap-2 items-center">
-					{{ if .LaunchDate }}
-					<span class="flex gap-2 items-center">
-						<i class="bi bi-calendar"></i>
-						<span class="text-sm text-gray-600">{{ .LaunchDate.Format "02.01.2006"
-							}}</span>
-					</span>
-					{{ end }}
-					<span class="text-sm text-gray-600">{{ .Name }}</span>
-				</div>
-				{{ template "launch-state" . }}
-			</a>
-			{{ end }}
-		</div>
-	</section>
-	<footer>
-		<a class="text-sm text-blue-600 underline" href="/products/{{ .Slug }}/launches/edit">
-			Все запуски
-		</a>
-	</footer>
+  <section class="flex flex-col gap-4">
+    <div class="flex justify-between items-center">
+      <h3>Запуски</h3>
+      <a class="btn-outline rounded-full" href="/products/{{ .ID }}/new-launch">
+        <i class="bi bi-plus-circle"></i>
+        Создать
+      </a>
+    </div>
+    <div class="flex flex-col w-full gap-2">
+      {{ range .Launches }}
+      <a
+        href="/products/{{ $.ID }}/launches/{{ .Slug }}/edit"
+        class="flex justify-between w-full gap-2 rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+      >
+        <div class="flex gap-2 items-center">
+          {{ if .LaunchDate }}
+          <span class="flex gap-2 items-center">
+            <i class="bi bi-clock"></i>
+            <span class="text-sm text-gray-600"
+              >{{ .LaunchDate.Format "02.01.2006" }}</span
+            >
+          </span>
+          {{ end }}
+          <span class="text-sm text-gray-600">{{ .Name }}</span>
+        </div>
+        {{ template "launch-state" . }}
+      </a>
+      {{ end }}
+    </div>
+  </section>
+  <footer>
+    <a
+      class="text-sm text-blue-600 underline"
+      href="/products/{{ .Slug }}/launches/edit"
+    >
+      Все запуски
+    </a>
+  </footer>
 </div>
 
 {{ end }}
