@@ -31,6 +31,7 @@ type ProductService interface {
 	URLExists(ctx context.Context, u string) (bool, error)
 	GetBySlug(ctx context.Context, slug string) (*product.Product, error)
 	GetByOwner(ctx context.Context, owner uuid.UUID) ([]*product.Product, error)
+    GetByMember(ctx context.Context, userID uuid.UUID) ([]*product.Product, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error)
 	GetCategoryBySlug(ctx context.Context, slug string) (*product.Category, error)
     GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*product.Product, error)
@@ -38,10 +39,14 @@ type ProductService interface {
     UpdateTagline(ctx context.Context, productID uuid.UUID, tagline string) error
     InviteMember(ctx context.Context, productID uuid.UUID, email string, role product.Role) (*product.Invitation, error)
     AcceptInvitation(ctx context.Context, token string, userID uuid.UUID) (uuid.UUID, error)
+    // Catalog
+    GetByCategorySlug(ctx context.Context, slug string) ([]*product.Product, error)
+    ListCategories(ctx context.Context) ([]*product.Category, error)
 }
 
 type LaunchService interface {
 	GetBySlug(ctx context.Context, slug string) (*launch.Launch, error)
+    GetByProductAndSlug(ctx context.Context, productID uuid.UUID, slug string) (*launch.Launch, error)
 	GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error)
 	Update(ctx context.Context, launch *launch.Launch) error
 	GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error)
@@ -57,9 +62,15 @@ type LaunchService interface {
     ReplaceMedia(ctx context.Context, l *launch.Launch, files []app.FileUpload) error
     UpdateImage(ctx context.Context, launchID uuid.UUID, originalFilename string, content io.Reader) (string, error)
     ToggleUpvote(ctx context.Context, launchID, userID uuid.UUID) (bool, int, error)
-    // Optional: used internally in this package when available at runtime
-    // GetUpvotedMap returns map of launchID->bool. Not all implementations need to expose this.
-    // We will perform a type assertion when needed.
+
+    // Comments
+    CreateComment(ctx context.Context, c *launch.Comment) error
+    GetCommentsTree(ctx context.Context, launchID uuid.UUID) ([]*launch.Comment, map[uuid.UUID][]*launch.Comment, error)
+    ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error)
+    PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error
+
+    // Admin notifications
+    SendAdminNotification(ctx context.Context, message string) error
 }
 
 type Storage interface {

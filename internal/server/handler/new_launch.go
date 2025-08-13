@@ -144,7 +144,11 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
         }
         
         if len(errors) == 0 {
-            redirectTo := "/products/" + productID.String() + "/launches/"
+            // Redirect back to product launches tab
+            p, _ := h.ProductService.GetByID(r.Context(), productID)
+            slug := productID.String()
+            if p != nil && p.Slug != "" { slug = p.Slug }
+            redirectTo := "/products/" + slug + "/launches"
             w.Header().Add("HX-Redirect", redirectTo)
             return
         }

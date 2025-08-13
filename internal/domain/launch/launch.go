@@ -21,6 +21,8 @@ type Launch struct {
 	Slug       string
 	LaunchDate *time.Time
 	Upvotes    int
+    // CommentsCount stores total number of comments (including replies)
+    CommentsCount int
 	UpdatedAt  time.Time
 }
 

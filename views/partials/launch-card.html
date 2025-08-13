@@ -1,9 +1,9 @@
 {{ define "launch-card" }} {{ $l := .Launch }}
 <div
   class="bg-white rounded-xl flex items-start gap-3 md:gap-4 p-3 md:p-4 transition hover:bg-gray-50 cursor-pointer"
-  onclick="window.location.href='/products/u/{{ $l.ProductID }}'"
+  onclick="window.location.href='/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ $l.Slug }}'"
   role="link"
-  aria-label="Открыть страницу продукта"
+  aria-label="Открыть страницу запуска"
   tabindex="0"
 >
   <img
@@ -17,7 +17,7 @@
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <a
-            href="/products/u/{{ $l.ProductID }}"
+            href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ $l.Slug }}"
             class="font-semibold text-base md:text-lg text-gray-900 truncate hover:underline"
             >{{ $l.Name }}</a
           >
@@ -27,12 +27,22 @@
         {{ end }}
       </div>
 
-      <div class="flex-shrink-0 flex flex-col items-center gap-1.5">
+      <div class="flex-shrink-0 flex items-center gap-2">
         {{ if and (not $l.LaunchingSoon) $l.IsPublished }} {{ if $.UpvotedMap }}
         {{ template "launch-upvote" (dict "Launch" $l "token" $.token "Upvoted"
         (index $.UpvotedMap $l.ID)) }} {{ else }} {{ template "launch-upvote"
-        (dict "Launch" $l "token" $.token "Upvoted" .Upvoted) }} {{ end }} {{
-        end }}
+        (dict "Launch" $l "token" $.token "Upvoted" .Upvoted) }} {{ end }}
+        <a
+          href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ $l.Slug }}"
+          class="border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 rounded-md px-3 h-9 inline-flex items-center text-sm font-semibold"
+          onclick="event.stopPropagation()"
+          aria-label="Открыть комментарии"
+        >
+          <span class="text-sm font-semibold">
+            <i class="bi bi-chat"></i> {{ $l.CommentsCount }}
+          </span>
+        </a>
+        {{ end }}
       </div>
     </div>
 

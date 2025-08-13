@@ -55,13 +55,24 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":      user,
-		"Launches":  launches,
-		"Product":   p,
-		"ActiveTab": "launches",
-		"token":     nosurf.Token(r),
-	})
+    // Add SEO meta to layout data
+    canonical := s.BaseURL + "/products/" + p.Slug
+    meta := map[string]any{
+        "Title":       p.Name + " — запуски и новости",
+        "Description": p.Tagline,
+        "Canonical":   canonical,
+        "OGType":      "product",
+        "Image":       p.ImageURL,
+    }
+
+    err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+        "User":      user,
+        "Launches":  launches,
+        "Product":   p,
+        "ActiveTab": "launches",
+        "token":     nosurf.Token(r),
+        "meta":      meta,
+    })
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

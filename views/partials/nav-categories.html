@@ -1,0 +1,16 @@
+{{ define "nav-categories" }} {{ range .Categories }}
+<a
+  role="menuitem"
+  href="/categories/{{ .Slug }}"
+  class="block px-2 py-1 rounded hover:bg-gray-50 whitespace-nowrap"
+  >{{ .Name }}</a
+>
+{{ else }}
+<div
+  role="menuitem"
+  aria-disabled="true"
+  class="text-sm text-gray-500 px-2 py-1"
+>
+  Нет категорий
+</div>
+{{ end }} {{ end }}

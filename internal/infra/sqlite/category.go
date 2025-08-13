@@ -35,3 +35,20 @@ func (r *CategoryRepository) GetBySlug(ctx context.Context, slug string) (*produ
 
 	return c, nil
 }
+
+func (r *CategoryRepository) ListAll(ctx context.Context) ([]*product.Category, error) {
+    query := `SELECT c.id, c.name, c.slug FROM categories c ORDER BY c.name`
+    var models []struct {
+        ID   int    `db:"id"`
+        Name string `db:"name"`
+        Slug string `db:"slug"`
+    }
+    if err := r.db.SelectContext(ctx, &models, r.db.Rebind(query)); err != nil {
+        return nil, err
+    }
+    result := make([]*product.Category, 0, len(models))
+    for _, m := range models {
+        result = append(result, &product.Category{ID: m.ID, Name: m.Name, Slug: m.Slug})
+    }
+    return result, nil
+}

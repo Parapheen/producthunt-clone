@@ -4,11 +4,46 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ph clone</title>
+  <title>
+    {{ if .meta.Title }}{{ .meta.Title }}{{ else }}justlaunch{{ end }}
+  </title>
 
-  {{ if .token }}
+  {{ if .meta.Description }}
+  <meta name="description" content="{{ .meta.Description }}" />
+  {{ end }} {{ if .meta.Robots }}
+  <meta name="robots" content="{{ .meta.Robots }}" />
+  {{ end }} {{ if .meta.Canonical }}
+  <link rel="canonical" href="{{ .meta.Canonical }}" />
+  {{ end }}
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="justlaunch" />
+  {{ if .meta.OGType }}
+  <meta property="og:type" content="{{ .meta.OGType }}" />
+  {{ else }}
+  <meta property="og:type" content="website" />
+  {{ end }} {{ if .meta.Title }}
+  <meta property="og:title" content="{{ .meta.Title }}" />
+  {{ end }} {{ if .meta.Description }}
+  <meta property="og:description" content="{{ .meta.Description }}" />
+  {{ end }} {{ if .meta.Canonical }}
+  <meta property="og:url" content="{{ .meta.Canonical }}" />
+  {{ end }} {{ if .meta.Image }}
+  <meta property="og:image" content="{{ .meta.Image }}" />
+  {{ end }}
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  {{ if .meta.Title }}
+  <meta name="twitter:title" content="{{ .meta.Title }}" />
+  {{ end }} {{ if .meta.Description }}
+  <meta name="twitter:description" content="{{ .meta.Description }}" />
+  {{ end }} {{ if .meta.Image }}
+  <meta name="twitter:image" content="{{ .meta.Image }}" />
+  {{ end }} {{ if .token }}
   <meta name="csrf-token" content="{{ .token }}" />
   {{ end }}
+  <link rel="icon" href="/assets/favicon.ico" />
 
   <script src="/assets/js/htmx.min.js"></script>
   <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
@@ -17,7 +52,7 @@
   <link href="/assets/css/output.css?v=1" rel="stylesheet" />
   <link
     rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.0/dist/basecoat.cdn.min.css"
+    href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/basecoat.cdn.min.css"
   />
   <link
     rel="stylesheet"
@@ -27,7 +62,11 @@
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
 
   <script
-    src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js"
+    src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/js/basecoat.min.js"
+    defer
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/js/dropdown-menu.min.js"
     defer
   ></script>
 
@@ -38,7 +77,51 @@
         evt.detail.headers["X-CSRF-Token"] = meta.getAttribute("content");
       }
     });
+    // Relative time rendering for timestamps marked with data-relative-time
+    function renderRelativeTimes(root) {
+      const nodes = (root || document).querySelectorAll("[data-relative-time]");
+      const now = new Date();
+      nodes.forEach((el) => {
+        const iso = el.getAttribute("title");
+        if (!iso) return;
+        const date = new Date(iso);
+        const diff = Math.floor((now - date) / 1000);
+        let text = "";
+        if (diff < 60) text = "только что";
+        else if (diff < 3600) text = Math.floor(diff / 60) + " мин назад";
+        else if (diff < 86400) text = Math.floor(diff / 3600) + " ч назад";
+        else if (diff < 2592000) text = Math.floor(diff / 86400) + " дн назад";
+        else {
+          const dd = String(date.getDate()).padStart(2, "0");
+          const mm = String(date.getMonth() + 1).padStart(2, "0");
+          const yyyy = date.getFullYear();
+          text = `${dd}.${mm}.${yyyy}`;
+        }
+        el.textContent = text;
+      });
+    }
+    document.addEventListener("DOMContentLoaded", () => renderRelativeTimes());
+    document.body.addEventListener("htmx:afterSwap", (e) => {
+      renderRelativeTimes(e.target);
+    });
   </script>
+
+  {{ if .Product }}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": {{ printf "%q" .Product.Name }},
+      {{ if .Product.Tagline }}"description": {{ printf "%q" .Product.Tagline }},{{ end }}
+      {{ if .meta.Canonical }}"url": {{ printf "%q" .meta.Canonical }},{{ end }}
+      {{ if .meta.Image }}"image": {{ printf "%q" .meta.Image }},{{ end }}
+      "brand": {
+        "@type": "Brand",
+        "name": {{ printf "%q" .Product.Name }}
+      }
+    }
+  </script>
+  {{ end }}
 </head>
 
 {{ end }}

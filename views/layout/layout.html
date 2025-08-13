@@ -2,23 +2,24 @@
 
 <!DOCTYPE html>
 <html lang="ru">
+  {{ template "head" . }}
 
-{{ template "head" . }}
+  <body class="flex flex-col min-h-screen">
+    {{ template "header" . }}
 
-<body class="flex flex-col min-h-screen">
-	{{ template "header" . }}
+    <main class="flex-grow my-8 mx-4 flex flex-col gap-8">
+      {{ template "content" . }}
+    </main>
 
-	<main class="flex-grow my-8 mx-4 flex flex-col gap-8">
-		{{ template "content" . }}
-	</main>
+    {{ template "footer" . }}
 
-	{{ template "footer" . }}
+    <div id="toaster" class="toaster"></div>
 
-	<div id="toaster" class="toaster"></div>
-
-	<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/toast.min.js" defer></script>
-</body>
-
+    <script
+      src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.1/dist/js/toast.min.js"
+      defer
+    ></script>
+  </body>
 </html>
 
 {{ end }}

@@ -187,6 +187,39 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*produc
 	return domainProduct, nil
 }
 
+// GetByCategorySlug returns products that belong to a category identified by slug, newest first.
+func (r *ProductRepository) GetByCategorySlug(ctx context.Context, slug string) ([]*product.Product, error) {
+    // 1. Select product IDs for the category
+    var ids []uuid.UUID
+    query := `SELECT pc.product_id FROM product_categories pc JOIN categories c ON pc.category_id = c.id WHERE c.slug = $1 ORDER BY pc.product_id DESC`
+    if err := r.db.SelectContext(ctx, &ids, query, slug); err != nil {
+        return nil, err
+    }
+    if len(ids) == 0 {
+        return []*product.Product{}, nil
+    }
+    // 2. Load products
+    var models []productModel
+    inQ, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, ids)
+    if err != nil { return nil, err }
+    inQ = r.db.Rebind(inQ)
+    if err := r.db.SelectContext(ctx, &models, inQ, args...); err != nil { return nil, err }
+    // 3. Relations
+    members, categories, err := r.fetchAllRelations(ctx, ids)
+    if err != nil { return nil, err }
+    // 4. Assemble and preserve order of ids
+    byID := make(map[uuid.UUID]*product.Product, len(models))
+    for _, m := range models {
+        p := toDomainProduct(&m)
+        p.Members = members[p.ID]
+        p.Categories = categories[p.ID]
+        byID[p.ID] = p
+    }
+    result := make([]*product.Product, 0, len(ids))
+    for _, id := range ids { result = append(result, byID[id]) }
+    return result, nil
+}
+
 // Invitations
 func (r *ProductRepository) CreateInvitation(ctx context.Context, inv *product.Invitation) error {
     _, err := r.db.NamedExecContext(ctx, `INSERT INTO product_invitations (id, product_id, email, role, token, status) VALUES (:id, :product_id, :email, :role, :token, :status)`, map[string]interface{}{
@@ -277,6 +310,53 @@ func (r *ProductRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) (
 	}
 
 	return result, nil
+}
+
+// GetByMember returns products where the given user is a member (any role) ordered by membership created_at desc.
+func (r *ProductRepository) GetByMember(ctx context.Context, userID uuid.UUID) ([]*product.Product, error) {
+    // 1. Collect product IDs for this user membership
+    var productIDs []uuid.UUID
+    idQuery := `SELECT product_id FROM product_members WHERE user_id = $1 ORDER BY created_at DESC`
+    if err := r.db.SelectContext(ctx, &productIDs, idQuery, userID); err != nil {
+        return nil, fmt.Errorf("error getting product ids by member: %w", err)
+    }
+    if len(productIDs) == 0 {
+        return []*product.Product{}, nil
+    }
+
+    // 2. Fetch all products at once
+    var productModels []productModel
+    query, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, productIDs)
+    if err != nil {
+        return nil, err
+    }
+    query = r.db.Rebind(query)
+    if err := r.db.SelectContext(ctx, &productModels, query, args...); err != nil {
+        return nil, fmt.Errorf("error getting products by ids: %w", err)
+    }
+
+    // 3. Fetch all relations for these products at once
+    allMembers, allCategories, err := r.fetchAllRelations(ctx, productIDs)
+    if err != nil {
+        return nil, err
+    }
+
+    // 4. Map and assemble
+    productMap := make(map[uuid.UUID]*product.Product)
+    for _, model := range productModels {
+        p := toDomainProduct(&model)
+        p.Members = allMembers[p.ID]
+        p.Categories = allCategories[p.ID]
+        productMap[p.ID] = p
+    }
+
+    // Preserve the original order from productIDs
+    result := make([]*product.Product, len(productIDs))
+    for i, id := range productIDs {
+        result[i] = productMap[id]
+    }
+
+    return result, nil
 }
 
 // fetchRelations loads relations for a single product.

@@ -14,24 +14,22 @@
             class="w-16 h-16 rounded-lg object-cover ring-2 ring-indigo-100 flex-shrink-0"
           />
           <div class="min-w-0">
-            <div class="inline-flex items-center gap-2 mb-2">
+            <div class="flex items-center gap-2 mb-1">
               <span
                 class="text-xs font-semibold px-2 py-1 rounded-full bg-indigo-600 text-white"
                 >Последний запуск</span
               >
+              {{ if $featured.LaunchDate }}
+              <span class="text-xs text-gray-500"
+                >{{ humanTime $featured.LaunchDate }}</span
+              >
+              {{ end }}
             </div>
             <h2 class="text-2xl font-bold text-gray-900 truncate">
               {{ $featured.Name }}
             </h2>
             {{ if $featured.Tagline }}
             <p class="text-gray-700 mt-1">{{ $featured.Tagline }}</p>
-            {{ end }} {{ if $featured.URL }}
-            <a
-              href="{{ $featured.URL }}"
-              target="_blank"
-              class="text-indigo-700 hover:underline break-all"
-              >{{ $featured.URL }}</a
-            >
             {{ end }}
           </div>
         </div>
@@ -72,6 +70,23 @@
               class="absolute inset-0 w-full h-full object-cover"
             />
           </div>
+        </div>
+        {{ end }} {{ if $featured.URL }}
+        <div class="mt-4 w-full">
+          <a
+            href="{{ $featured.URL }}?utm_source=justlaunch"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="outline w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md"
+          >
+            <img
+              src="https://www.google.com/s2/favicons?sz=32&domain_url={{ $featured.URL }}"
+              alt="favicon"
+              class="w-5 h-5"
+              loading="lazy"
+            />
+            <span class="font-semibold">Перейти на сайт</span>
+          </a>
         </div>
         {{ end }}
       </div>
@@ -128,6 +143,17 @@
           ></div>
         </div>
       </div>
+      <div class="mt-6">
+        {{ if not $featured.LaunchingSoon }}
+        <div
+          hx-get="/api/launches/{{ $featured.ID }}/comments"
+          hx-trigger="load"
+          hx-target="#comments-{{ $featured.ID }}"
+          hx-swap="outerHTML"
+        ></div>
+        <div id="comments-{{ $featured.ID }}"></div>
+        {{ end }}
+      </div>
     </div>
   </div>
 
@@ -136,9 +162,10 @@
     <h3 class="text-xl font-bold text-gray-900">Другие запуски</h3>
     {{ end }} {{ range $i, $l := .Launches }} {{ if ne $i 0 }} {{ if
     $.UpvotedMap }} {{ template "launch-card" (dict "Launch" $l "Categories"
-    $.Product.Categories "Upvoted" (index $.UpvotedMap $l.ID)) }} {{ else }} {{
-    template "launch-card" (dict "Launch" $l "Categories" $.Product.Categories)
-    }} {{ end }} {{ end }} {{ end }}
+    $.Product.Categories "Upvoted" (index $.UpvotedMap $l.ID) "ProductSlug"
+    $.Product.Slug) }} {{ else }} {{ template "launch-card" (dict "Launch" $l
+    "Categories" $.Product.Categories "ProductSlug" $.Product.Slug) }} {{ end }}
+    {{ end }} {{ end }}
   </div>
   {{ else }}
   <div class="bg-white p-6 text-center rounded-2xl border">

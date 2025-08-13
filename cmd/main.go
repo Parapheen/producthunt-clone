@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/Parapheen/ph-clone/internal/infra/mailer"
 	"github.com/Parapheen/ph-clone/internal/infra/sqlite"
 	localstorage "github.com/Parapheen/ph-clone/internal/infra/storage/local"
+	"github.com/Parapheen/ph-clone/internal/infra/storage/s3"
 	"github.com/Parapheen/ph-clone/internal/infra/telegram"
 	"github.com/Parapheen/ph-clone/internal/pkg/config"
 	"github.com/Parapheen/ph-clone/internal/server"
@@ -60,10 +62,18 @@ func main() {
     launchService := app.NewLaunchService(launchRepository, telegramClient)
 
     // Initialize storage (local by default)
+    ctx := context.Background()
     var storage app.Storage
     switch cfg.Storage.Driver {
     case "local":
         storage = localstorage.NewFilesystemStorage(cfg.Storage.LocalUploadDir, cfg.Storage.PublicUploadBase)
+	case "s3":
+        uploader, err := s3.NewAWSV2Uploader(ctx, cfg.Storage.S3Region, cfg.Storage.S3Endpoint, cfg.Storage.S3UsePathStyle, cfg.Storage.S3PublicBaseURL)
+        if err != nil {
+            logger.Error("Failed to initialize S3 uploader", "error", err)
+            os.Exit(1)
+        }
+        storage = s3.NewS3Storage(cfg.Storage.S3Bucket, cfg.Storage.S3BaseKey, uploader)
     default:
         storage = localstorage.NewFilesystemStorage(cfg.Storage.LocalUploadDir, cfg.Storage.PublicUploadBase)
     }
@@ -86,7 +96,7 @@ func main() {
 	m := mw.NewMiddleware(userService)
 
 	// Initialize handler
-	h := handler.NewHandler(
+    h := handler.NewHandler(
 		logger,
 		db,
 		authService,
@@ -94,6 +104,7 @@ func main() {
 		productService,
 		launchService,
         storage,
+        cfg.App.BaseURL,
 	)
 
 	// Initialize server

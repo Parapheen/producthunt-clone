@@ -16,10 +16,7 @@
       проектов в реальном времени.
     </p>
     <div class="flex flex-col justify-center gap-2 mt-5">
-      <a
-        class="btn-outline flex items-center gap-2 rounded-full"
-        href="/auth/yandex"
-      >
+      <a class="btn flex items-center gap-2 rounded-full" href="/auth/yandex">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -44,40 +41,115 @@
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
+          x="0px"
+          y="0px"
+          width="100"
+          height="100"
+          viewBox="0 0 48 48"
         >
           <path
-            d="M12 2.04c5.522 0 10 4.478 10 10 0 .68-.068 1.343-.196 1.982h-9.804v-3.96h5.6c-.24-1.36-1.36-3.2-5.6-3.2-3.36 0-6.08 2.76-6.08 6.16s2.72 6.16 6.08 6.16c1.92 0 3.2-.8 3.92-1.52l2.72 2.64C17.6 21.2 15.12 22 12 22 6.476 22 2 17.522 2 12S6.476 2.04 12 2.04z"
-            fill="#4285F4"
-          />
+            fill="#FFC107"
+            d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+          ></path>
+          <path
+            fill="#FF3D00"
+            d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+          ></path>
+          <path
+            fill="#4CAF50"
+            d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+          ></path>
+          <path
+            fill="#1976D2"
+            d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+          ></path>
         </svg>
         Войти через Google
       </a>
-      <a
-        class="btn-outline flex items-center gap-2 rounded-full"
-        href="/auth/vk"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
+      <a href="/auth/vk">
+        <button
+          id="VKIDSDKAuthButton"
+          class="VkIdWebSdk__button VkIdWebSdk__button_reset"
         >
-          <path
-            d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12z"
-            fill="#2787F5"
-          />
-          <path
-            d="M13.85 16.5c-4.1 0-6.5-2.83-6.62-7.5h2.1c.08 3.1 1.48 4.45 2.33 4.67V9h2c.04.3.2 1.3.2 1.3.5-.93 1.76-1.57 2.98-1.57.2 0 .38.02.56.05v2.04c-.2-.02-.43-.04-.7-.04-1.2 0-2.02.63-2.02 2.23V16.5h-1.83z"
-            fill="#fff"
-          />
-        </svg>
-        Войти через ВКонтакте
+          <div class="VkIdWebSdk__button_container">
+            <div class="VkIdWebSdk__button_icon">
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 28 28"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M4.54648 4.54648C3 6.09295 3 8.58197 3 13.56V14.44C3 19.418 3 21.907 4.54648 23.4535C6.09295 25 8.58197 25 13.56 25H14.44C19.418 25 21.907 25 23.4535 23.4535C25 21.907 25
+           19.418 25 14.44V13.56C25 8.58197 25 6.09295 23.4535 4.54648C21.907 3 19.418 3 14.44 3H13.56C8.58197 3 6.09295 3 4.54648 4.54648ZM6.79999 10.15C6.91798 15.8728 9.92951 19.31 14.8932 19.31H15.1812V16.05C16.989 16.2332 18.3371
+           17.5682 18.8875 19.31H21.4939C20.7869 16.7044 18.9535 15.2604 17.8141 14.71C18.9526 14.0293 20.5641 12.3893 20.9436 10.15H18.5722C18.0747 11.971 16.5945 13.6233 15.1803 13.78V10.15H12.7711V16.5C11.305 16.1337 9.39237 14.3538 9.314 10.15H6.79999Z"
+                  fill="white"
+                />
+              </svg>
+            </div>
+            <div class="VkIdWebSdk__button_text">Войти с VK ID</div>
+          </div>
+        </button>
       </a>
     </div>
   </div>
 </div>
+
+<style>
+  .VkIdWebSdk__button_reset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    width: auto;
+    overflow: visible;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: normal;
+    -webkit-font-smoothing: inherit;
+    -moz-osx-font-smoothing: inherit;
+    -webkit-appearance: none;
+  }
+
+  .VkIdWebSdk__button {
+    background: #0077ff;
+    cursor: pointer;
+    transition: all 0.1s ease-out;
+  }
+
+  .VkIdWebSdk__button:hover {
+    opacity: 0.8;
+  }
+
+  .VkIdWebSdk__button:active {
+    opacity: 0.7;
+    transform: scale(0.97);
+  }
+
+  .VkIdWebSdk__button {
+    border-radius: 8px;
+    width: 100%;
+    min-height: 34px;
+  }
+
+  .VkIdWebSdk__button_container {
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+  }
+
+  .VkIdWebSdk__button_icon + .VkIdWebSdk__button_text {
+    margin-left: -28px;
+  }
+
+  .VkIdWebSdk__button_text {
+    display: flex;
+    font-family: -apple-system, system-ui, "Helvetica Neue", Roboto, sans-serif;
+    flex: 1;
+    justify-content: center;
+    color: #ffffff;
+  }
+</style>

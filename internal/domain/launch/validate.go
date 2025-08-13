@@ -35,12 +35,14 @@ func (l *Launch) Validate() error {
 	now := time.Now()
 
 	if l.LaunchDate != nil {
-		if now.After(*l.LaunchDate) {
+		// Allow launch date to be today (ignore time)
+		launchDate := l.LaunchDate.Truncate(24 * time.Hour)
+		today := now.Truncate(24 * time.Hour)
+		if launchDate.Before(today) {
 			return LaunchDateInPast
 		}
 	}
 
-	// Validate media count (maximum 4 images)
 	if len(l.Media) > 4 {
 		return TooManyMediaFiles
 	}

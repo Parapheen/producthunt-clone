@@ -1,14 +1,15 @@
 {{ define "members-tab" }}
 <div class="flex flex-col gap-4">
   {{ if .Members }}
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     {{ range .Members }}
+    <a href="/u/{{ .ID }}">
     <div class="bg-white p-4 rounded-2xl border hover:shadow-md transition">
       <div class="flex items-center gap-3">
         <img
           alt="{{ .Name }}"
           class="w-10 h-10 rounded-full ring-1 ring-gray-200 object-cover"
-          src="https://placehold.co/80x80/e0e7ff/4338ca?text={{ .Name }}"
+          src="{{ if .AvatarURL }}{{ .AvatarURL }}{{ else }}https://placehold.co/80x80/e0e7ff/4338ca?text={{ .Name }}{{ end }}"
           loading="lazy"
         />
         <div class="min-w-0">
@@ -19,8 +20,9 @@
             {{ if eq .Role "owner" }}Владелец{{ else if eq .Role "developer" }}Разработчик{{ else if eq .Role "designer" }}Дизайнер{{ else }}Другое{{ end }}
           </span>
         </div>
+        </div>
       </div>
-    </div>
+    </a>
     {{ end }}
   </div>
   {{ else }}

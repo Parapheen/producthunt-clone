@@ -1,0 +1,219 @@
+{{ define "content" }}
+<div class="relative isolate overflow-hidden bg-white">
+  <section class="container mx-auto px-4 py-16 sm:py-24">
+    <div class="mx-auto max-w-3xl text-center">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+        Продвижение запуска
+      </h1>
+      <p class="mt-4 text-lg text-gray-600">
+        Получите больше внимания: ваша карточка появится среди популярных
+        запусков в ленте и категориях как промо-блок.
+      </p>
+      <div class="mt-8 inline-block" id="promotion-cta">
+        <form
+          hx-post="/api/promote/request"
+          hx-target="#promotion-cta"
+          hx-swap="outerHTML"
+        >
+          <input type="hidden" name="csrf_token" value="{{ .token }}" />
+          <button
+            type="submit"
+            class="btn btn-primary rounded-full bg-indigo-600 text-white"
+          >
+            Оставить заявку
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-gray-50 border-t border-b border-gray-100">
+    <div class="container mx-auto px-4 py-14 grid md:grid-cols-3 gap-6">
+      <div class="rounded-xl bg-white p-6 border border-gray-200">
+        <div class="text-sm font-semibold text-indigo-600">Формат</div>
+        <h3 class="mt-2 text-lg font-semibold">Карточка между запусками</h3>
+        <p class="mt-2 text-gray-600">
+          Рекламная карточка визуально совпадает с обычными, но помечена «Промо»
+          и вставляется регулярно при прокрутке.
+        </p>
+      </div>
+      <div class="rounded-xl bg-white p-6 border border-gray-200">
+        <div class="text-sm font-semibold text-indigo-600">Покрытие</div>
+        <h3 class="mt-2 text-lg font-semibold">Лента и категории</h3>
+        <p class="mt-2 text-gray-600">
+          Показы в главной ленте по периодам и в тематических категориях для
+          вашей целевой аудитории.
+        </p>
+      </div>
+      <div class="rounded-xl bg-white p-6 border border-gray-200">
+        <div class="text-sm font-semibold text-indigo-600">Результат</div>
+        <h3 class="mt-2 text-lg font-semibold">Больше кликов и обсуждений</h3>
+        <p class="mt-2 text-gray-600">
+          Увеличение кликов на страницу запуска и роста комментариев — особенно
+          в день старта.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container mx-auto px-4 py-16">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold text-gray-900">Как это выглядит</h2>
+      <p class="mt-2 text-gray-600">
+        Ниже пример карточки промо, которая вставляется между другими запусками.
+      </p>
+      <div class="mt-6 border rounded-xl overflow-hidden">
+        <div class="p-3 bg-amber-50 text-amber-800 text-sm">
+          Пример закреплённой карточки
+        </div>
+        <div class="p-4 bg-white">
+          <div class="space-y-3">
+            <!-- Обычная карточка запуска (выше) -->
+            <div
+              class="bg-white rounded-lg p-3 flex items-start gap-3 border border-gray-200"
+            >
+              <img
+                src="https://placehold.co/80x80/f1f5f9/334155?text=A"
+                alt="Product A"
+                class="w-16 h-16 rounded-lg object-cover"
+              />
+              <div class="flex-grow min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                  <div class="min-w-0">
+                    <div class="font-semibold text-gray-900 truncate">
+                      Продукт A
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                      Короткий слоган продукта.
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 rounded-md px-3 h-9 inline-flex items-center"
+                    >
+                      <span class="text-sm font-semibold"
+                        ><i class="bi bi-caret-up"></i> 128</span
+                      >
+                    </button>
+                    <div
+                      class="border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 rounded-md px-3 h-9 inline-flex items-center text-sm font-semibold"
+                    >
+                      <span><i class="bi bi-chat"></i> 23</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Промо карточка (середина) -->
+            <div
+              class="bg-gray-50 rounded-lg p-3 flex items-start gap-3 border border-amber-200 relative"
+            >
+              <span
+                class="absolute top-2 right-2 text-xs text-amber-700 bg-amber-100 px-2 py-1 rounded"
+                >Промо</span
+              >
+              <img
+                src="https://placehold.co/80x80/e0e7ff/4338ca?text=Promo"
+                alt="Promo"
+                class="w-16 h-16 rounded-lg object-cover"
+              />
+              <div class="flex-grow min-w-0">
+                <div class="min-w-0">
+                  <div class="font-semibold text-gray-900 truncate">
+                    Ваш продукт (Promo)
+                  </div>
+                  <p class="text-gray-600 text-sm">
+                    Краткий слоган продукта. Карточка появляется между другими
+                    запусками.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Обычная карточка запуска (ниже) -->
+            <div
+              class="bg-white rounded-lg p-3 flex items-start gap-3 border border-gray-200"
+            >
+              <img
+                src="https://placehold.co/80x80/f1f5f9/334155?text=B"
+                alt="Product B"
+                class="w-16 h-16 rounded-lg object-cover"
+              />
+              <div class="flex-grow min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                  <div class="min-w-0">
+                    <div class="font-semibold text-gray-900 truncate">
+                      Продукт B
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                      Короткий слоган продукта.
+                    </p>
+                  </div>
+                  <div class="flex-shrink-0 flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 rounded-md px-3 h-9 inline-flex items-center"
+                    >
+                      <span class="text-sm font-semibold"
+                        ><i class="bi bi-caret-up"></i> 75</span
+                      >
+                    </button>
+                    <a
+                      href="#"
+                      class="border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 rounded-md px-3 h-9 inline-flex items-center text-sm font-semibold"
+                    >
+                      <span><i class="bi bi-chat"></i> 9</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white border-t border-gray-100">
+    <div
+      class="container mx-auto px-4 py-16 grid md:grid-cols-2 gap-8 items-start"
+    >
+      <div class="space-y-3">
+        <h2 class="text-2xl font-bold text-gray-900">Что входит</h2>
+        <ul class="list-disc pl-5 text-gray-700 space-y-2">
+          <li>
+            Размещение карточки в ленте по периодам (daily/weekly/monthly)
+          </li>
+          <li>Показы в выбранных категориях</li>
+          <li>Пометка «Промо» без навязчивых баннеров</li>
+          <li>Быстрый старт — оформим за 24 часа</li>
+        </ul>
+      </div>
+      <div class="rounded-xl border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold">Готовы обсудить?</h3>
+        <p class="text-gray-600 mt-2">
+          Оставьте заявку — мы увидим ваш email и вернёмся с деталями и
+          стоимостью.
+        </p>
+        <div class="mt-4" id="promotion-cta-2">
+          <form
+            hx-post="/api/promote/request"
+            hx-target="#promotion-cta-2"
+            hx-swap="outerHTML"
+          >
+            <input type="hidden" name="csrf_token" value="{{ .token }}" />
+            <button
+              type="submit"
+              class="btn rounded-full bg-indigo-600 text-white"
+            >
+              Оставить заявку
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{{ end }}

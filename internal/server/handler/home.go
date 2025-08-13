@@ -45,8 +45,10 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
         return
     }
     categoriesByProduct := map[uuid.UUID]interface{}{}
+    productSlugByID := map[uuid.UUID]string{}
     for _, p := range products {
         categoriesByProduct[p.ID] = p.Categories
+        productSlugByID[p.ID] = p.Slug
     }
     // 3) Upvoted map for user
     // Upvoted map for user when service supports it
@@ -67,6 +69,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
             "Launch":      l,
             "Categories":  categoriesByProduct[l.ProductID],
             "Upvoted":     upvoted[l.ID],
+            "ProductSlug": productSlugByID[l.ProductID],
         })
     }
 
@@ -115,11 +118,21 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+    // SEO meta for Home
+    baseURL := s.BaseURL
+    meta := map[string]any{
+        "Title":       "Лучшие стартапы и запуски — justlaunch",
+        "Description": "Открывайте новые продукты, следите за запусками и продвигайте свои проекты. Сообщество создателей и ранних пользователей.",
+        "Canonical":   baseURL + "/",
+        "OGType":      "website",
+    }
+
     err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
         "User":         user,
         "Items":        items,
         "ActivePeriod": period,
         "token":        nosurf.Token(r),
+        "meta":         meta,
     })
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

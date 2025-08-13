@@ -1,0 +1,657 @@
+{{ define "launch-comments" }} {{ $l := .Launch }}
+<div id="comments-{{ $l.ID }}" class="mt-6 comments-scope">
+  <h3 class="text-lg font-semibold mb-3">Комментарии</h3>
+
+  <div class="mb-4">
+    <form
+      hx-post="/api/launches/{{ $l.ID }}/comments"
+      hx-target="#comments-{{ $l.ID }}"
+      hx-swap="outerHTML"
+      hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
+    >
+      <div id="composer-{{ $l.ID }}" class="border rounded-md">
+        <button
+          type="button"
+          id="composer-collapsed-{{ $l.ID }}"
+          class="w-full text-left px-3 py-2 text-gray-500"
+        >
+          Что думаете о запуске?
+        </button>
+        <div
+          id="toolbar-{{ $l.ID }}"
+          class="hidden flex-wrap items-center gap-1 p-2 border-b bg-gray-50 rounded-t-md"
+        >
+          <button
+            type="button"
+            data-cmd="bold"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Bold"
+          >
+            <i class="bi bi-type-bold"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="italic"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Italic"
+          >
+            <i class="bi bi-type-italic"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="strike"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Strike"
+          >
+            <i class="bi bi-type-strikethrough"></i>
+          </button>
+          <span class="w-px h-5 bg-gray-300 mx-1"></span>
+          <button
+            type="button"
+            data-cmd="bulletList"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Bullet list"
+          >
+            <i class="bi bi-list-ul"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="orderedList"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Ordered list"
+          >
+            <i class="bi bi-list-ol"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="blockquote"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Blockquote"
+          >
+            <i class="bi bi-quote"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="codeBlock"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Code block"
+          >
+            <i class="bi bi-code"></i>
+          </button>
+          <span class="w-px h-5 bg-gray-300 mx-1"></span>
+          <button
+            type="button"
+            data-cmd="link"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Add link"
+          >
+            <i class="bi bi-link-45deg"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="unlink"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Remove link"
+          >
+            <i class="bi bi-x"></i>
+          </button>
+          <span class="w-px h-5 bg-gray-300 mx-1"></span>
+          <button
+            type="button"
+            data-cmd="undo"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Undo"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+          <button
+            type="button"
+            data-cmd="redo"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Redo"
+          >
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+        <div id="editor-{{ $l.ID }}" class="hidden p-2 tiptap"></div>
+        <input
+          type="hidden"
+          name="content_html"
+          id="content-html-{{ $l.ID }}"
+        />
+        <div
+          id="actions-{{ $l.ID }}"
+          class="hidden justify-end items-center gap-2 p-2 border-t bg-gray-50 rounded-b-md"
+        >
+          <button
+            type="button"
+            id="composer-cancel-{{ $l.ID }}"
+            class="btn-secondary"
+          >
+            Отмена
+          </button>
+          <button type="submit" class="btn-primary">Отправить</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="space-y-3">
+    {{ range $idx, $c := .Roots }}
+    <div class="border rounded-lg p-3 bg-white" id="comment-{{ $c.ID }}">
+      <div class="flex items-start gap-3">
+        <img
+          src="{{ (index $.Authors $c.AuthorID).AvatarURL }}"
+          alt="avatar"
+          class="w-8 h-8 rounded-full object-cover"
+        />
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-semibold">
+                <a class="hover:underline" href="/u/{{ $c.AuthorID }}">{{ (index $.Authors $c.AuthorID).Name }}</a>
+                {{ with (index $.MemberRoles $c.AuthorID) }}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ if eq . "owner" }}bg-amber-100 text-amber-800{{ else if eq . "developer" }}bg-indigo-100 text-indigo-800{{ else if eq . "designer" }}bg-pink-100 text-pink-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                  {{ if eq . "owner" }}Владелец{{ else if eq . "developer" }}Разработчик{{ else if eq . "designer" }}Дизайнер{{ else }}Другое{{ end }}
+                </span>
+                {{ end }}
+              </div>
+              <span
+                class="text-xs text-gray-400"
+                title="{{ formatDateTime $c.CreatedAt }}"
+                >{{ humanTime $c.CreatedAt }}</span
+              >
+            </div>
+            <div class="flex items-center gap-2">
+              {{ if $.CanPin }}
+              <form
+                hx-post="/api/launches/{{ $.Launch.ID }}/comments/{{ $c.ID }}/pin"
+                hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
+                hx-target="#comments-{{ $.Launch.ID }}"
+                hx-swap="outerHTML"
+              >
+                <input
+                  type="hidden"
+                  name="pinned"
+                  value="{{ if $c.IsPinned }}false{{ else }}true{{ end }}"
+                />
+                <button
+                  type="submit"
+                  class="text-xs px-2 py-1 rounded border {{ if $c.IsPinned }}border-amber-500 text-amber-700 bg-amber-50{{ else }}border-gray-200 text-gray-600 bg-white{{ end }}"
+                >
+                  {{ if $c.IsPinned }}Открепить{{ else }}Закрепить{{ end }}
+                </button>
+              </form>
+              {{ end }}
+            </div>
+          </div>
+          <div class="prose max-w-none text-sm mt-1">
+            {{ $c.ContentHTML | safeHTML }}
+          </div>
+          {{ if (index $.Replies $c.ID) }}
+          <div class="mt-3 pl-2 border-l-2 border-gray-200 space-y-3">
+            {{ range (index $.Replies $c.ID) }}
+            <div
+              class="relative flex items-start gap-3 bg-gray-50 rounded-lg p-3"
+            >
+              <img
+                src="{{ (index $.Authors .AuthorID).AvatarURL }}"
+                class="w-7 h-7 rounded-full object-cover"
+              />
+              <div class="flex-1">
+                <div class="text-sm flex items-center gap-2">
+                  <a class="font-semibold hover:underline" href="/u/{{ .AuthorID }}">{{ (index $.Authors .AuthorID).Name }}</a>
+                  {{ with (index $.MemberRoles .AuthorID) }}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ if eq . "owner" }}bg-amber-100 text-amber-800{{ else if eq . "developer" }}bg-indigo-100 text-indigo-800{{ else if eq . "designer" }}bg-pink-100 text-pink-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                    {{ if eq . "owner" }}Владелец{{ else if eq . "developer" }}Разработчик{{ else if eq . "designer" }}Дизайнер{{ else }}Другое{{ end }}
+                  </span>
+                  {{ end }}
+                  <span
+                    class="text-xs text-gray-400"
+                    title="{{ formatDateTime .CreatedAt }}"
+                    >{{ humanTime .CreatedAt }}</span
+                  >
+                </div>
+                <div class="prose max-w-none text-sm">
+                  {{ .ContentHTML | safeHTML }}
+                </div>
+              </div>
+            </div>
+            {{ end }}
+          </div>
+          {{ end }} {{ if $.CurrentUser }}
+          <div class="mt-2">
+            <button
+              type="button"
+              class="text-sm text-indigo-600 hover:underline"
+              data-reply-open="{{ $c.ID }}"
+            >
+              Ответить
+            </button>
+            <form
+              class="reply-form mt-2 hidden"
+              id="reply-box-{{ $c.ID }}"
+              hx-post="/api/launches/{{ $l.ID }}/comments/{{ $c.ID }}/reply"
+              hx-target="#comments-{{ $l.ID }}"
+              hx-swap="outerHTML"
+              hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
+            >
+              <div class="border rounded-md">
+                <div
+                  id="toolbar-reply-{{ $c.ID }}"
+                  class="hidden flex-wrap items-center gap-1 p-2 border-b bg-gray-50 rounded-t-md"
+                >
+                  <button
+                    type="button"
+                    data-cmd="bold"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Bold"
+                  >
+                    <i class="bi bi-type-bold"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="italic"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Italic"
+                  >
+                    <i class="bi bi-type-italic"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="strike"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Strike"
+                  >
+                    <i class="bi bi-type-strikethrough"></i>
+                  </button>
+                  <span class="w-px h-5 bg-gray-300 mx-1"></span>
+                  <button
+                    type="button"
+                    data-cmd="bulletList"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Bullet list"
+                  >
+                    <i class="bi bi-list-ul"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="orderedList"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Ordered list"
+                  >
+                    <i class="bi bi-list-ol"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="blockquote"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Blockquote"
+                  >
+                    <i class="bi bi-quote"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="codeBlock"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Code block"
+                  >
+                    <i class="bi bi-code"></i>
+                  </button>
+                  <span class="w-px h-5 bg-gray-300 mx-1"></span>
+                  <button
+                    type="button"
+                    data-cmd="link"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Add link"
+                  >
+                    <i class="bi bi-link-45deg"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="unlink"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Remove link"
+                  >
+                    <i class="bi bi-x"></i>
+                  </button>
+                  <span class="w-px h-5 bg-gray-300 mx-1"></span>
+                  <button
+                    type="button"
+                    data-cmd="undo"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Undo"
+                  >
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                  </button>
+                  <button
+                    type="button"
+                    data-cmd="redo"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Redo"
+                  >
+                    <i class="bi bi-arrow-clockwise"></i>
+                  </button>
+                </div>
+                <div
+                  id="editor-reply-{{ $c.ID }}"
+                  class="hidden p-2 tiptap-reply"
+                ></div>
+                <input
+                  type="hidden"
+                  name="content_html"
+                  id="content-reply-html-{{ $c.ID }}"
+                />
+                <div
+                  id="actions-reply-{{ $c.ID }}"
+                  class="hidden justify-end items-center gap-2 p-2 border-t bg-gray-50 rounded-b-md"
+                >
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    data-reply-cancel="{{ $c.ID }}"
+                  >
+                    Отмена
+                  </button>
+                  <button type="submit" class="btn-primary">Отправить</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+    {{ end }}
+  </div>
+</div>
+
+<script type="module">
+  import { Editor } from "https://esm.sh/@tiptap/core";
+  import StarterKit from "https://esm.sh/@tiptap/starter-kit";
+  import Placeholder from "https://esm.sh/@tiptap/extension-placeholder";
+
+  function setupToolbar(editor, toolbar) {
+    if (!toolbar) return;
+    const activeClass = "bg-gray-200";
+    const updateActive = () => {
+      toolbar.querySelectorAll("[data-cmd]").forEach((btn) => {
+        const cmd = btn.getAttribute("data-cmd");
+        let isActive = false;
+        try {
+          switch (cmd) {
+            case "bold":
+              isActive = editor.isActive("bold");
+              break;
+            case "italic":
+              isActive = editor.isActive("italic");
+              break;
+            case "strike":
+              isActive = editor.isActive("strike");
+              break;
+            case "bulletList":
+              isActive = editor.isActive("bulletList");
+              break;
+            case "orderedList":
+              isActive = editor.isActive("orderedList");
+              break;
+            case "blockquote":
+              isActive = editor.isActive("blockquote");
+              break;
+            case "codeBlock":
+              isActive = editor.isActive("codeBlock");
+              break;
+            case "link":
+              isActive = editor.isActive("link");
+              break;
+          }
+        } catch (_) {}
+        btn.classList.toggle(activeClass, !!isActive);
+      });
+    };
+    editor.on("update", updateActive);
+    editor.on("selectionUpdate", updateActive);
+    updateActive();
+
+    toolbar.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-cmd]");
+      if (!btn) return;
+      const cmd = btn.getAttribute("data-cmd");
+      switch (cmd) {
+        case "bold":
+          editor.chain().focus().toggleBold().run();
+          break;
+        case "italic":
+          editor.chain().focus().toggleItalic().run();
+          break;
+        case "strike":
+          editor.chain().focus().toggleStrike().run();
+          break;
+        case "bulletList":
+          editor.chain().focus().toggleBulletList().run();
+          break;
+        case "orderedList":
+          editor.chain().focus().toggleOrderedList().run();
+          break;
+        case "blockquote":
+          editor.chain().focus().toggleBlockquote().run();
+          break;
+        case "codeBlock":
+          editor.chain().focus().toggleCodeBlock().run();
+          break;
+        case "link": {
+          let url = prompt("Вставьте ссылку (https://...)");
+          if (!url) break;
+          try {
+            const hasProtocol = /^(https?:)?\/\//i.test(url);
+            if (!hasProtocol) url = "https://" + url;
+            editor
+              .chain()
+              .focus()
+              .extendMarkRange("link")
+              .setLink({
+                href: url,
+                target: "_blank",
+                rel: "noopener noreferrer",
+              })
+              .run();
+          } catch (_) {}
+          break;
+        }
+        case "unlink":
+          editor.chain().focus().unsetLink().run();
+          break;
+        case "undo":
+          editor.chain().focus().undo().run();
+          break;
+        case "redo":
+          editor.chain().focus().redo().run();
+          break;
+      }
+      updateActive();
+    });
+  }
+
+  // Main editor: lazy activate on click
+  (function () {
+    const toolbar = document.getElementById("toolbar-{{ $l.ID }}");
+    const editorEl = document.getElementById("editor-{{ $l.ID }}");
+    const hidden = document.getElementById("content-html-{{ $l.ID }}");
+    const actions = document.getElementById("actions-{{ $l.ID }}");
+    const collapsedBtn = document.getElementById(
+      "composer-collapsed-{{ $l.ID }}"
+    );
+    const cancelBtn = document.getElementById("composer-cancel-{{ $l.ID }}");
+    if (!collapsedBtn) return;
+    const editors = new Map();
+    function ensureEditor() {
+      if (editors.has("main")) return editors.get("main");
+      const editor = new Editor({
+        element: editorEl,
+        extensions: [
+          StarterKit.configure({
+            link: {
+              autolink: true,
+              openOnClick: true,
+              linkOnPaste: true,
+            },
+          }),
+          Placeholder.configure({ placeholder: "Напишите комментарий…" }),
+        ],
+        content: "",
+        onUpdate: ({ editor }) => {
+          hidden.value = editor.getHTML();
+        },
+      });
+      setupToolbar(editor, toolbar);
+      editors.set("main", editor);
+      return editor;
+    }
+    function openComposer() {
+      toolbar.classList.remove("hidden");
+      editorEl.classList.remove("hidden");
+      actions.classList.remove("hidden");
+      collapsedBtn.classList.add("hidden");
+      const ed = ensureEditor();
+      setTimeout(() => ed.chain().focus().run(), 0);
+    }
+    function closeComposer() {
+      const ed = editors.get("main");
+      if (ed) ed.commands.clearContent(true);
+      hidden.value = "";
+      toolbar.classList.add("hidden");
+      editorEl.classList.add("hidden");
+      actions.classList.add("hidden");
+      collapsedBtn.classList.remove("hidden");
+    }
+    collapsedBtn.addEventListener("click", openComposer);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeComposer);
+  })();
+
+  // Reply editors: open on demand
+  (function () {
+    const editors = new Map();
+    function ensureEditor(id, el, hidden, toolbar) {
+      const key = "reply-" + id;
+      if (editors.has(key)) return editors.get(key);
+      const editor = new Editor({
+        element: el,
+        extensions: [
+          StarterKit.configure({
+            link: {
+              autolink: true,
+              openOnClick: true,
+              linkOnPaste: true,
+            },
+          }),
+          Placeholder.configure({ placeholder: "Напишите ответ…" }),
+        ],
+        content: "",
+        onUpdate: ({ editor }) => {
+          hidden.value = editor.getHTML();
+        },
+      });
+      setupToolbar(editor, toolbar);
+      editors.set(key, editor);
+      return editor;
+    }
+    document.querySelectorAll("[data-reply-open]").forEach((btn) => {
+      const id = btn.getAttribute("data-reply-open");
+      const box = document.getElementById("reply-box-" + id);
+      const editorEl = document.getElementById("editor-reply-" + id);
+      const hidden = document.getElementById("content-reply-html-" + id);
+      const toolbar = document.getElementById("toolbar-reply-" + id);
+      const actions = document.getElementById("actions-reply-" + id);
+      btn.addEventListener("click", () => {
+        btn.classList.add("hidden");
+        box.classList.remove("hidden");
+        toolbar.classList.remove("hidden");
+        editorEl.classList.remove("hidden");
+        actions.classList.remove("hidden");
+        const ed = ensureEditor(id, editorEl, hidden, toolbar);
+        setTimeout(() => ed.chain().focus().run(), 0);
+      });
+    });
+    document.querySelectorAll("[data-reply-cancel]").forEach((btn) => {
+      const id = btn.getAttribute("data-reply-cancel");
+      const openBtn = document.querySelector('[data-reply-open="' + id + '"]');
+      const box = document.getElementById("reply-box-" + id);
+      const ed = editors.get("reply-" + id);
+      const hidden = document.getElementById("content-reply-html-" + id);
+      btn.addEventListener("click", () => {
+        if (ed) ed.commands.clearContent(true);
+        if (hidden) hidden.value = "";
+        box.classList.add("hidden");
+        if (openBtn) openBtn.classList.remove("hidden");
+      });
+    });
+  })();
+</script>
+
+<style>
+  /* Ensure editor fits container and has comfortable height */
+  .ProseMirror {
+    min-height: 140px;
+    width: 100%;
+    outline: none;
+  }
+  .tiptap-reply .ProseMirror {
+    min-height: 100px;
+  }
+  /* Placeholder styling for Tiptap */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    color: #9ca3af; /* gray-400 */
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+  /* Make lists look nice inside editor */
+  .ProseMirror ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+  .ProseMirror ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+  }
+  blockquote {
+    border-left: 3px solid #e5e7eb;
+    padding-left: 0.75rem;
+    color: #6b7280;
+  }
+  pre {
+    background: #f3f4f6;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    overflow: auto;
+  }
+
+  /* Rendered comment content styles (scoped to this comments block) */
+  /* stylelint-disable */
+  /* Scoped styles applied via a stable class to avoid template interpolation issues */
+  .comments-scope .prose ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .comments-scope .prose ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .comments-scope .prose li {
+    margin: 0.125rem 0;
+  }
+  .comments-scope .prose a {
+    color: #2563eb; /* indigo-600 */
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .comments-scope .prose a:hover {
+    color: #1d4ed8; /* indigo-700 */
+  }
+</style>
+{{ end }}

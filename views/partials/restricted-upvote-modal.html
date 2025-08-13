@@ -1,0 +1,39 @@
+<div
+  id="modal"
+  _="on closeModal add .closing then remove me"
+  class="fixed inset-0 flex flex-col items-center z-50"
+>
+  <div
+    _="on click trigger closeModal"
+    class="modal-underlay absolute inset-0 bg-black/50 z-40"
+  ></div>
+  <div
+    class="modal-content mt-[12vh] w-11/12 max-w-[600px] border border-gray-300 rounded-sm shadow-xl bg-white p-8 modal-content-open z-50"
+  >
+    <h1 class="text-2xl font-bold text-center">Голоса доступны через 7 дней</h1>
+    <p class="text-gray-700 text-center mt-2">
+      Вы сможете голосовать за проекты после того, как вашему аккаунту
+      исполнится 7 дней. Это помогает нам предотвращать злоупотребления и
+      сохранять честность рейтинга.
+    </p>
+    <div class="flex justify-center mt-6">
+      <button
+        type="button"
+        class="btn btn-primary rounded-full bg-indigo-600 text-white"
+        _="on click trigger closeModal"
+      >
+        Понятно
+      </button>
+    </div>
+  </div>
+  <div class="absolute top-4 right-4 z-50">
+    <button
+      type="button"
+      class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/90 hover:bg-white border border-gray-300 shadow"
+      aria-label="Закрыть"
+      _="on click trigger closeModal"
+    >
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+</div>

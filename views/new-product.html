@@ -1,57 +1,73 @@
 {{ define "content" }}
-<section class="container mx-auto max-w-lg mt-32">
-	<div class="card">
-		<header>
-			<h2>Добавьте свой продукт</h2>
-		</header>
-		<section>
-			<form id="create-product-form" class="form grid gap-6" hx-post="/api/new-product" hx-swap="none"
-				hx-disable-elt="button">
-				<input type="hidden" name="csrf_token" value="{{ .token }}">
-				<div class="grid gap-2">
-					<label for="name">Название продукта</label>
-					<input name="name" type="text" id="name" placeholder="product hunt">
-				</div>
-				<div class="grid gap-2">
-					<label for="url">Ссылка</label>
-					<input name="url" type="text" id="url" placeholder="https://my-product">
-				</div>
-				<div class="grid gap-2">
-					<label for="tagline">Короткое описание</label>
-					<input name="tagline" type="text" id="tagline" placeholder="Лучший продукт">
-					<p class="text-gray-500 text-sm">Не более 140 символов.</p>
-				</div>
-				<div class="grid gap-2">
-					<label for="select-categories">Категории</label>
-					{{ template "select-categories" . }}
-					<p class="text-gray-500 text-sm">Не более 3 категорий</p>
-					<p class="text-gray-500 text-sm">
-						Чего-то не хватает? <a href="" class="underline">Напишите нам</a>
-					</p>
-				</div>
-			</form>
+<section class="container mx-auto max-w-lg mt-14">
+  <div class="card">
+    <header>
+      <h2>Добавьте свой продукт</h2>
+    </header>
+    <section>
+      <form
+        id="create-product-form"
+        class="form grid gap-6"
+        hx-post="/api/new-product"
+        hx-swap="none"
+        hx-disable-elt="button"
+      >
+        <input type="hidden" name="csrf_token" value="{{ .token }}" />
+        <div class="grid gap-2">
+          <label for="name">Название продукта</label>
+          <input name="name" type="text" id="name" placeholder="product hunt" />
+        </div>
+        <div class="grid gap-2">
+          <label for="url">Ссылка</label>
+          <input
+            name="url"
+            type="text"
+            id="url"
+            placeholder="https://my-product"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label for="tagline">Короткое описание</label>
+          <input
+            name="tagline"
+            type="text"
+            id="tagline"
+            placeholder="Лучший продукт"
+          />
+          <p class="text-gray-500 text-sm">Не более 140 символов.</p>
+        </div>
+        <div class="grid gap-2">
+          <label for="select-categories">Категории</label>
+          {{ template "select-categories" . }}
+          <p class="text-gray-500 text-sm">Не более 3 категорий</p>
+          <p class="text-gray-500 text-sm">
+            Чего-то не хватает? <a href="" class="underline">Напишите нам</a>
+          </p>
+        </div>
+      </form>
 
-			<div id="errors" class="mt-5"></div>
-		</section>
-		<footer>
-			<button class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
-				form="create-product-form">
-				Создать
-			</button>
-		</footer>
-	</div>
+      <div id="errors" class="mt-5"></div>
+    </section>
+    <footer>
+      <button
+        class="btn btn-primary w-full rounded-full bg-indigo-600 text-white"
+        form="create-product-form"
+      >
+        Создать
+      </button>
+    </footer>
+  </div>
 </section>
 
-
 <script defer>
-	new TomSelect("#select-categories", {
-		plugins: {
-			remove_button: {
-				title: 'Удалить',
-			}
-		},
-		maxItems: 3,
-	});
+  new TomSelect("#select-categories", {
+    plugins: {
+      remove_button: {
+        title: "Удалить",
+      },
+    },
+    maxItems: 3,
+  });
 </script>
 
 {{ end }}

@@ -58,6 +58,10 @@ func (s *ProductService) GetByOwner(ctx context.Context, owner uuid.UUID) ([]*pr
 	return s.productRepo.GetByOwner(ctx, owner)
 }
 
+func (s *ProductService) GetByMember(ctx context.Context, userID uuid.UUID) ([]*product.Product, error) {
+    return s.productRepo.GetByMember(ctx, userID)
+}
+
 func (s *ProductService) GetByID(ctx context.Context, id uuid.UUID) (*product.Product, error) {
 	return s.productRepo.GetByID(ctx, id)
 }
@@ -68,6 +72,14 @@ func (s *ProductService) GetCategoryBySlug(ctx context.Context, slug string) (*p
 
 func (s *ProductService) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*product.Product, error) {
     return s.productRepo.GetByIDs(ctx, ids)
+}
+
+func (s *ProductService) GetByCategorySlug(ctx context.Context, slug string) ([]*product.Product, error) {
+    return s.productRepo.GetByCategorySlug(ctx, slug)
+}
+
+func (s *ProductService) ListCategories(ctx context.Context) ([]*product.Category, error) {
+    return s.categoryRepo.ListAll(ctx)
 }
 
 // WithStorage wires a storage dependency to the service (for DI without breaking existing constructors).

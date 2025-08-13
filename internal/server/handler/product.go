@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/Parapheen/ph-clone/internal/pkg/tmpl"
@@ -30,12 +32,37 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+    humanTime := func(ts time.Time) string {
+        d := time.Since(ts)
+        if d < time.Minute {
+            return "только что"
+        }
+        if d < time.Hour {
+            return strconv.Itoa(int(d.Minutes())) + " мин назад"
+        }
+        if d < 24*time.Hour {
+            return strconv.Itoa(int(d.Hours())) + " ч назад"
+        }
+        days := int(d.Hours() / 24)
+        if days < 30 {
+            return strconv.Itoa(days) + " дн назад"
+        }
+        months := days / 30
+        if months < 12 {
+            return strconv.Itoa(months) + " мес назад"
+        }
+        years := months / 12
+        return strconv.Itoa(years) + " г назад"
+    }
 
-	t, err := template.New("product.html").Funcs(template.FuncMap{
+    t, err := template.New("product.html").Funcs(template.FuncMap{
 		"add": func(a, b int) int {
 			return a + b
 		},
 		"dict": tmpl.Dict,
+        "safeHTML": func(s string) template.HTML { return template.HTML(s) },
+        "humanTime": humanTime,
+        "formatDateTime": func(ts time.Time) string { return ts.Format("02.01.2006 15:04") },
 	}).ParseFiles(
 		"views/product/product.html",
 		"views/product/partials/launches-tab.html",
@@ -45,8 +72,9 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		"views/layout/footer.html",
 		"views/layout/head.html",
 		"views/partials/launch-card.html",
-		"views/partials/launch-state.html",
-		"views/partials/launch-upvote.html",
+        "views/partials/launch-state.html",
+        "views/partials/launch-upvote.html",
+        "views/partials/launch-comments.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -69,14 +97,27 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":       u,
-		"Product":    p,
-		"Launches":   launches,
-		"ActiveTab":  "launches",
-		"token":      nosurf.Token(r),
-		"UpvotedMap": upvoted,
-	})
+    // SEO meta for Product
+    canonical := h.BaseURL + "/products/" + p.Slug
+    var image string
+    if p.ImageURL != "" { image = p.ImageURL }
+    meta := map[string]any{
+        "Title":       p.Name + " — " + p.Tagline,
+        "Description": p.Tagline,
+        "Canonical":   canonical,
+        "OGType":      "product",
+        "Image":       image,
+    }
+
+    err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+        "User":       u,
+        "Product":    p,
+        "Launches":   launches,
+        "ActiveTab":  "launches",
+        "token":      nosurf.Token(r),
+        "UpvotedMap": upvoted,
+        "meta":       meta,
+    })
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -97,8 +138,10 @@ func (h *Handler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 }
 
 type MemberView struct {
+	ID uuid.UUID
 	Name string
 	Role string
+    AvatarURL string
 }
 
 func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
@@ -142,8 +185,10 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		membersView = append(membersView, &MemberView{
+			ID: user.ID,
 			Name: user.Name,
 			Role: memberRoles[member.UserID],
+            AvatarURL: user.AvatarURL,
 		})
 	}
 
@@ -181,11 +226,36 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.New("product.html").Funcs(template.FuncMap{
+	humanTime := func(ts time.Time) string {
+		d := time.Since(ts)
+		if d < time.Minute {
+			return "только что"
+		}
+		if d < time.Hour {
+			return strconv.Itoa(int(d.Minutes())) + " мин назад"
+		}
+		if d < 24*time.Hour {
+			return strconv.Itoa(int(d.Hours())) + " ч назад"
+		}
+		days := int(d.Hours() / 24)
+		if days < 30 {
+			return strconv.Itoa(days) + " дн назад"
+		}
+		months := days / 30
+		if months < 12 {
+			return strconv.Itoa(months) + " мес назад"
+		}
+		years := months / 12
+		return strconv.Itoa(years) + " г назад"
+	}
+
+    t, err := template.New("product.html").Funcs(template.FuncMap{
 		"add": func(a, b int) int {
 			return a + b
 		},
 		"dict": tmpl.Dict,
+		"humanTime": humanTime,
+		"formatDateTime": func(ts time.Time) string { return ts.Format("02.01.2006 15:04") },
 	}).ParseFiles(
 		"views/product/product.html",
 		"views/product/partials/launches-tab.html",
@@ -203,14 +273,27 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":      u,
-		"Members":   membersView,
-		"Product":   p,
-		"Launches":  launches,
-		"ActiveTab": "members",
-		"token":     nosurf.Token(r),
-	})
+    // SEO for members tab uses same product canonical
+    canonical := h.BaseURL + "/products/" + p.Slug
+    var image string
+    if p.ImageURL != "" { image = p.ImageURL }
+    meta := map[string]any{
+        "Title":       p.Name + " — команда продукта",
+        "Description": p.Tagline,
+        "Canonical":   canonical,
+        "OGType":      "product",
+        "Image":       image,
+    }
+
+    err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+        "User":      u,
+        "Members":   membersView,
+        "Product":   p,
+        "Launches":  launches,
+        "ActiveTab": "members",
+        "token":     nosurf.Token(r),
+        "meta":      meta,
+    })
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -253,17 +336,44 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	humanTime := func(ts time.Time) string {
+		d := time.Since(ts)
+		if d < time.Minute {
+			return "только что"
+		}
+		if d < time.Hour {
+			return strconv.Itoa(int(d.Minutes())) + " мин назад"
+		}
+		if d < 24*time.Hour {
+			return strconv.Itoa(int(d.Hours())) + " ч назад"
+		}
+		days := int(d.Hours() / 24)
+		if days < 30 {
+			return strconv.Itoa(days) + " дн назад"
+		}
+		months := days / 30
+		if months < 12 {
+			return strconv.Itoa(months) + " мес назад"
+		}
+		years := months / 12
+		return strconv.Itoa(years) + " г назад"
+	}
+
 	if r.Header.Get("HX-Request") == "true" {
-		t, err := template.New("product-launches.html").
-			Funcs(template.FuncMap{
-				"dict": tmpl.Dict,
-			}).
-			ParseFiles(
-				"views/product/partials/launches-tab.html",
-				"views/partials/launch-state.html",
-				"views/partials/launch-card.html",
-				"views/partials/launch-upvote.html",
-			)
+        t, err := template.New("product-launches.html").
+            Funcs(template.FuncMap{
+                "dict": tmpl.Dict,
+                "safeHTML": func(s string) template.HTML { return template.HTML(s) },
+				"humanTime": humanTime,
+				"formatDateTime": func(ts time.Time) string { return ts.Format("02.01.2006 15:04") },
+            }).
+            ParseFiles(
+                "views/product/partials/launches-tab.html",
+                "views/partials/launch-state.html",
+                "views/partials/launch-card.html",
+                "views/partials/launch-upvote.html",
+                "views/partials/launch-comments.html",
+            )
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -282,22 +392,25 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.New("product-launches.html").
-		Funcs(template.FuncMap{
-			"dict": tmpl.Dict,
-		}).
-		ParseFiles(
-			"views/product/product.html",
-			"views/product/partials/launches-tab.html",
-			"views/product/partials/members-tab.html",
-			"views/layout/layout.html",
-			"views/layout/header.html",
-			"views/layout/footer.html",
-			"views/layout/head.html",
-			"views/partials/launch-card.html",
-			"views/partials/launch-state.html",
-			"views/partials/launch-upvote.html",
-		)
+    t, err := template.New("product-launches.html").
+        Funcs(template.FuncMap{
+            "dict": tmpl.Dict,
+            "safeHTML": func(s string) template.HTML { return template.HTML(s) },
+			"humanTime": humanTime,
+			"formatDateTime": func(ts time.Time) string { return ts.Format("02.01.2006 15:04") },
+        }).
+        ParseFiles(
+            "views/product/product.html",
+            "views/product/partials/launches-tab.html",
+            "views/product/partials/members-tab.html",
+            "views/layout/layout.html",
+            "views/layout/header.html",
+            "views/layout/footer.html",
+            "views/layout/head.html",
+            "views/partials/launch-card.html",
+            "views/partials/launch-state.html",
+            "views/partials/launch-upvote.html",
+        )
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

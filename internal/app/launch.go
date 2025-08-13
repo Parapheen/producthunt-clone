@@ -32,6 +32,11 @@ func (s *LaunchService) GetBySlug(ctx context.Context, slug string) (*launch.Lau
 	return s.launchRepo.GetBySlug(ctx, slug)
 }
 
+// GetByProductAndSlug retrieves a launch by product and slug
+func (s *LaunchService) GetByProductAndSlug(ctx context.Context, productID uuid.UUID, slug string) (*launch.Launch, error) {
+    return s.launchRepo.GetByProductAndSlug(ctx, productID, slug)
+}
+
 func (s *LaunchService) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
 	return s.launchRepo.GetByID(ctx, id)
 }
@@ -238,4 +243,30 @@ type FileUpload struct {
 // ToggleUpvote toggles the upvote and returns the new upvoted state and total count.
 func (s *LaunchService) ToggleUpvote(ctx context.Context, launchID, userID uuid.UUID) (bool, int, error) {
     return s.launchRepo.ToggleUpvote(ctx, launchID, userID)
+}
+
+// --- Comments ---
+
+func (s *LaunchService) CreateComment(ctx context.Context, c *launch.Comment) error {
+    if err := c.Validate(); err != nil {
+        return err
+    }
+    return s.launchRepo.CreateComment(ctx, c)
+}
+
+func (s *LaunchService) GetCommentsTree(ctx context.Context, launchID uuid.UUID) ([]*launch.Comment, map[uuid.UUID][]*launch.Comment, error) {
+    return s.launchRepo.GetCommentsTree(ctx, launchID)
+}
+
+func (s *LaunchService) ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error) {
+    return s.launchRepo.ToggleCommentUpvote(ctx, commentID, userID)
+}
+
+func (s *LaunchService) PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error {
+    return s.launchRepo.PinComment(ctx, commentID, pinned)
+}
+
+// SendAdminNotification sends a free-form admin notification via Telegram.
+func (s *LaunchService) SendAdminNotification(ctx context.Context, message string) error {
+    return s.telegramCleint.Send(ctx, os.Getenv("TELEGRAM_CHAT_ID"), message)
 }

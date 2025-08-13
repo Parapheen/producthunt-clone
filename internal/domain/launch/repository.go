@@ -8,6 +8,8 @@ import (
 
 type LaunchRepository interface {
 	GetBySlug(ctx context.Context, slug string) (*Launch, error)
+    // GetByProductAndSlug retrieves a launch by product ID and its slug (unique per product)
+    GetByProductAndSlug(ctx context.Context, productID uuid.UUID, slug string) (*Launch, error)
 	GetByState(ctx context.Context, states []State) ([]*Launch, error)
 	GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*Launch, error)
 	Update(ctx context.Context, launch *Launch) error
@@ -30,4 +32,10 @@ type LaunchRepository interface {
     ToggleUpvote(ctx context.Context, launchID uuid.UUID, userID uuid.UUID) (upvoted bool, count int, err error)
     // GetUpvotedByUserForLaunchIDs returns map of launchID->true for items upvoted by the user
     GetUpvotedByUserForLaunchIDs(ctx context.Context, userID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]bool, error)
+
+    // Comments
+    CreateComment(ctx context.Context, c *Comment) error
+    GetCommentsTree(ctx context.Context, launchID uuid.UUID) ([]*Comment, map[uuid.UUID][]*Comment, error)
+    ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error)
+    PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error
 }

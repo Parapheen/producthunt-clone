@@ -55,8 +55,23 @@ func (s *S3Storage) Save(ctx context.Context, pathPrefix string, originalFilenam
 }
 
 func (s *S3Storage) Delete(ctx context.Context, publicURL string) error {
-    // If uploader can map URL->key, implement here. Otherwise, best-effort no-op.
-    return nil
+    if publicURL == "" {
+        return nil
+    }
+    // Strip querystring if any
+    base := publicURL
+    if i := strings.Index(base, "?"); i >= 0 {
+        base = base[:i]
+    }
+    // Attempt to locate the key portion by searching for "/{baseKey}/"
+    marker := "/" + strings.Trim(s.baseKey, "/") + "/"
+    idx := strings.Index(base, marker)
+    if idx == -1 {
+        // unknown URL format; skip delete (best-effort)
+        return nil
+    }
+    key := strings.TrimPrefix(base[idx:], "/") // {baseKey}/...
+    return s.uploader.DeleteObject(ctx, s.bucket, key)
 }
 
 func sanitize(p string) string {

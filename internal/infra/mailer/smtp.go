@@ -53,7 +53,7 @@ func (m *SMTPMailer) Send(ctx context.Context, recipient, templateFile string, d
 
 	// 5. Construct the full MIME message.
 	// We use a multipart/alternative message to provide both HTML and plain text versions.
-	fromHeader := fmt.Sprintf("From: \"justlaunch team\" <%s>", m.cfg.FromAddress)
+	fromHeader := fmt.Sprintf("From: \"justlaunch\" <%s>", m.cfg.FromAddress)
 	toHeader := fmt.Sprintf("To: %s", recipient)
 	subjectHeader := fmt.Sprintf("Subject: %s", subject.String())
 	mimeHeader := "MIME-version: 1.0;\nContent-Type: multipart/alternative; boundary=\"boundary\"\n\n"

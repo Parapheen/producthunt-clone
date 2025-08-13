@@ -1,0 +1,15 @@
+{{ define "content" }}
+<section class="container mx-auto flex-col gap-8">
+  <div class="flex items-center justify-between">
+    <h1 class="text-3xl font-bold">Категория: {{ .Category.Name }}</h1>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+    {{ range .Products }} {{ template "product-card" . }} {{ else }}
+    <div class="text-sm text-gray-500">
+      Пока нет продуктов в этой категории.
+    </div>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

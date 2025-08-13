@@ -50,11 +50,19 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 
 	// Routes
 	r.Get("/", h.Home)
+	r.Get("/categories/{categorySlug}", h.CategoryPage)
+	r.Get("/promoting", h.PromotingPage)
+	r.Get("/rules", h.Rules)
+	r.Get("/policy", h.Policy)
 	r.Get("/new-product", h.NewProductForm)
 	r.Get("/u/{userID}", h.UserProfile)
 	r.Get("/u/{userID}/edit", h.EditProfileForm)
 	r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
+	// Standalone launch page
+	r.Get("/launches/{launchSlug}", h.GetLaunch)
     r.Get("/products/{productSlug}", h.GetProduct)
+    // Nested launch page under product slug
+    r.Get("/products/{productSlug}/launches/{launchSlug}", h.GetProductLaunch)
     r.Get("/products/{productSlug}/edit", h.EditProductForm)
 	r.Get("/products/u/{productID}", h.GetProductByID)
 	r.Get("/my/products", h.MyProducts)
@@ -63,6 +71,12 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Get("/products/{productSlug}/members", h.ProductMembers)
 	r.Get("/products/{productID}/new-launch", h.GetNewLaunch)
 	r.Get("/invitations/accept", h.AcceptInvitation)
+
+	// Comments routes (HTMX partials)
+	r.Get("/api/launches/{launchID}/comments", h.GetLaunchComments)
+	r.Post("/api/launches/{launchID}/comments", h.PostLaunchComment)
+	r.Post("/api/launches/{launchID}/comments/{commentID}/reply", h.ReplyLaunchComment)
+	r.Post("/api/launches/{launchID}/comments/{commentID}/pin", h.TogglePinComment)
 
 	// Admin routes
 	r.Group(func(r chi.Router) {
@@ -83,6 +97,7 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	// API routes
 	r.Get("/api/login", h.LoginModal)
 	r.Get("/api/logout", h.Logout)
+	r.Post("/api/promote/request", h.RequestPromotion)
 	r.Post("/api/new-product", h.NewProduct)
 	r.Post("/api/new-launch", h.NewLaunch)
 	r.Post("/api/update-launch", h.UpdateLaunch)
@@ -100,6 +115,13 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 
 	// Static files
 	fileServer(r, "/assets")
+
+	// Partials
+	r.Get("/api/nav/categories", h.NavCategories)
+
+    // robots.txt and sitemap.xml
+    r.Get("/robots.txt", h.Robots)
+    r.Get("/sitemap.xml", h.Sitemap)
 
 	// CSRF protection
 	csrfHandler := nosurf.New(r)

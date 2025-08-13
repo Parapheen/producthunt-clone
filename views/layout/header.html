@@ -4,16 +4,105 @@
   <nav
     class="container mx-auto navbar rounded-box flex items-center justify-between gap-2 py-4"
   >
-    <div class="navbar-start">
+    <div class="navbar-start flex items-center gap-2">
+      <div id="main-menu" class="dropdown-menu lg:hidden">
+        <button
+          type="button"
+          id="main-menu-trigger"
+          aria-haspopup="menu"
+          aria-controls="main-menu-menu"
+          aria-expanded="false"
+          aria-label="Открыть меню"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            class="size-6"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M3.75 5.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Zm0 6a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+        <div id="main-menu-popover" data-popover aria-hidden="true">
+          <div
+            role="menu"
+            id="main-menu-menu"
+            aria-labelledby="main-menu-trigger"
+          >
+            <div role="group" aria-labelledby="menu-heading">
+              <div role="heading" id="menu-heading">Меню</div>
+              <div role="menuitem">
+                <a href="/promoting"> Продвижение </a>
+              </div>
+            </div>
+            <hr role="separator" />
+            <div role="group" aria-labelledby="mobile-categories">
+              <div role="heading" id="mobile-categories">Категории</div>
+              <div
+                role="menuitem"
+                id="mobile-categories-container"
+                class="grid grid-cols-2 gap-2 p-2 min-w-56"
+                hx-get="/api/nav/categories"
+                hx-trigger="load"
+                hx-swap="innerHTML"
+              >
+                <div class="text-sm text-gray-500 px-2 py-1">Загрузка...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <a
-        class="link text-base-content link-neutral text-xl font-bold no-underline"
+        class="link text-base-content link-neutral md:text-xl font-bold no-underline"
         href="/"
       >
         justlaunch 🚀
       </a>
     </div>
     <div class="navbar-center hidden lg:flex">
-      <ul class="menu menu-horizontal px-1"></ul>
+      <div class="flex items-center gap-6">
+        <div id="categories-dropdown" class="dropdown-menu">
+          <button
+            type="button"
+            id="categories-dropdown-trigger"
+            aria-haspopup="menu"
+            aria-controls="categories-dropdown-menu"
+            aria-expanded="false"
+          >
+            Категории
+            <i class="bi bi-chevron-down text-sm"></i>
+          </button>
+          <div
+            id="categories-dropdown-popover"
+            data-popover
+            aria-hidden="true"
+            class="min-w-56"
+          >
+            <div
+              role="menu"
+              id="categories-dropdown-menu"
+              aria-labelledby="categories-dropdown-trigger"
+              class="grid grid-cols-3 gap-2 p-2"
+              hx-get="/api/nav/categories"
+              hx-trigger="load"
+              hx-swap="innerHTML"
+            >
+              <div
+                role="menuitem"
+                aria-disabled="true"
+                class="text-sm text-gray-500 px-2 py-1"
+              >
+                Загрузка...
+              </div>
+            </div>
+          </div>
+        </div>
+        <a href="/promoting">Продвижение</a>
+      </div>
     </div>
     <div class="navbar-end flex items-center gap-4">
       {{ if .User }}
@@ -59,11 +148,7 @@
             </div>
             <hr role="separator" />
             <div role="menuitem">
-              <a
-                href="https://github.com/Parapheen/producthunt-clone/issues"
-                target="_blank"
-                >Поддержка</a
-              >
+              <a href="https://t.me/evpetrovich" target="_blank">Поддержка</a>
             </div>
             <hr role="separator" />
             <div role="menuitem">

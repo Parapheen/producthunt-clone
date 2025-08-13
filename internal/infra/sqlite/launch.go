@@ -25,6 +25,7 @@ type LaunchModel struct {
 	LaunchDate  *time.Time     `db:"launch_date"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 	UpvoteCount int            `db:"upvote_count"` // For aggregate queries
+    CommentCount int           `db:"comment_count"`
 }
 
 // LaunchRepository handles database operations for launches.
@@ -53,6 +54,7 @@ func toDomain(l *LaunchModel) *launch.Launch {
 		Slug:        l.Slug,
 		LaunchDate:  l.LaunchDate,
 		Upvotes:     l.UpvoteCount,
+        CommentsCount: l.CommentCount,
 		UpdatedAt:   l.UpdatedAt,
 	}
 }
@@ -88,11 +90,12 @@ func (r *LaunchRepository) Create(ctx context.Context, l *launch.Launch) error {
 func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.Launch, error) {
     query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
-			COUNT(lu.launch_id) as upvote_count
-		FROM launches l
-		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
-		WHERE l.slug = ?
-		GROUP BY l.id`
+            COUNT(lu.launch_id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
+        WHERE l.slug = ?
+        GROUP BY l.id`
 
 	query = r.db.Rebind(query)
 	l := &LaunchModel{}
@@ -115,14 +118,44 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
 	return domainLaunch, nil
 }
 
+// GetByProductAndSlug retrieves a launch by its product ID and slug pair
+func (r *LaunchRepository) GetByProductAndSlug(ctx context.Context, productID uuid.UUID, slug string) (*launch.Launch, error) {
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
+            COUNT(lu.launch_id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
+        WHERE l.product_id = ? AND l.slug = ?
+        GROUP BY l.id`
+
+    query = r.db.Rebind(query)
+    l := &LaunchModel{}
+    if err := r.db.GetContext(ctx, l, query, productID, slug); err != nil {
+        if err == sql.ErrNoRows {
+            return nil, sql.ErrNoRows
+        }
+        return nil, err
+    }
+
+    domainLaunch := toDomain(l)
+    // Load media
+    mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+    if err == nil {
+        domainLaunch.Media = mediaMap[domainLaunch.ID]
+    }
+    return domainLaunch, nil
+}
+
 func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
     query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
-			COUNT(lu.launch_id) as upvote_count
-		FROM launches l
-		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
-		WHERE l.id = ?
-		GROUP BY l.id`
+            COUNT(lu.launch_id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
+        WHERE l.id = ?
+        GROUP BY l.id`
 
 	query = r.db.Rebind(query)
 	l := &LaunchModel{}
@@ -176,11 +209,12 @@ func (r *LaunchRepository) Update(ctx context.Context, l *launch.Launch) error {
 func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error) {
     query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at,
-			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
-		FROM launches l
-		JOIN product_members pm ON l.product_id = pm.product_id
-		WHERE pm.user_id = ? AND pm.role = 'owner'
-		ORDER BY l.launch_date DESC`
+            (SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        JOIN product_members pm ON l.product_id = pm.product_id
+        WHERE pm.user_id = ? AND pm.role = 'owner'
+        ORDER BY l.launch_date DESC`
 
 	query = r.db.Rebind(query)
 	var dbLaunches []*LaunchModel
@@ -202,10 +236,11 @@ func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([
 func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error) {
     query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at,
-			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
-		FROM launches l
-		WHERE l.product_id = ?
-		ORDER BY l.launch_date DESC`
+            (SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        WHERE l.product_id = ?
+        ORDER BY l.launch_date DESC`
 
 	query = r.db.Rebind(query)
 	var dbLaunches []*LaunchModel
@@ -305,11 +340,12 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 // Valid periods are "daily", "weekly", "monthly", and "all_time".
 func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, offset int) ([]*launch.Launch, error) {
     baseQuery := `
-		SELECT
+        SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
-			COUNT(lu.launch_id) as upvote_count
-		FROM launches l
-		LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id`
+            COUNT(lu.launch_id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id`
 
 	endQuery := `
 		GROUP BY l.id
@@ -501,4 +537,87 @@ func (r *LaunchRepository) GetUpvotedByUserForLaunchIDs(ctx context.Context, use
         result[id] = true
     }
     return result, nil
+}
+
+// --- Comments ---
+
+type commentRow struct {
+    ID          uuid.UUID  `db:"id"`
+    LaunchID    uuid.UUID  `db:"launch_id"`
+    AuthorID    uuid.UUID  `db:"author_id"`
+    ParentID    *uuid.UUID `db:"parent_id"`
+    ContentHTML string     `db:"content_html"`
+    IsPinned    bool       `db:"is_pinned"`
+    CreatedAt   time.Time  `db:"created_at"`
+    Upvotes     int        `db:"upvotes"`
+}
+
+func (r *LaunchRepository) CreateComment(ctx context.Context, c *launch.Comment) error {
+    _, err := r.db.ExecContext(ctx, `INSERT INTO launch_comments (id, launch_id, author_id, parent_id, content_html, is_pinned, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, c.ID, c.LaunchID, c.AuthorID, c.ParentID, c.ContentHTML, c.IsPinned)
+    return err
+}
+
+func (r *LaunchRepository) GetCommentsTree(ctx context.Context, launchID uuid.UUID) ([]*launch.Comment, map[uuid.UUID][]*launch.Comment, error) {
+    // Fetch all comments with upvote counts for the launch
+    query := r.db.Rebind(`SELECT c.id, c.launch_id, c.author_id, c.parent_id, c.content_html, c.is_pinned, c.created_at,
+        COALESCE((SELECT COUNT(*) FROM launch_comment_upvotes u WHERE u.comment_id = c.id), 0) AS upvotes
+        FROM launch_comments c WHERE c.launch_id = ? ORDER BY c.is_pinned DESC, c.created_at ASC`)
+    var rows []commentRow
+    if err := r.db.SelectContext(ctx, &rows, query, launchID); err != nil {
+        return nil, nil, err
+    }
+    topLevel := make([]*launch.Comment, 0)
+    replies := make(map[uuid.UUID][]*launch.Comment)
+    for _, rrow := range rows {
+        c := &launch.Comment{
+            ID:          rrow.ID,
+            LaunchID:    rrow.LaunchID,
+            AuthorID:    rrow.AuthorID,
+            ParentID:    rrow.ParentID,
+            ContentHTML: rrow.ContentHTML,
+            IsPinned:    rrow.IsPinned,
+            Upvotes:     rrow.Upvotes,
+            CreatedAt:   rrow.CreatedAt,
+        }
+        if rrow.ParentID == nil {
+            topLevel = append(topLevel, c)
+        } else {
+            replies[*rrow.ParentID] = append(replies[*rrow.ParentID], c)
+        }
+    }
+    return topLevel, replies, nil
+}
+
+func (r *LaunchRepository) ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error) {
+    upvoted := false
+    var count int
+    err := runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
+        var exists int
+        if err := tx.GetContext(ctx, &exists, r.db.Rebind(`SELECT 1 FROM launch_comment_upvotes WHERE comment_id = ? AND user_id = ?`), commentID, userID); err != nil && err != sql.ErrNoRows {
+            return err
+        }
+        if exists == 1 {
+            if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM launch_comment_upvotes WHERE comment_id = ? AND user_id = ?`), commentID, userID); err != nil {
+                return err
+            }
+        } else {
+            if _, err := tx.ExecContext(ctx, r.db.Rebind(`INSERT INTO launch_comment_upvotes(comment_id, user_id) VALUES(?, ?)`), commentID, userID); err != nil {
+                return err
+            }
+            upvoted = true
+        }
+        if err := tx.GetContext(ctx, &count, r.db.Rebind(`SELECT COUNT(*) FROM launch_comment_upvotes WHERE comment_id = ?`), commentID); err != nil {
+            return err
+        }
+        return nil
+    })
+    if err != nil {
+        return false, 0, err
+    }
+    return upvoted, count, nil
+}
+
+func (r *LaunchRepository) PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error {
+    _, err := r.db.ExecContext(ctx, r.db.Rebind(`UPDATE launch_comments SET is_pinned = ?, created_at = created_at WHERE id = ?`), pinned, commentID)
+    return err
 }

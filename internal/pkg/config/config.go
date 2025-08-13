@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -51,6 +52,10 @@ type StorageConfig struct {
     PublicUploadBase string // e.g., "/assets/uploads"
     S3Bucket         string
     S3BaseKey        string
+    S3Region         string
+    S3Endpoint       string
+    S3UsePathStyle   bool
+    S3PublicBaseURL  string
 }
 
 // SMTP contains settings for sending emails via SMTP.
@@ -93,6 +98,10 @@ func Load() (*Config, error) {
             PublicUploadBase: getEnv("PUBLIC_UPLOAD_BASE", "/assets/uploads"),
             S3Bucket:         getEnv("S3_BUCKET", ""),
             S3BaseKey:        getEnv("S3_BASE_KEY", ""),
+            S3Region:         getEnv("S3_REGION", "us-east-1"),
+            S3Endpoint:       getEnv("S3_ENDPOINT", ""),
+            S3UsePathStyle:   getEnvAsBool("S3_USE_PATH_STYLE", false),
+            S3PublicBaseURL:  getEnv("S3_PUBLIC_BASE_URL", ""),
         },
         SMTP: SMTP{
             Host:        getEnv("SMTP_HOST", ""),
@@ -159,4 +168,16 @@ func getEnvAsInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+func getEnvAsBool(key string, defaultValue bool) bool {
+    if value := os.Getenv(key); value != "" {
+        switch strings.ToLower(value) {
+        case "1", "true", "yes", "y":
+            return true
+        case "0", "false", "no", "n":
+            return false
+        }
+    }
+    return defaultValue
 }
