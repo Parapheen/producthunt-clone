@@ -121,7 +121,7 @@ func (h *Handler) NewProduct(w http.ResponseWriter, r *http.Request) {
 			h.renderErrors(w, []string{"Что-то пошло не так. Пожалуйста, попробуйте еще раз."})
 			return
         } else {
-            redirectTo := "/products/" + p.Slug + "/launches/" + createdFirstLaunch.Slug + "/edit"
+            redirectTo := "/products/" + p.ID.String() + "/launches/" + createdFirstLaunch.Slug + "/edit"
             w.Header().Add("HX-Redirect", redirectTo)
             return
         }
