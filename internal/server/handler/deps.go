@@ -71,6 +71,10 @@ type LaunchService interface {
 
     // Admin notifications
     SendAdminNotification(ctx context.Context, message string) error
+
+	// Index-based navigation
+	GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*launch.Launch, error)
+	GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error)
 }
 
 type Storage interface {

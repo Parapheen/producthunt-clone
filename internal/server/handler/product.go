@@ -20,16 +20,16 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	productSlug := r.PathValue("productSlug")
 
 	p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 
 	launches, err := h.LaunchService.GetPublishedByProduct(r.Context(), p.ID)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
     humanTime := func(ts time.Time) string {
@@ -76,12 +76,12 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
         "views/partials/launch-upvote.html",
         "views/partials/launch-comments.html",
 	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.InternalServerError(w, r, err)
 		return
 	}
 
-	// Build upvoted map for current user, when service supports it
+    // Build upvoted map for current user, when service supports it
 	var upvoted map[uuid.UUID]bool
 	if u != nil {
 		type upvoteAware interface {
@@ -109,6 +109,19 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
         "Image":       image,
     }
 
+    // Build index map (launch ID -> index) for created_at DESC ordering
+    indexMap := make(map[uuid.UUID]int)
+    type indexAware interface {
+        GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error)
+    }
+    if svc, ok := any(h.LaunchService).(indexAware); ok {
+        for _, l := range launches {
+            if idx, err := svc.GetIndexByProductAndLaunchID(r.Context(), p.ID, l.ID); err == nil {
+                indexMap[l.ID] = idx
+            }
+        }
+    }
+
     err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
         "User":       u,
         "Product":    p,
@@ -116,10 +129,11 @@ func (h *Handler) GetProduct(w http.ResponseWriter, r *http.Request) {
         "ActiveTab":  "launches",
         "token":      nosurf.Token(r),
         "UpvotedMap": upvoted,
+        "IndexMap":   indexMap,
         "meta":       meta,
     })
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -128,9 +142,9 @@ func (h *Handler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 	productID := r.PathValue("productID")
 
 	p, err := h.ProductService.GetByID(r.Context(), uuid.MustParse(productID))
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -142,6 +156,7 @@ type MemberView struct {
 	Name string
 	Role string
     AvatarURL string
+	Bio string
 }
 
 func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
@@ -150,9 +165,9 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 	productSlug := r.PathValue("productSlug")
 
 	p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -167,9 +182,9 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	users, err := h.UserService.GetByIDs(r.Context(), memberIDs)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting users", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting users", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -189,6 +204,7 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 			Name: user.Name,
 			Role: memberRoles[member.UserID],
             AvatarURL: user.AvatarURL,
+			Bio: user.Bio,
 		})
 	}
 
@@ -200,9 +216,9 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 			ParseFiles(
 				"views/product/partials/members-tab.html",
 			)
-		if err != nil {
-			h.Logger.ErrorContext(r.Context(), "error parsing template", slog.Any("error", err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err != nil {
+            h.Logger.ErrorContext(r.Context(), "error parsing template", slog.Any("error", err))
+            h.InternalServerError(w, r, err)
 			return
 		}
 
@@ -211,18 +227,18 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 			"Members": membersView,
 			"token":   nosurf.Token(r),
 		})
-		if err != nil {
-			h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err != nil {
+            h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
+            h.InternalServerError(w, r, err)
 			return
 		}
 		return
 	}
 
 	launches, err := h.LaunchService.GetByProduct(r.Context(), p.ID)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -267,9 +283,9 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
 		"views/partials/launch-card.html",
 		"views/partials/launch-upvote.html",
 	)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error parsing template", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error parsing template", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -294,9 +310,9 @@ func (h *Handler) ProductMembers(w http.ResponseWriter, r *http.Request) {
         "token":     nosurf.Token(r),
         "meta":      meta,
     })
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -307,16 +323,16 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 	productSlug := r.PathValue("productSlug")
 
 	p, err := s.ProductService.GetBySlug(r.Context(), productSlug)
-	if err != nil {
-		s.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        s.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+        s.InternalServerError(w, r, err)
 		return
 	}
 
 	launches, err := s.LaunchService.GetPublishedByProduct(r.Context(), p.ID)
-	if err != nil {
-		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+        s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -374,8 +390,8 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
                 "views/partials/launch-upvote.html",
                 "views/partials/launch-comments.html",
             )
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err != nil {
+            s.InternalServerError(w, r, err)
 			return
 		}
 
@@ -385,8 +401,8 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 			"UpvotedMap": upvoted,
 			"token":      nosurf.Token(r),
 		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err != nil {
+            s.InternalServerError(w, r, err)
 			return
 		}
 		return
@@ -411,8 +427,8 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
             "views/partials/launch-state.html",
             "views/partials/launch-upvote.html",
         )
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -424,8 +440,8 @@ func (s *Handler) ProductLaunches(w http.ResponseWriter, r *http.Request) {
 		"token":      nosurf.Token(r),
 		"UpvotedMap": upvoted,
 	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        s.InternalServerError(w, r, err)
 		return
 	}
 }

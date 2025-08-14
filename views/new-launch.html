@@ -42,7 +42,7 @@
             name="name"
             type="text"
             id="name"
-            value="{{ .Launch.Name }}"
+            value="{{ if .Launch.Name }}{{ .Launch.Name }}{{ else }}{{ .Product.Name }}{{ end }}"
             placeholder="product hunt"
           />
         </div>
@@ -52,7 +52,7 @@
             name="url"
             type="text"
             id="url"
-            value="{{ .Launch.URL }}"
+            value="{{ if .Launch.URL }}{{ .Launch.URL }}{{ else }}{{ .Product.URL }}{{ end }}"
             placeholder="https://my-product"
           />
         </div>
@@ -84,12 +84,12 @@
           </p>
         </div>
         <div class="grid gap-2">
-          <label for="image">Аватар запуска (опционально)</label>
+          <label for="image">Аватар запуска</label>
           <div class="flex items-center gap-4">
             <img
               id="image-preview"
               class="w-16 h-16 rounded-lg object-cover ring-2 ring-gray-200"
-              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Launch.Name }}{{ end }}"
+              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}{{ .Product.ImageURL }}{{ end }}"
               alt="preview"
             />
             <input type="file" id="image" name="image" accept="image/*" />
@@ -99,7 +99,7 @@
           </p>
         </div>
         <div class="grid gap-2">
-          <label for="media">Изображения (опционально)</label>
+          <label for="media">Изображения</label>
           <input
             type="file"
             id="media"
@@ -112,9 +112,6 @@
             горизонтальный формат 16:9.
           </p>
           <div class="mt-2">
-            <p class="text-xs text-gray-500 mb-2">
-              Рекомендуем вертикальный формат (например, 9:16) — как сторис.
-            </p>
             <div id="media-previews" class="grid grid-cols-4 gap-2 py-1"></div>
           </div>
         </div>

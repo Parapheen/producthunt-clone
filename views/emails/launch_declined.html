@@ -1,0 +1,45 @@
+{{ define "subject" }}Ваш запуск отклонён — {{ .LaunchName }}{{ end }} {{ define
+"plainBody" }} К сожалению, ваш запуск "{{ .LaunchName }}" для продукта "{{
+.ProductName }}" отклонён модератором. Вы можете отредактировать запуск и
+отправить на модерацию снова. Ссылка: {{ .LaunchURL }} {{ end }} {{ define
+"htmlBody" }}
+<div
+  style="
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+      sans-serif;
+    line-height: 1.5;
+    color: #111827;
+  "
+>
+  <h2 style="margin: 0 0 12px; font-size: 20px">Запуск отклонён</h2>
+  <p style="margin: 0 0 12px">
+    К сожалению, ваш запуск <strong>{{ .LaunchName }}</strong> для продукта
+    <strong>{{ .ProductName }}</strong> отклонён модератором.
+  </p>
+  <p style="margin: 0 0 24px">
+    Вы можете внести правки и повторно отправить на модерацию.
+  </p>
+  <p style="margin: 0 0 24px">
+    <a
+      href="{{ .LaunchURL }}"
+      style="
+        display: inline-block;
+        background: #ef4444;
+        color: #fff;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 9999px;
+      "
+      >Перейти к запуску</a
+    >
+  </p>
+  <p style="margin: 0 0 8px; font-size: 12px; color: #6b7280">
+    Если кнопка не работает, перейдите по ссылке:
+    <a href="{{ .LaunchURL }}">{{ .LaunchURL }}</a>
+  </p>
+  <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb" />
+  <p style="margin: 0; font-size: 12px; color: #9ca3af">
+    Отправлено автоматически, не отвечайте на это письмо.
+  </p>
+</div>
+{{ end }}

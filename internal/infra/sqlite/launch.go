@@ -336,6 +336,60 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 	return result, nil
 }
 
+// GetNthByProductOrderedByCreatedAt returns the nth published launch for a product ordered by created_at DESC.
+func (r *LaunchRepository) GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*launch.Launch, error) {
+    if index <= 0 {
+        return nil, sql.ErrNoRows
+    }
+    // OFFSET is 0-based; index is 1-based
+    offset := index - 1
+    query := `SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
+            COUNT(lu.launch_id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
+        WHERE l.product_id = ? AND l.state = 'published'
+        GROUP BY l.id
+        ORDER BY l.created_at DESC
+        LIMIT 1 OFFSET ?`
+    query = r.db.Rebind(query)
+    l := &LaunchModel{}
+    if err := r.db.GetContext(ctx, l, query, productID, offset); err != nil {
+        if err == sql.ErrNoRows {
+            return nil, sql.ErrNoRows
+        }
+        return nil, err
+    }
+    domainLaunch := toDomain(l)
+    mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+    if err == nil {
+        domainLaunch.Media = mediaMap[domainLaunch.ID]
+    }
+    return domainLaunch, nil
+}
+
+// GetIndexByProductAndLaunchID returns the 1-based index (created_at DESC) of the given launch within published launches of the product.
+func (r *LaunchRepository) GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error) {
+    // Rank by created_at DESC; index = count of rows with created_at >= target's created_at
+    // Using a correlated subquery for simplicity
+    query := r.db.Rebind(`
+        SELECT COUNT(*)
+        FROM launches l
+        WHERE l.product_id = ? AND l.state = 'published' AND l.created_at >= (
+            SELECT created_at FROM launches WHERE id = ?
+        )
+    `)
+    var idx int
+    if err := r.db.GetContext(ctx, &idx, query, productID, launchID); err != nil {
+        return 0, err
+    }
+    if idx <= 0 {
+        return 0, sql.ErrNoRows
+    }
+    return idx, nil
+}
+
 // GetFeed retrieves a paginated and ordered feed of launches based on a time period.
 // Valid periods are "daily", "weekly", "monthly", and "all_time".
 func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, offset int) ([]*launch.Launch, error) {

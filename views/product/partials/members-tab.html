@@ -13,9 +13,12 @@
           loading="lazy"
         />
         <div class="min-w-0">
-          <p class="font-semibold text-gray-900 truncate">{{ .Name }}</p>
+          <p class="font-semibold text-gray-900">{{ .Name }}</p>
+          {{ if .Bio }}
+          <p class="text-gray-500 text-sm">{{ .Bio }}</p>
+          {{ end }}
           <span
-            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ if eq .Role "owner" }}bg-amber-100 text-amber-800{{ else if eq .Role "developer" }}bg-indigo-100 text-indigo-800{{ else if eq .Role "designer" }}bg-pink-100 text-pink-800{{ else }}bg-gray-100 text-gray-800{{ end }}"
+            class="inline-flex mt-3 items-center px-2 py-0.5 rounded-full text-xs font-medium {{ if eq .Role "owner" }}bg-amber-100 text-amber-800{{ else if eq .Role "developer" }}bg-indigo-100 text-indigo-800{{ else if eq .Role "designer" }}bg-pink-100 text-pink-800{{ else }}bg-gray-100 text-gray-800{{ end }}"
           >
             {{ if eq .Role "owner" }}Владелец{{ else if eq .Role "developer" }}Разработчик{{ else if eq .Role "designer" }}Дизайнер{{ else }}Другое{{ end }}
           </span>

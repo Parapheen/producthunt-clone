@@ -26,7 +26,7 @@ func (h *Handler) EditProfileForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles(
+    t, err := template.ParseFiles(
 		"views/edit-profile.html",
 		"views/layout/layout.html",
 		"views/layout/header.html",
@@ -35,7 +35,7 @@ func (h *Handler) EditProfileForm(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error parsing templates", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -43,9 +43,9 @@ func (h *Handler) EditProfileForm(w http.ResponseWriter, r *http.Request) {
 		"User": u,
         "token": nosurf.Token(r),
 	})
-	if err != nil {
+    if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -83,13 +83,13 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
                 errors = append(errors, e.Error())
             }
         }
-        h.renderErrors(w, errors)
+        h.renderErrors(w, r, errors)
         return
     }
 
     if err := h.UserService.UpdateBio(r.Context(), u.ID, bio); err != nil {
 		h.Logger.ErrorContext(r.Context(), "error updating bio", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
         limited := &io.LimitedReader{R: file, N: maxAvatarBytes + 1}
         if _, err := h.UserService.UpdateAvatar(r.Context(), u.ID, header.Filename, limited); err != nil {
             h.Logger.ErrorContext(r.Context(), "error updating avatar", slog.Any("error", err))
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
             return
         }
         if limited.N <= 0 { // exceeded limit

@@ -40,7 +40,7 @@ func (h *Handler) EditProductForm(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error parsing templates", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func (h *Handler) EditProductForm(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error executing template", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -89,12 +89,12 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	v := validation.NewValidator()
 	if verr := v.ValidateString(tagline, "tagline", 0, 140, false); verr != nil {
 		// Render standard error partial
-		h.renderErrors(w, []string{verr.Error()})
+		h.renderErrors(w, r, []string{verr.Error()})
 		return
 	}
-	if err := h.ProductService.UpdateTagline(r.Context(), p.ID, tagline); err != nil {
+    if err := h.ProductService.UpdateTagline(r.Context(), p.ID, tagline); err != nil {
 		h.Logger.ErrorContext(r.Context(), "error updating product tagline", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -105,9 +105,9 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		limited := &io.LimitedReader{R: file, N: maxImageBytes + 1}
-		if _, err := h.ProductService.UpdateImage(r.Context(), p.ID, header.Filename, limited); err != nil {
+        if _, err := h.ProductService.UpdateImage(r.Context(), p.ID, header.Filename, limited); err != nil {
 			h.Logger.ErrorContext(r.Context(), "error updating product image", slog.Any("error", err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
 			return
 		}
 		if limited.N <= 0 {
@@ -156,13 +156,13 @@ func (h *Handler) InviteMember(w http.ResponseWriter, r *http.Request) {
     role := product.ParseRole(roleStr)
     v := validation.NewValidator()
     if verr := v.ValidateEmail(email, "email", true); verr != nil {
-        h.renderErrors(w, []string{verr.Error()})
+        h.renderErrors(w, r, []string{verr.Error()})
         return
     }
     inv, err := h.ProductService.InviteMember(r.Context(), p.ID, email, role)
     if err != nil {
         h.Logger.ErrorContext(r.Context(), "error inviting member", slog.Any("error", err))
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
 

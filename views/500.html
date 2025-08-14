@@ -1,0 +1,17 @@
+{{ define "content" }}
+<section
+  class="container mx-auto flex flex-col items-center justify-center text-center py-20 gap-6"
+>
+  <div class="rounded-xl bg-gray-50 border p-10 max-w-2xl w-full">
+    <h1 class="text-4xl font-extrabold mb-2">Упс! Что-то пошло не так</h1>
+    <p class="text-gray-600 mb-6">
+      Мы уже работаем над исправлением. Пожалуйста, попробуйте снова чуть позже.
+    </p>
+    <div class="flex items-center justify-center gap-3">
+      <a href="/" class="btn btn-primary">На главную</a>
+      <button class="btn" onclick="location.reload()">Обновить страницу</button>
+    </div>
+  </div>
+  <p class="text-sm text-gray-400">Код ошибки: 500</p>
+</section>
+{{ end }}

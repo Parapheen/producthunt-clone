@@ -21,10 +21,10 @@ func (s *Handler) Rules(w http.ResponseWriter, r *http.Request) {
         "views/layout/footer.html",
         "views/layout/head.html",
     )
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        s.InternalServerError(w, r, err)
+        return
+    }
 
     // SEO meta for Rules
     baseURL := s.BaseURL
@@ -39,10 +39,10 @@ func (s *Handler) Rules(w http.ResponseWriter, r *http.Request) {
         "User":         user,
         "meta":         meta,
     })
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        s.InternalServerError(w, r, err)
+        return
+    }
 }
 
 
@@ -58,10 +58,10 @@ func (s *Handler) Policy(w http.ResponseWriter, r *http.Request) {
         "views/layout/footer.html",
         "views/layout/head.html",
     )
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        s.InternalServerError(w, r, err)
+        return
+    }
 
     // SEO meta for Policy
     baseURL := s.BaseURL
@@ -76,8 +76,8 @@ func (s *Handler) Policy(w http.ResponseWriter, r *http.Request) {
         "User":         user,
         "meta":         meta,
     })
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        s.InternalServerError(w, r, err)
+        return
+    }
 }

@@ -4,9 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/Parapheen/ph-clone/internal/infra/oauth"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
 
@@ -15,6 +18,7 @@ type AuthService struct {
 	yandexOauthProvider *oauth.YandexOauthProvider
     googleOauthProvider *oauth.GoogleOauthProvider
     vkOauthProvider     *oauth.VKOauthProvider
+    storage             Storage
 }
 
 func NewAuthService(userRepository user.UserRepository) *AuthService {
@@ -28,6 +32,12 @@ func NewAuthService(userRepository user.UserRepository) *AuthService {
         googleOauthProvider: googleOauthProvider,
         vkOauthProvider:     vkOauthProvider,
 	}
+}
+
+// WithStorage wires storage so we can persist provider avatars on first login
+func (a *AuthService) WithStorage(storage Storage) *AuthService {
+    a.storage = storage
+    return a
 }
 
 func (a *AuthService) GetSocialRedirectURL(provider, state string) string {
@@ -89,14 +99,21 @@ func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider strin
 
 	isNewUser := existingUser == nil
 
-	if isNewUser {
+    if isNewUser {
         newUser := user.NewUserFromSocialAccount(account)
-		err = a.userRepository.Create(ctx, newUser)
-		if err != nil {
-			return nil, fmt.Errorf("error creating user: %w", err)
-		}
-		return newUser, nil
-	}
+        // Try to persist provider avatar if provided
+        if a.storage != nil && account.AvatarURL != "" {
+            if url, err := a.fetchAndSaveAvatar(ctx, newUser.ID, account.AvatarURL); err == nil {
+                newUser.AvatarURL = url
+                _ = a.userRepository.UpdateAvatarURL(ctx, newUser.ID, url)
+            }
+        }
+        err = a.userRepository.Create(ctx, newUser)
+        if err != nil {
+            return nil, fmt.Errorf("error creating user: %w", err)
+        }
+        return newUser, nil
+    }
 
 	if existingUser.Session == nil {
 		existingUser.Session = user.NewSession()
@@ -113,12 +130,42 @@ func (a *AuthService) AuthenticateWithSocial(ctx context.Context, provider strin
 		if err != nil {
 			return nil, fmt.Errorf("error refreshing session: %w", err)
 		}
-		return existingUser, nil
+		// fall through to possibly enrich avatar before returning
 	}
+
+    // If user has no avatar saved yet but provider supplies one, fetch and persist once
+    if existingUser.AvatarURL == "" && account.AvatarURL != "" && a.storage != nil {
+        if url, err := a.fetchAndSaveAvatar(ctx, existingUser.ID, account.AvatarURL); err == nil {
+            existingUser.AvatarURL = url
+            _ = a.userRepository.UpdateAvatarURL(ctx, existingUser.ID, url)
+        }
+    }
 
 	return existingUser, nil
 }
 
 func (a *AuthService) Logout(ctx context.Context, session string) error {
 	return a.userRepository.DeleteSession(ctx, session)
+}
+
+// fetchAndSaveAvatar downloads the given URL and stores it via configured storage
+func (a *AuthService) fetchAndSaveAvatar(ctx context.Context, userID uuid.UUID, avatarURL string) (string, error) {
+    if a.storage == nil || avatarURL == "" {
+        return "", fmt.Errorf("storage or url missing")
+    }
+    req, err := http.NewRequestWithContext(ctx, http.MethodGet, avatarURL, nil)
+    if err != nil {
+        return "", err
+    }
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        return "", fmt.Errorf("failed to fetch avatar: status %d", resp.StatusCode)
+    }
+    var reader io.Reader = resp.Body
+    // Use a generic filename; storage will hash/rename appropriately
+    return a.storage.Save(ctx, fmt.Sprintf("users/%s/avatars", userID.String()), "provider_avatar", reader)
 }

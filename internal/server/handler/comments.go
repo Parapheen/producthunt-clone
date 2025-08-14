@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
+	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/Parapheen/ph-clone/internal/pkg/tmpl"
 	"github.com/google/uuid"
@@ -26,14 +27,14 @@ func (h *Handler) GetLaunchComments(w http.ResponseWriter, r *http.Request) {
 
     l, err := h.LaunchService.GetByID(r.Context(), launchID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
 
     // Fetch comments
     roots, replies, err := h.LaunchService.GetCommentsTree(r.Context(), l.ID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
 
@@ -107,7 +108,7 @@ func (h *Handler) GetLaunchComments(w http.ResponseWriter, r *http.Request) {
         "views/partials/launch-comments.html",
     )
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     _ = t.ExecuteTemplate(w, "launch-comments", map[string]any{
@@ -140,7 +141,37 @@ func (h *Handler) PostLaunchComment(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
-    // Re-render comments list
+
+	// Email notification to product owners about new comment
+	if h.Mailer != nil {
+		if l, err := h.LaunchService.GetByID(r.Context(), launchID); err == nil {
+			if p, pErr := h.ProductService.GetByID(r.Context(), l.ProductID); pErr == nil {
+				recipients := make([]uuid.UUID, 0)
+				for _, m := range p.Members {
+						if m.UserID == u.ID {
+							continue
+						}
+						recipients = append(recipients, m.UserID)
+				}
+				if len(recipients) > 0 {
+					if members, uErr := h.UserService.GetByIDs(r.Context(), recipients); uErr == nil {
+						index, _ := h.LaunchService.GetIndexByProductAndLaunchID(r.Context(), p.ID, l.ID)
+						launchURL := h.BaseURL + "/products/" + p.Slug + "/launches/" + strconv.Itoa(index)
+						data := map[string]any{
+							"ProductName": p.Name,
+							"LaunchName":  l.Name,
+							"LaunchURL":   launchURL,
+							"AuthorName":  u.Name,
+							"ContentHTML": c.ContentHTML,
+						}
+						for _, member := range members {
+							_ = h.Mailer.Send(r.Context(), member.Email, "launch_new_comment.html", data)
+						}
+					}
+				}
+			}
+		}
+	}
     h.GetLaunchComments(w, r)
 }
 
@@ -169,6 +200,76 @@ func (h *Handler) ReplyLaunchComment(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
+
+    productOwnerID := uuid.Nil
+
+	// Email notification to product members about new reply
+	if h.Mailer != nil {
+		if l, err := h.LaunchService.GetByID(r.Context(), launchID); err == nil {
+			if p, pErr := h.ProductService.GetByID(r.Context(), l.ProductID); pErr == nil {
+				recipients := make([]uuid.UUID, 0)
+				for _, m := range p.Members {
+                    if m.Role == product.Owner {
+                        productOwnerID = m.UserID
+                    }
+					if m.UserID == u.ID {
+						continue
+					}
+					recipients = append(recipients, m.UserID)
+				}
+				if len(recipients) > 0 {
+					if members, uErr := h.UserService.GetByIDs(r.Context(), recipients); uErr == nil {
+						index, _ := h.LaunchService.GetIndexByProductAndLaunchID(r.Context(), p.ID, l.ID)
+						launchURL := h.BaseURL + "/products/" + p.Slug + "/launches/" + strconv.Itoa(index)
+						data := map[string]any{
+							"ProductName": p.Name,
+							"LaunchName":  l.Name,
+							"LaunchURL":   launchURL,
+							"AuthorName":  u.Name,
+							"ContentHTML": c.ContentHTML,
+						}
+						for _, member := range members {
+							_ = h.Mailer.Send(r.Context(), member.Email, "launch_new_comment.html", data)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Email notification to the parent comment author about received reply
+	if h.Mailer != nil {
+		if l, err := h.LaunchService.GetByID(r.Context(), launchID); err == nil {
+			// Get root comments and find the parent author
+			if roots, _, err := h.LaunchService.GetCommentsTree(r.Context(), l.ID); err == nil {
+				var parentAuthorID uuid.UUID
+				for _, root := range roots {
+                    // Skip if the parent comment is by the product owner
+                    // since he will receive notification about new comment
+					if root.ID == parentID && root.AuthorID != productOwnerID {
+						parentAuthorID = root.AuthorID
+						break
+					}
+				}
+				if parentAuthorID != uuid.Nil && parentAuthorID != u.ID {
+					if parentUser, err := h.UserService.GetByID(r.Context(), parentAuthorID); err == nil {
+						if p, pErr := h.ProductService.GetByID(r.Context(), l.ProductID); pErr == nil {
+							index, _ := h.LaunchService.GetIndexByProductAndLaunchID(r.Context(), p.ID, l.ID)
+							launchURL := h.BaseURL + "/products/" + p.Slug + "/launches/" + strconv.Itoa(index) + "#comments-" + l.ID.String()
+							data := map[string]any{
+								"ProductName": p.Name,
+								"LaunchName":  l.Name,
+								"LaunchURL":   launchURL,
+								"AuthorName":  u.Name,
+								"ContentHTML": c.ContentHTML,
+							}
+							_ = h.Mailer.Send(r.Context(), parentUser.Email, "launch_reply_comment.html", data)
+						}
+					}
+				}
+			}
+		}
+	}
     h.GetLaunchComments(w, r)
 }
 
@@ -190,12 +291,12 @@ func (h *Handler) TogglePinComment(w http.ResponseWriter, r *http.Request) {
     // Check ownership via product
     l, err := h.LaunchService.GetByID(r.Context(), launchID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     p, err := h.ProductService.GetByID(r.Context(), l.ProductID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     if !p.IsOwner(u.ID) {
@@ -209,7 +310,7 @@ func (h *Handler) TogglePinComment(w http.ResponseWriter, r *http.Request) {
     }
     pinned := r.FormValue("pinned") == "true"
     if err := h.LaunchService.PinComment(r.Context(), commentID, pinned); err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     // Re-render the full comments block to reflect pin ordering
@@ -219,7 +320,7 @@ func (h *Handler) TogglePinComment(w http.ResponseWriter, r *http.Request) {
 func unauthorizedAuthModal(w http.ResponseWriter) {
     t, err := template.ParseFiles("views/partials/auth-modal.html")
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
         return
     }
     w.Header().Set("HX-Retarget", "body")

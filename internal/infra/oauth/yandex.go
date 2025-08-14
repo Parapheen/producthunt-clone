@@ -17,6 +17,7 @@ type YandexUser struct {
 	ID    string `json:"id"`
 	Name  string `json:"display_name"`
 	Email string `json:"default_email"`
+    DefaultAvatarID string `json:"default_avatar_id"`
 }
 
 type YandexOauthProvider struct {
@@ -64,11 +65,18 @@ func (y *YandexOauthProvider) GetUserInfo(ctx context.Context, token *oauth2.Tok
 		return nil, fmt.Errorf("error unmarshaling user info: %w", err)
 	}
 
-	return &user.SocialAccount{
+    // Build avatar URL if available: https://avatars.yandex.net/get-yapic/<id>/islands-200
+    avatarURL := ""
+    if yandexUser.DefaultAvatarID != "" {
+        avatarURL = fmt.Sprintf("https://avatars.yandex.net/get-yapic/%s/islands-200", yandexUser.DefaultAvatarID)
+    }
+
+    return &user.SocialAccount{
 		ID:         uuid.New(),
 		Provider:   "yandex",
 		ProviderID: yandexUser.ID,
 		Email:      yandexUser.Email,
-		Name:       yandexUser.Name,
+        Name:       yandexUser.Name,
+        AvatarURL:  avatarURL,
 	}, nil
 }

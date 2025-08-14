@@ -17,13 +17,13 @@ func (h *Handler) ToggleLaunchUpvote(w http.ResponseWriter, r *http.Request) {
         // Return auth modal HTML for HTMX
         t, err := template.ParseFiles("views/partials/auth-modal.html")
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
             return
         }
         w.Header().Set("HX-Retarget", "body")
         w.Header().Set("HX-Reswap", "beforeend")
         if err := t.Execute(w, nil); err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
         }
         return
     }
@@ -33,13 +33,13 @@ func (h *Handler) ToggleLaunchUpvote(w http.ResponseWriter, r *http.Request) {
     if time.Since(u.CreatedAt) < 1*time.Hour {
         t, err := template.ParseFiles("views/partials/restricted-upvote-modal.html")
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
             return
         }
         w.Header().Set("HX-Retarget", "body")
         w.Header().Set("HX-Reswap", "beforeend")
         if err := t.Execute(w, nil); err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
         }
         return
     }
@@ -53,30 +53,34 @@ func (h *Handler) ToggleLaunchUpvote(w http.ResponseWriter, r *http.Request) {
 
     upvoted, count, err := h.LaunchService.ToggleUpvote(r.Context(), launchID, u.ID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
 
     // Re-fetch launch to keep other fields consistent (optional)
     l, err := h.LaunchService.GetByID(r.Context(), launchID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     l.Upvotes = count
 
     t, err := template.New("launch-upvote").ParseFiles("views/partials/launch-upvote.html")
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
+
+    withText := r.FormValue("withText") == "true"
+
     err = t.ExecuteTemplate(w, "launch-upvote", map[string]interface{}{
         "Launch": l,
         "token":  nosurf.Token(r),
         "Upvoted": upvoted,
+        "WithText": withText,
     })
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
 }

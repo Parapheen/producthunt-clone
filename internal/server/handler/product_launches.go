@@ -15,10 +15,10 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 
 	productSlug := r.PathValue("productSlug")
 
-	p, err := s.ProductService.GetBySlug(r.Context(), productSlug)
+    p, err := s.ProductService.GetBySlug(r.Context(), productSlug)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -31,9 +31,9 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		p.ID,
 	)
-	if err != nil {
-		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+        s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -50,8 +50,8 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 			"views/layout/head.html",
 			"views/partials/launch-edit-card.html",
 		)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -73,8 +73,8 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
         "token":     nosurf.Token(r),
         "meta":      meta,
     })
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        s.InternalServerError(w, r, err)
+        return
+    }
 }

@@ -139,6 +139,7 @@ func (v *VKOauthProvider) GetUserInfo(ctx context.Context, token *oauth2.Token) 
         ProviderID: providerID,
         Email:      email,
         Name:       name,
+        AvatarURL:  u.Photo200,
     }, nil
 }
 

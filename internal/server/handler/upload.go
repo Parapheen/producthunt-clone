@@ -42,7 +42,7 @@ func (h *Handler) UploadUserAvatar(w http.ResponseWriter, r *http.Request) {
     // Forward to application service to store and persist URL
     url, err := h.UserService.UpdateAvatar(r.Context(), u.ID, header.Filename, file)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
 
@@ -88,7 +88,7 @@ func (h *Handler) UploadProductImage(w http.ResponseWriter, r *http.Request) {
 
     url, err := h.ProductService.UpdateImage(r.Context(), p.ID, header.Filename, file)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     w.Header().Set("Content-Type", "application/json")
@@ -138,7 +138,7 @@ func (h *Handler) UploadLaunchMedia(w http.ResponseWriter, r *http.Request) {
     var reader io.Reader = file
     url, err := h.LaunchService.AddMedia(r.Context(), l, header.Filename, reader)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
         return
     }
     w.Header().Set("Content-Type", "application/json")

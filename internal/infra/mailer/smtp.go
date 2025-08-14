@@ -25,7 +25,11 @@ func NewSMTPMailer(logger *slog.Logger, cfg config.SMTP) *SMTPMailer {
 // Send parses an HTML template, executes it with the given data, and sends it.
 func (m *SMTPMailer) Send(ctx context.Context, recipient, templateFile string, data interface{}) error {
 	// 1. Parse the template file.
-	tmpl, err := template.New("email").ParseFiles(filepath.Join("views/emails", templateFile))
+	tmpl, err := template.New("email").
+		Funcs(template.FuncMap{
+			"safeHTML": func(s string) template.HTML { return template.HTML(s) },
+		}).
+		ParseFiles(filepath.Join("views/emails", templateFile))
 	if err != nil {
 		return fmt.Errorf("failed to parse email template %s: %w", templateFile, err)
 	}

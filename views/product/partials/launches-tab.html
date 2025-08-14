@@ -160,12 +160,18 @@
   <div class="flex flex-col max-w-md gap-4">
     {{ if gt (len .Launches) 1 }}
     <h3 class="text-xl font-bold text-gray-900">Другие запуски</h3>
-    {{ end }} {{ range $i, $l := .Launches }} {{ if ne $i 0 }} {{ if
-    $.UpvotedMap }} {{ template "launch-card" (dict "Launch" $l "Categories"
-    $.Product.Categories "Upvoted" (index $.UpvotedMap $l.ID) "ProductSlug"
-    $.Product.Slug) }} {{ else }} {{ template "launch-card" (dict "Launch" $l
-    "Categories" $.Product.Categories "ProductSlug" $.Product.Slug) }} {{ end }}
-    {{ end }} {{ end }}
+    {{ end }} {{ range $i, $l := .Launches }} {{ if ne $i 0 }} {{ $idx := 0 }}
+    {{ if $.IndexMap }}{{ $tmp := index $.IndexMap $l.ID }}{{ $idx = $tmp }}{{
+    end }} {{ if $.UpvotedMap }} {{ template "launch-card" (dict "Launch" (dict
+    "ID" $l.ID "Name" $l.Name "Tagline" $l.Tagline "ImageURL" $l.ImageURL
+    "Media" $l.Media "LaunchingSoon" $l.LaunchingSoon "IsPublished"
+    $l.IsPublished "URL" $l.URL "Index" $idx) "Categories" $.Product.Categories
+    "Upvoted" (index $.UpvotedMap $l.ID) "ProductSlug" $.Product.Slug) }} {{
+    else }} {{ template "launch-card" (dict "Launch" (dict "ID" $l.ID "Name"
+    $l.Name "Tagline" $l.Tagline "ImageURL" $l.ImageURL "Media" $l.Media
+    "LaunchingSoon" $l.LaunchingSoon "IsPublished" $l.IsPublished "URL" $l.URL
+    "Index" $idx) "Categories" $.Product.Categories "ProductSlug"
+    $.Product.Slug) }} {{ end }} {{ end }} {{ end }}
   </div>
   {{ else }}
   <div class="bg-white p-6 text-center rounded-2xl border">

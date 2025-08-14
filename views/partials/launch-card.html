@@ -1,7 +1,7 @@
 {{ define "launch-card" }} {{ $l := .Launch }}
 <div
   class="bg-white rounded-xl flex items-start gap-3 md:gap-4 p-3 md:p-4 transition hover:bg-gray-50 cursor-pointer"
-  onclick="window.location.href='/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ $l.Slug }}'"
+  onclick="window.location.href='/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ if .Index }}{{ .Index }}{{ else if $l.Index }}{{ $l.Index }}{{ else }}{{ $l.Slug }}{{ end }}'"
   role="link"
   aria-label="Открыть страницу запуска"
   tabindex="0"
@@ -17,7 +17,7 @@
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
           <a
-            href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ $l.Slug }}"
+            href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ if .Index }}{{ .Index }}{{ else if $l.Index }}{{ $l.Index }}{{ else }}{{ $l.Slug }}{{ end }}"
             class="font-semibold text-base md:text-lg text-gray-900 truncate hover:underline"
             >{{ $l.Name }}</a
           >
@@ -33,7 +33,7 @@
         (index $.UpvotedMap $l.ID)) }} {{ else }} {{ template "launch-upvote"
         (dict "Launch" $l "token" $.token "Upvoted" .Upvoted) }} {{ end }}
         <a
-          href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ $l.Slug }}"
+          href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ if .Index }}{{ .Index }}{{ else if $l.Index }}{{ $l.Index }}{{ else }}{{ $l.Slug }}{{ end }}"
           class="border border-gray-200 bg-white text-gray-900 hover:bg-gray-50 rounded-md px-3 h-9 inline-flex items-center text-sm font-semibold"
           onclick="event.stopPropagation()"
           aria-label="Открыть комментарии"

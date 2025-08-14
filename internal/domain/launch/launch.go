@@ -62,6 +62,10 @@ func (l *Launch) IsPublished() bool {
 	return l.State == Published
 }
 
+func (l *Launch) IsPublic() bool {
+	return l.IsPublished() && l.LaunchDate != nil && l.LaunchDate.Before(time.Now())
+}
+
 func (l *Launch) InModeration() bool {
 	return l.State == Review || l.State == Declined
 }

@@ -36,16 +36,16 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
     products, err := s.ProductService.GetByOwner(r.Context(), user.ID)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        s.InternalServerError(w, r, err)
 		return
 	}
 
 	productsView := make([]*ProductView, 0, len(products))
 	for _, p := range products {
 		launches, err := s.LaunchService.GetByProduct(r.Context(), p.ID)
-		if err != nil {
+        if err != nil {
 			s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+            s.InternalServerError(w, r, err)
 			return
 		}
 
@@ -64,7 +64,7 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
     memberProducts, err := s.ProductService.GetByMember(r.Context(), user.ID)
     if err != nil {
         s.Logger.ErrorContext(r.Context(), "error getting member products", slog.Any("error", err))
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        s.InternalServerError(w, r, err)
         return
     }
     memberViews := make([]*MemberProductView, 0, len(memberProducts))
@@ -76,7 +76,7 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
         launches, err := s.LaunchService.GetByProduct(r.Context(), p.ID)
         if err != nil {
             s.Logger.ErrorContext(r.Context(), "error getting launches for member product", slog.Any("error", err))
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            s.InternalServerError(w, r, err)
             return
         }
         memberViews = append(memberViews, &MemberProductView{
@@ -100,7 +100,7 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
         "views/partials/launch-upvote.html",
     )
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -110,8 +110,8 @@ func (s *Handler) MyProducts(w http.ResponseWriter, r *http.Request) {
         "MemberProducts": memberViews,
         "token":          nosurf.Token(r),
     })
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        s.InternalServerError(w, r, err)
+        return
+    }
 }

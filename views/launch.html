@@ -32,7 +32,7 @@
       <div class="flex-shrink-0">
         {{ if and (not .Launch.LaunchingSoon) .Launch.IsPublished }} {{ template
         "launch-upvote" (dict "Launch" .Launch "token" .token "Upvoted"
-        .Upvoted) }} {{ end }}
+        .Upvoted "WithText" true) }} {{ end }}
       </div>
     </div>
 
@@ -63,6 +63,28 @@
             alt="{{ .Launch.Name }}"
             class="absolute inset-0 w-full h-full object-cover"
           />
+        </div>
+      </div>
+      {{ end }} {{ if .Launch.URL }} {{ end }} {{ if .Makers }}
+      <div class="mt-4 w-full">
+        <div class="border rounded-lg p-3 bg-gray-50">
+          <div class="text-sm font-semibold text-gray-900 mb-3">Создатели продукта</div>
+          <div class="flex flex-wrap gap-3">
+            {{ range .Makers }}
+            <a href="/u/{{ .ID }}" class="flex items-center gap-2 px-3 py-2 bg-white rounded-md border hover:bg-gray-50">
+              <img src="{{ if .AvatarURL }}{{ .AvatarURL }}{{ else }}https://placehold.co/32x32/e0e7ff/4338ca?text={{ .Name }}{{ end }}" alt="{{ .Name }}" class="w-8 h-8 rounded-full object-cover" />
+              <div class="min-w-0">
+                <div class="text-sm font-medium text-gray-900">{{ .Name }}</div>
+                {{ if .Bio }}
+                <div class="text-xs text-gray-500">{{ .Bio }}</div>
+                {{ end }}
+                <span class="inline-flex mt-3 items-center px-2 py-0.5 rounded-full text-xs font-medium {{ if eq .Role "owner" }}bg-amber-100 text-amber-800{{ else if eq .Role "developer" }}bg-indigo-100 text-indigo-800{{ else if eq .Role "designer" }}bg-pink-100 text-pink-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                  {{ if eq .Role "owner" }}Владелец{{ else if eq .Role "developer" }}Разработчик{{ else if eq .Role "designer" }}Дизайнер{{ else }}Другое{{ end }}
+                </span>
+              </div>
+            </a>
+            {{ end }}
+          </div>
         </div>
       </div>
       {{ end }} {{ if .Launch.URL }}

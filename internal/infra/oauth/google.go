@@ -17,6 +17,7 @@ type GoogleUser struct {
     ID    string `json:"sub"`
     Name  string `json:"name"`
     Email string `json:"email"`
+    Picture string `json:"picture"`
 }
 
 type GoogleOauthProvider struct {
@@ -68,6 +69,7 @@ func (g *GoogleOauthProvider) GetUserInfo(ctx context.Context, token *oauth2.Tok
         ProviderID: gu.ID,
         Email:      gu.Email,
         Name:       gu.Name,
+        AvatarURL:  gu.Picture,
     }, nil
 }
 

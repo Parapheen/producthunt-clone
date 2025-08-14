@@ -56,7 +56,7 @@ func main() {
 	categoryRepository := sqlite.NewCategoryRepository(db)
 
 	// Initialize services
-	authService := app.NewAuthService(userRepository)
+    authService := app.NewAuthService(userRepository)
     userService := app.NewUserService(userRepository)
     productService := app.NewProductService(productRepository, categoryRepository)
     launchService := app.NewLaunchService(launchRepository, telegramClient)
@@ -80,16 +80,19 @@ func main() {
 
     // Wire storage into services
     _ = userService.WithStorage(storage)
+    _ = authService.WithStorage(storage)
     _ = productService.WithStorage(storage)
     _ = launchService.WithStorage(storage)
 
     // Initialize mailer (dummy or smtp depending on env)
     // Mailer: use SMTP in prod when configured, otherwise dummy
+    var appMailer app.Mailer
     if cfg.IsProduction() && cfg.SMTP.Host != "" {
-        _ = productService.WithMailer(mailer.NewSMTPMailer(logger, cfg.SMTP))
+        appMailer = mailer.NewSMTPMailer(logger, cfg.SMTP)
     } else {
-        _ = productService.WithMailer(mailer.NewDummyMailer(logger))
+        appMailer = mailer.NewDummyMailer(logger)
     }
+    _ = productService.WithMailer(appMailer)
     _ = productService.WithBaseURL(cfg.App.BaseURL)
 
 	// Initialize middleware
@@ -105,6 +108,7 @@ func main() {
 		launchService,
         storage,
         cfg.App.BaseURL,
+        appMailer,
 	)
 
 	// Initialize server

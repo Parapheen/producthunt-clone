@@ -29,7 +29,7 @@
 
   <div id="feed-list" class="flex flex-col justify-start gap-5 mt-6 max-w-xl">
     {{ range .Items }}
-      {{ template "launch-card" . }}
+      {{ template "launch-card" (dict "Launch" .Launch "Categories" .Categories "Upvoted" .Upvoted "ProductSlug" .ProductSlug "token" $.token "Index" .Index) }}
     {{ else }}
       <div class="text-sm text-gray-500">Пока нет запусков за выбранный период.</div>
     {{ end }}

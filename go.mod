@@ -17,6 +17,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/justinas/nosurf v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.28
+	golang.org/x/net v0.43.0
 )
 
 require (

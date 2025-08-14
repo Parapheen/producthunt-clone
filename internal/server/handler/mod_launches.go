@@ -15,10 +15,10 @@ func (h *Handler) ModLaunches(w http.ResponseWriter, r *http.Request) {
 
 	launches, err := h.LaunchService.GetByState(r.Context(), []launch.State{launch.Review, launch.Declined})
 
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	t, err := template.New("product-launches.html").
 		Funcs(template.FuncMap{
@@ -33,18 +33,18 @@ func (h *Handler) ModLaunches(w http.ResponseWriter, r *http.Request) {
 			"views/layout/head.html",
 			"views/partials/launch-moderation-card.html",
 		)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
 		"User":     user,
 		"Launches": launches,
 		"token":    nosurf.Token(r),
 	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.InternalServerError(w, r, err)
+        return
+    }
 }

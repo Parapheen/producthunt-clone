@@ -26,7 +26,7 @@ func (h *Handler) PromotingPage(w http.ResponseWriter, r *http.Request) {
         "views/partials/promotion-result.html",
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -36,12 +36,12 @@ func (h *Handler) PromotingPage(w http.ResponseWriter, r *http.Request) {
 		"Canonical":   h.BaseURL + "/promoting",
 	}
 
-	if err := t.ExecuteTemplate(w, "layout", map[string]any{
+    if err := t.ExecuteTemplate(w, "layout", map[string]any{
 		"User":  u,
 		"token": nosurf.Token(r),
 		"meta":  meta,
 	}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -53,7 +53,7 @@ func (h *Handler) RequestPromotion(w http.ResponseWriter, r *http.Request) {
         w.WriteHeader(http.StatusUnauthorized)
         t, err := template.ParseFiles("views/partials/promotion-result.html")
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
             return
         }
         _ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
@@ -80,15 +80,26 @@ When: %s
 		time.Now().Format(time.RFC3339),
 	)
 
-	if err := h.LaunchService.SendAdminNotification(r.Context(), msg); err != nil {
+    if err := h.LaunchService.SendAdminNotification(r.Context(), msg); err != nil {
 		h.Logger.ErrorContext(r.Context(), "error sending promotion request", "error", err)
-		http.Error(w, "Не удалось отправить запрос. Попробуйте позже", http.StatusInternalServerError)
+        w.WriteHeader(http.StatusInternalServerError)
+        t, tplErr := template.ParseFiles("views/partials/promotion-result.html")
+        if tplErr != nil {
+            http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+            return
+        }
+        _ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
+            "Title":   "Ошибка",
+            "Message": "Не удалось отправить запрос. Попробуйте позже",
+            "Support": true,
+            "ShowBack": false,
+        })
 		return
 	}
 
     t, err := template.ParseFiles("views/partials/promotion-result.html")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
     _ = t.ExecuteTemplate(w, "promotion-result", map[string]any{

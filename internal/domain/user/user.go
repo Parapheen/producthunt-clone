@@ -23,6 +23,7 @@ func NewUserFromSocialAccount(socialAccount *SocialAccount) *User {
 		ID:    uuid.New(),
 		Email: socialAccount.Email,
 		Name:  socialAccount.Name,
+        AvatarURL: socialAccount.AvatarURL,
 
 		Session:        NewSession(),
 		SocialAccounts: []*SocialAccount{socialAccount},

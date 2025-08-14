@@ -23,7 +23,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
     launches, err := s.LaunchService.GetFeedByPeriod(r.Context(), period)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -41,7 +41,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
     products, err := s.ProductService.GetByIDs(r.Context(), productIDs)
     if err != nil {
         s.Logger.ErrorContext(r.Context(), "error getting products for launches", slog.Any("error", err))
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        s.InternalServerError(w, r, err)
         return
     }
     categoriesByProduct := map[uuid.UUID]interface{}{}
@@ -64,13 +64,21 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
     }
     // 4) compose items for template
     items := make([]map[string]interface{}, 0, len(launches))
+    // Build index map per product to avoid per-item SQL; compute by created_at DESC position.
+    type indexAware interface { GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error) }
+    var idxSvc indexAware
+    if svc, ok := any(s.LaunchService).(indexAware); ok { idxSvc = svc }
     for _, l := range launches {
-        items = append(items, map[string]interface{}{
+        item := map[string]interface{}{
             "Launch":      l,
             "Categories":  categoriesByProduct[l.ProductID],
             "Upvoted":     upvoted[l.ID],
             "ProductSlug": productSlugByID[l.ProductID],
-        })
+        }
+        if idxSvc != nil {
+            if idx, err := idxSvc.GetIndexByProductAndLaunchID(r.Context(), l.ProductID, l.ID); err == nil { item["Index"] = idx }
+        }
+        items = append(items, item)
     }
 
     // HTMX partial render for feed swap
@@ -84,7 +92,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
             "views/partials/launch-upvote.html",
         )
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            s.InternalServerError(w, r, err)
             return
         }
 
@@ -95,7 +103,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
             "token":        nosurf.Token(r),
         })
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            s.InternalServerError(w, r, err)
         }
         return
     }
@@ -114,7 +122,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
         "views/partials/launch-upvote.html",
     )
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -135,7 +143,7 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
         "meta":         meta,
     })
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		s.InternalServerError(w, r, err)
 		return
 	}
 }

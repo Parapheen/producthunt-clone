@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
@@ -17,11 +18,11 @@ func (h *Handler) GetNewLaunch(w http.ResponseWriter, r *http.Request) {
 
 	productID := uuid.MustParse(r.PathValue("productID"))
 
-	p, err := h.ProductService.GetByID(r.Context(), productID)
+    p, err := h.ProductService.GetByID(r.Context(), productID)
 
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -30,7 +31,7 @@ func (h *Handler) GetNewLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles(
+    t, err := template.ParseFiles(
 		"views/new-launch.html",
 		"views/layout/layout.html",
 		"views/layout/header.html",
@@ -38,7 +39,7 @@ func (h *Handler) GetNewLaunch(w http.ResponseWriter, r *http.Request) {
 		"views/layout/head.html",
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -47,8 +48,8 @@ func (h *Handler) GetNewLaunch(w http.ResponseWriter, r *http.Request) {
 		"Product": p,
 		"token":   nosurf.Token(r),
 	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -64,12 +65,21 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
     errors := make([]string, 0)
 
     // Multipart for optional media
-    if err := r.ParseMultipartForm(20 << 20); err != nil { // 20MB
+        if err := r.ParseMultipartForm(20 << 20); err != nil { // 20MB
         http.Error(w, "invalid form", http.StatusBadRequest)
         return
     }
     name := r.FormValue("name")
     url := r.FormValue("url")
+	tagline := r.FormValue("tagline")
+	description := r.FormValue("description")
+	launchDate, err := time.Parse("2006-01-02", r.FormValue("launch-date"))
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error parsing launch date", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
+        return
+    }
+
     productID := uuid.MustParse(r.FormValue("product_id"))
 
     // Field-level validation before creating domain entity
@@ -77,6 +87,7 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
     if verr := v.ValidateMultiple(
         v.ValidateString(name, "name", 1, 255, true),
         v.ValidateURL(url, "url", true),
+        v.ValidateString(tagline, "tagline", 0, 140, false),
     ); verr != nil {
         switch ve := verr.(type) {
         case validation.ValidationErrors:
@@ -90,10 +101,11 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
 
     launch := launch.NewLaunch(productID, name, url)
 
-	launch.Tagline = r.FormValue("tagline")
-	launch.Description = r.FormValue("description")
+	launch.Tagline = tagline
+	launch.Description = description
+	launch.LaunchDate = &launchDate
 
-    err := h.LaunchService.Create(
+    err = h.LaunchService.Create(
 		r.Context(),
 		launch,
 	)
@@ -130,25 +142,24 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
                     h.Logger.ErrorContext(r.Context(), "error opening file", slog.Any("error", ferr))
                     continue
                 }
-                            // Storage handles streaming; service persists reference
-            if _, uerr := h.LaunchService.AddMedia(r.Context(), launch, fh.Filename, f); uerr != nil {
+                // Storage handles streaming; service persists reference
+                if _, uerr := h.LaunchService.AddMedia(r.Context(), launch, fh.Filename, f); uerr != nil {
                 h.Logger.ErrorContext(r.Context(), "error saving media", slog.Any("error", uerr))
                 // Check if it's a media limit error
                 if uerr.Error() == "too many media files" {
                     errors = append(errors, "Можно загрузить не более 4 изображений")
                     break // Stop processing more files
                 }
-            }
+                }
                 f.Close()
             }
         }
         
         if len(errors) == 0 {
-            // Redirect back to product launches tab
             p, _ := h.ProductService.GetByID(r.Context(), productID)
             slug := productID.String()
             if p != nil && p.Slug != "" { slug = p.Slug }
-            redirectTo := "/products/" + slug + "/launches"
+            redirectTo := "/products/" + slug + "/launches/edit"
             w.Header().Add("HX-Redirect", redirectTo)
             return
         }
@@ -159,17 +170,17 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(errors) > 0 {
-		t, err := template.ParseFiles("views/partials/errors.html")
+        t, err := template.ParseFiles("views/partials/errors.html")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
 			return
 		}
 
 		err = t.Execute(w, map[string]interface{}{
 			"Errors": errors,
 		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err != nil {
+            h.InternalServerError(w, r, err)
 			return
 		}
 	}

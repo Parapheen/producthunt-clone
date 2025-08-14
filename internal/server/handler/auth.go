@@ -13,14 +13,14 @@ const sessionCookieName = "session"
 const inviteTokenCookie = "invite_token"
 
 func (h *Handler) LoginModal(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("views/partials/auth-modal.html")
+    t, err := template.ParseFiles("views/partials/auth-modal.html")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 	err = t.Execute(w, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+    if err != nil {
+        h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -42,23 +42,23 @@ func (h *Handler) YandexAuth(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// validate state
-	cookie, err := r.Cookie(oauthStateCookie)
+    cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
 	state := r.URL.Query().Get("state")
-	if cookie.Value != state {
-		http.Error(w, "Invalid state", http.StatusInternalServerError)
+    if cookie.Value != state {
+        http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 
-	user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "yandex", code)
+    user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "yandex", code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -115,23 +115,23 @@ func (h *Handler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GoogleAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// validate state
-	cookie, err := r.Cookie(oauthStateCookie)
+    cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
 	state := r.URL.Query().Get("state")
-	if cookie.Value != state {
-		http.Error(w, "Invalid state", http.StatusInternalServerError)
+    if cookie.Value != state {
+        http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 
-	user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "google", code)
+    user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "google", code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -187,23 +187,23 @@ func (h *Handler) VKAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) VKAuthCallback(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(oauthStateCookie)
+    cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
 	state := r.URL.Query().Get("state")
-	if cookie.Value != state {
-		http.Error(w, "Invalid state", http.StatusInternalServerError)
+    if cookie.Value != state {
+        http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 
-	user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "vk", code)
+    user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "vk", code)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -242,15 +242,15 @@ func (h *Handler) VKAuthCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie(sessionCookieName)
+    cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
-	err = h.AuthService.Logout(r.Context(), cookie.Value)
+    err = h.AuthService.Logout(r.Context(), cookie.Value)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 

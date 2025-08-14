@@ -38,4 +38,11 @@ type LaunchRepository interface {
     GetCommentsTree(ctx context.Context, launchID uuid.UUID) ([]*Comment, map[uuid.UUID][]*Comment, error)
     ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error)
     PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error
+
+	// Index-based navigation
+	// GetNthByProductOrderedByCreatedAt returns the nth (1-based) published launch for a product,
+	// ordered by created_at DESC (1 is most recent by created_at).
+	GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*Launch, error)
+	// GetIndexByProductAndLaunchID returns the 1-based index (created_at DESC) of the given launch within the product's published launches.
+	GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error)
 }

@@ -8,4 +8,5 @@ type SocialAccount struct {
 	ProviderID string
 	Email      string
 	Name       string
+    AvatarURL  string
 }

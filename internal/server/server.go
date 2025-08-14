@@ -29,11 +29,23 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r := chi.NewRouter()
 
 	// Middleware
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+    r.Use(middleware.Logger)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(m.SessionMiddleware)
+    r.Use(m.SessionMiddleware)
+
+    // Custom recoverer that renders our 500 page instead of plain text
+    r.Use(func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            defer func() {
+                if rec := recover(); rec != nil {
+                    // Render generic 500 page; avoid exposing panic detail to user
+                    h.InternalServerError(w, r, fmt.Errorf("panic: %v", rec))
+                }
+            }()
+            next.ServeHTTP(w, r)
+        })
+    })
 
 	// Add security headers
 	r.Use(func(next http.Handler) http.Handler {
@@ -57,12 +69,12 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Get("/new-product", h.NewProductForm)
 	r.Get("/u/{userID}", h.UserProfile)
 	r.Get("/u/{userID}/edit", h.EditProfileForm)
-	r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
-	// Standalone launch page
-	r.Get("/launches/{launchSlug}", h.GetLaunch)
+    r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
     r.Get("/products/{productSlug}", h.GetProduct)
     // Nested launch page under product slug
-    r.Get("/products/{productSlug}/launches/{launchSlug}", h.GetProductLaunch)
+    // New index-based route: e.g., /products/foo/launches/1
+    r.Get("/products/{productSlug}/launches/{index:[0-9]+}", h.GetProductLaunchByIndex)
+    // Only index-based route is supported for public launch pages
     r.Get("/products/{productSlug}/edit", h.EditProductForm)
 	r.Get("/products/u/{productID}", h.GetProductByID)
 	r.Get("/my/products", h.MyProducts)

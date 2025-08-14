@@ -23,11 +23,11 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 
 	p, err := h.ProductService.GetByID(r.Context(), productID)
 
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	if !p.IsOwner(u.ID) {
 		http.Error(w, "Вы не автор этого продукта", http.StatusForbidden)
@@ -35,11 +35,11 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	launch, err := h.LaunchService.GetBySlug(r.Context(), launchSlug)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	if !launch.IsDraft() {
 		http.Redirect(w, r, "/products/"+p.Slug, http.StatusFound)
@@ -54,10 +54,10 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 		"views/layout/footer.html",
 		"views/layout/head.html",
 	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
 		"User":    u,
@@ -65,10 +65,10 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 		"Launch":  launch,
 		"token":   nosurf.Token(r),
 	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.InternalServerError(w, r, err)
+        return
+    }
 }
 
 func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
@@ -83,10 +83,10 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 	productSlug := r.FormValue("product_slug")
 	launchSlug := r.FormValue("launch_slug")
 
-	p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
+    p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -96,11 +96,11 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 	}
 
     l, err := h.LaunchService.GetBySlug(r.Context(), launchSlug)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
+        return
+    }
 
     l.Name = r.FormValue("name")
     l.URL = r.FormValue("url")
@@ -109,11 +109,11 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 
 	launchDate, err := time.Parse("2006-01-02", r.FormValue("launch-date"))
 
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error parsing launch date", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error parsing launch date", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	l.LaunchDate = &launchDate
 
@@ -178,7 +178,7 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
                     }
                     
                     // Replace all existing media with new uploads
-                    if err := h.LaunchService.ReplaceMedia(r.Context(), l, uploads); err != nil {
+            if err := h.LaunchService.ReplaceMedia(r.Context(), l, uploads); err != nil {
                         h.Logger.ErrorContext(r.Context(), "error replacing media", slog.Any("error", err))
                         // Check if it's a media limit error
                         if err.Error() == "too many media files" {
@@ -200,7 +200,7 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
             }
             
             if len(errors) == 0 {
-                w.Header().Add("HX-Redirect", "/products/"+p.Slug+"/launches")
+                w.Header().Add("HX-Redirect", "/products/"+p.Slug+"/launches/edit")
                 return
             }
         case launch.InvalidURLSchemeError, launch.InvalidURL:
@@ -209,23 +209,23 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
             errors = append(errors, "Дата запуска не может быть в прошлом")
 
         default:
-            http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
             return
         }
     }
 
 	if len(errors) > 0 {
-		t, err := template.ParseFiles("views/partials/errors.html")
+        t, err := template.ParseFiles("views/partials/errors.html")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+            h.InternalServerError(w, r, err)
 			return
 		}
 
 		err = t.Execute(w, map[string]interface{}{
 			"Errors": errors,
 		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err != nil {
+            h.InternalServerError(w, r, err)
 			return
 		}
 	}
@@ -236,17 +236,17 @@ func (h *Handler) DeleteLaunch(w http.ResponseWriter, r *http.Request) {
 
 	launchID := uuid.MustParse(r.PathValue("launchID"))
 
-	launch, err := h.LaunchService.GetByID(r.Context(), launchID)
+    launch, err := h.LaunchService.GetByID(r.Context(), launchID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
-	product, err := h.ProductService.GetByID(r.Context(), launch.ProductID)
+    product, err := h.ProductService.GetByID(r.Context(), launch.ProductID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+        h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -256,11 +256,11 @@ func (h *Handler) DeleteLaunch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.LaunchService.Delete(r.Context(), launchID)
-	if err != nil {
-		h.Logger.ErrorContext(r.Context(), "error deleting launch", slog.Any("error", err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+    if err != nil {
+        h.Logger.ErrorContext(r.Context(), "error deleting launch", slog.Any("error", err))
+        h.InternalServerError(w, r, err)
+        return
+    }
 
 	w.Write([]byte(""))
 }
