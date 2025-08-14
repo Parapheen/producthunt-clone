@@ -30,6 +30,7 @@
       hx-post="/api/send-launch-to-moderation"
       hx-target="#l-{{ .Launch.ID }}"
       hx-swap="outerHTML"
+      hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
     >
       <input type="hidden" name="csrf_token" value="{{ .token }}" />
       <input type="hidden" name="product_id" value="{{ .Launch.ProductID }}" />
@@ -72,7 +73,11 @@
       </svg>
     </a>
     {{ end }}
-    <form hx-delete="/api/launches/{{ .Launch.ID }}" hx-confirm="Вы уверены?">
+    <form
+      hx-delete="/api/launches/{{ .Launch.ID }}"
+      hx-confirm="Вы уверены?"
+      hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
+    >
       <input type="hidden" name="csrf_token" value="{{ .token }}" />
       <button
         class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-100 hover:text-gray-900"
