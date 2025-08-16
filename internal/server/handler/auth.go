@@ -210,25 +210,23 @@ func (h *Handler) VKAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse VK ID payload
-	type vkPayload struct {
-		Code     string `json:"code"`
-		State    string `json:"state"`
-		Type     string `json:"type"`
-		DeviceID string `json:"device_id"`
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		http.Error(w, "Invalid code", http.StatusInternalServerError)
+		return
 	}
-	var p vkPayload
-	if payloadStr := r.URL.Query().Get("payload"); payloadStr != "" {
-		_ = json.Unmarshal([]byte(payloadStr), &p)
+	deviceID := r.URL.Query().Get("device_id")
+	if deviceID == "" {
+		http.Error(w, "Invalid device_id", http.StatusInternalServerError)
+		return
 	}
-	if p.Code == "" {
-		p.Code = r.URL.Query().Get("code")
-	}
-	if p.State == "" {
-		p.State = r.URL.Query().Get("state")
+	state := r.URL.Query().Get("state")
+	if state == "" {
+		http.Error(w, "Invalid state", http.StatusInternalServerError)
+		return
 	}
 
-	if cookie.Value != p.State || p.State == "" {
+	if cookie.Value != state || state == "" {
 		http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
@@ -239,7 +237,7 @@ func (h *Handler) VKAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.AuthService.AuthenticateWithVK(r.Context(), p.Code, verifierCookie.Value, p.DeviceID, p.State)
+	user, err := h.AuthService.AuthenticateWithVK(r.Context(), code, verifierCookie.Value, deviceID, state)
 	if err != nil {
 		h.InternalServerError(w, r, err)
 		return

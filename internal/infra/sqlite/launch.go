@@ -878,10 +878,11 @@ func (r *LaunchRepository) GetFirstTimeMakerLaunches(ctx context.Context, limit 
 
 // GetHiddenGems returns launches with strong feedback but below a visibility threshold (performance-based)
 // Selection heuristic:
-//  - Published launches, launch_date not null
-//  - Exit condition (visibility threshold): upvotes < 50
-//  - Quality signals: comments >= 5 OR comments/(upvotes+1) >= 1.5
-//  - Fail-safe freshness window: last 180 days
+//   - Published launches, launch_date not null
+//   - Exit condition (visibility threshold): upvotes < 50
+//   - Quality signals: comments >= 5 OR comments/(upvotes+1) >= 1.5
+//   - Fail-safe freshness window: last 180 days
+//
 // Ordered by feedback-to-visibility ratio then recency
 func (r *LaunchRepository) GetHiddenGems(ctx context.Context, limit int) ([]*launch.Launch, error) {
 	q := `

@@ -196,4 +196,3 @@ func (v *VKOauthProvider) GetUserInfo(ctx context.Context, accessToken string) (
 		AvatarURL:  ui.User.Avatar,
 	}, nil
 }
-
