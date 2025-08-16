@@ -4,8 +4,9 @@
 Как начать: 1) Создайте карточку продукта: {{ .NewProductURL }} 2) Подготовьте
 запуск (описание, изображения, ссылки) 3) Отправьте на модерацию — и после
 публикации делитесь ссылкой! Важно: ознакомьтесь с принципами: {{ .PrinciplesURL
-}} Полезно: как продвигать запуск — {{ .PromotingURL }} Удачных запусков! {{ end
-}} {{ define "htmlBody" }}
+}} Полезно: как продвигать запуск — {{ .PromotingURL }}. Доступно платное
+продвижение для увеличения видимости. Удачных запусков! {{ end }} {{ define
+"htmlBody" }}
 <div
   style="
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
@@ -51,13 +52,52 @@
     >
   </p>
 
+  <h3 style="margin: 16px 0 8px; font-size: 16px">Наши ценности</h3>
+  <p style="margin: 0 0 8px; font-size: 14px">
+    Основа сообщества — три принципа. Коротко:
+  </p>
+  <ul style="margin: 0 0 12px; padding-left: 18px; font-size: 14px">
+    <li style="margin: 0 4px">Обратная связь — сердце продукта</li>
+    <li style="margin: 0 4px">Каждый запуск имеет значение</li>
+    <li style="margin: 0 4px">Создавайте, не ломайте</li>
+  </ul>
+  <p style="margin: 0 0 16px; font-size: 14px">
+    Подробнее на странице <a href="{{ .PrinciplesURL }}">принципов</a>.
+  </p>
+
+  <div
+    style="
+      margin: 20px 0;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f9fafb;
+    "
+  >
+    <h3 style="margin: 0 0 8px; font-size: 16px">Продвижение запуска</h3>
+    <p style="margin: 0 0 10px; font-size: 14px">
+      Хотите больше охвата в день запуска? Доступна опция платного продвижения —
+      закрепление, дополнительная видимость и приоритетные размещения.
+    </p>
+    <p style="margin: 0">
+      <a
+        href="{{ .PromotingURL }}"
+        style="
+          display: inline-block;
+          background: #111827;
+          color: #fff;
+          text-decoration: none;
+          padding: 10px 14px;
+          border-radius: 10px;
+        "
+        >Узнать о продвижении</a
+      >
+    </p>
+  </div>
+
   <p style="margin: 0 0 8px; font-size: 14px">
     Ознакомьтесь с
     <a href="{{ .PrinciplesURL }}">принципами и ценностями платформы</a>.
-  </p>
-  <p style="margin: 0 0 24px; font-size: 14px">
-    Также посмотрите раздел
-    <a href="{{ .PromotingURL }}">как продвигать запуск</a>.
   </p>
 
   <hr style="margin: 16px 0; border: none; border-top: 1px solid #e5e7eb" />

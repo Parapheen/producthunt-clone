@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	"github.com/goforj/godump"
 	"github.com/google/uuid"
 )
 
@@ -28,8 +29,8 @@ type VKOauthProvider struct {
 func NewVKOauthProvider() *VKOauthProvider {
 	scope := os.Getenv("VK_SCOPE")
 	if strings.TrimSpace(scope) == "" {
-		// Request email and phone; VK ID defaults also include vkid.personal_info
-		scope = "email phone"
+		// Request email VK ID defaults also include vkid.personal_info
+		scope = "email"
 	}
 	return &VKOauthProvider{
 		clientID:    os.Getenv("VK_CLIENT_ID"),
@@ -177,6 +178,9 @@ func (v *VKOauthProvider) GetUserInfo(ctx context.Context, accessToken string) (
 		return nil, fmt.Errorf("vk: user_info decode failed: %w", err)
 	}
 
+	godump.Dump(accessToken)
+	godump.Dump(ui)
+
 	email := strings.TrimSpace(ui.User.Email)
 	if email == "" {
 		return nil, errors.New("vk: email permission not granted or email not available")
@@ -191,4 +195,5 @@ func (v *VKOauthProvider) GetUserInfo(ctx context.Context, accessToken string) (
 		Name:       name,
 		AvatarURL:  ui.User.Avatar,
 	}, nil
-} 
+}
+
