@@ -73,6 +73,10 @@ type LaunchService interface {
 	ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error)
 	PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error
 
+	// Discovery
+	GetFirstTimeMakerLaunches(ctx context.Context, limit int) ([]*launch.Launch, error)
+	GetHiddenGems(ctx context.Context, limit int) ([]*launch.Launch, error)
+
 	// Admin notifications
 	SendAdminNotification(ctx context.Context, message string) error
 

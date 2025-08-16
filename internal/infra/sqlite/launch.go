@@ -836,3 +836,85 @@ func (r *LaunchRepository) GetAwardsByLaunchIDs(ctx context.Context, ids []uuid.
 	}
 	return result, rows.Err()
 }
+
+// GetFirstTimeMakerLaunches returns recent launches where all makers have no previous launches
+func (r *LaunchRepository) GetFirstTimeMakerLaunches(ctx context.Context, limit int) ([]*launch.Launch, error) {
+	// Define a maker as product owner(s). First-time maker if this product's owner has no other launches before this one.
+	q := `
+		SELECT l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
+		       (SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) AS upvote_count,
+		       (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) AS comment_count
+		FROM launches l
+		JOIN product_members pm ON pm.product_id = l.product_id AND pm.role = 'owner'
+		WHERE l.state = 'published'
+		  AND l.launch_date IS NOT NULL
+		  AND date(l.launch_date) >= date('now','-14 day')
+		  AND NOT EXISTS (
+			SELECT 1 FROM launches l2
+			JOIN product_members pm2 ON pm2.product_id = l2.product_id AND pm2.role = 'owner'
+			WHERE pm2.user_id = pm.user_id
+			  AND l2.state = 'published'
+			  AND l2.launch_date IS NOT NULL
+			  AND (l2.launch_date < l.launch_date OR (l2.launch_date = l.launch_date AND l2.created_at < l.created_at))
+		)
+		ORDER BY l.launch_date DESC, l.created_at DESC
+		LIMIT ?`
+	q = r.db.Rebind(q)
+	var rows []LaunchModel
+	if err := r.db.SelectContext(ctx, &rows, q, limit); err != nil {
+		return nil, err
+	}
+	result := make([]*launch.Launch, 0, len(rows))
+	for _, m := range rows {
+		result = append(result, toDomain(&m))
+	}
+	// Attach media
+	mediaMap, _ := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
+	for _, l := range result {
+		l.Media = mediaMap[l.ID]
+	}
+	return result, nil
+}
+
+// GetHiddenGems returns launches with strong feedback but below a visibility threshold (performance-based)
+// Selection heuristic:
+//  - Published launches, launch_date not null
+//  - Exit condition (visibility threshold): upvotes < 50
+//  - Quality signals: comments >= 5 OR comments/(upvotes+1) >= 1.5
+//  - Fail-safe freshness window: last 180 days
+// Ordered by feedback-to-visibility ratio then recency
+func (r *LaunchRepository) GetHiddenGems(ctx context.Context, limit int) ([]*launch.Launch, error) {
+	q := `
+		WITH metrics AS (
+		  SELECT l.id,
+		         (SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) AS upvotes,
+		         (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) AS comments
+		  FROM launches l
+		  WHERE l.state = 'published' AND l.launch_date IS NOT NULL AND date(l.launch_date) >= date('now','-180 day')
+		)
+		SELECT l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
+		       m.upvotes AS upvote_count,
+		       m.comments AS comment_count
+		FROM launches l
+		JOIN metrics m ON m.id = l.id
+		WHERE m.upvotes < 50
+		  AND (
+		    m.comments >= 5 OR (CAST(m.comments AS REAL) / NULLIF(m.upvotes + 1, 0)) >= 1.5
+		  )
+		ORDER BY (CAST(m.comments AS REAL) / NULLIF(m.upvotes + 1, 0)) DESC, l.launch_date DESC
+		LIMIT ?`
+	q = r.db.Rebind(q)
+	var rows []LaunchModel
+	if err := r.db.SelectContext(ctx, &rows, q, limit); err != nil {
+		return nil, err
+	}
+	result := make([]*launch.Launch, 0, len(rows))
+	for _, m := range rows {
+		result = append(result, toDomain(&m))
+	}
+	mediaMap, _ := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
+	for _, l := range result {
+		l.Media = mediaMap[l.ID]
+	}
+	return result, nil
+}

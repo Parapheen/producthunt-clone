@@ -27,19 +27,29 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build items with product categories for each launch
-	// 1) collect product IDs and launch IDs
+	// Discovery sections (for aside)
+	firstTime, _ := s.LaunchService.GetFirstTimeMakerLaunches(r.Context(), 12)
+	hiddenGems, _ := s.LaunchService.GetHiddenGems(r.Context(), 12)
+
+	// Collect product IDs for all sections to resolve slugs and categories
 	productIDSet := map[uuid.UUID]struct{}{}
 	launchIDs := make([]uuid.UUID, 0, len(launches))
 	for _, l := range launches {
 		productIDSet[l.ProductID] = struct{}{}
 		launchIDs = append(launchIDs, l.ID)
 	}
+	for _, l := range firstTime {
+		productIDSet[l.ProductID] = struct{}{}
+	}
+	for _, l := range hiddenGems {
+		productIDSet[l.ProductID] = struct{}{}
+	}
 	productIDs := make([]uuid.UUID, 0, len(productIDSet))
 	for id := range productIDSet {
 		productIDs = append(productIDs, id)
 	}
-	// 2) fetch products with categories in bulk
+
+	// fetch products with categories in bulk
 	products, err := s.ProductService.GetByIDs(r.Context(), productIDs)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting products for launches", slog.Any("error", err))
@@ -52,8 +62,8 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		categoriesByProduct[p.ID] = p.Categories
 		productSlugByID[p.ID] = p.Slug
 	}
-	// 3) Upvoted map for user
-	// Upvoted map for user when service supports it
+
+	// Upvoted map for user (for main list)
 	var upvoted map[uuid.UUID]bool
 	if user != nil {
 		type upvoteAware interface {
@@ -68,22 +78,17 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 			upvoted = up
 		}
 	}
-	// 3.1) Awards by launch
+
+	// Awards by launch (for main list rendering)
 	awardsByLaunch := map[uuid.UUID][]*struct { /* placeholder */
 	}{}
 	if m, err := s.LaunchService.GetAwardsByLaunchIDs(r.Context(), launchIDs); err == nil {
-		// pass as interface{} directly in template data
-		// store in a generic map[uuid.UUID]any for safety
 		_ = m
-		// we'll pass m in the template data under key AwardsByLaunch
-		// nothing else to transform
-		// reuse variable name to avoid confusion
 		_ = awardsByLaunch
 	}
 
-	// 4) compose items for template
+	// Compose main items
 	items := make([]map[string]interface{}, 0, len(launches))
-	// Build index map per product to avoid per-item SQL; compute by created_at DESC position.
 	type indexAware interface {
 		GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error)
 	}
@@ -104,6 +109,34 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		items = append(items, item)
+	}
+
+	// Compose aside items (compact)
+	firstTimeItems := make([]map[string]interface{}, 0, len(firstTime))
+	for _, l := range firstTime {
+		it := map[string]interface{}{
+			"Launch":      l,
+			"ProductSlug": productSlugByID[l.ProductID],
+		}
+		if idxSvc != nil {
+			if idx, err := idxSvc.GetIndexByProductAndLaunchID(r.Context(), l.ProductID, l.ID); err == nil {
+				it["Index"] = idx
+			}
+		}
+		firstTimeItems = append(firstTimeItems, it)
+	}
+	hiddenGemItems := make([]map[string]interface{}, 0, len(hiddenGems))
+	for _, l := range hiddenGems {
+		it := map[string]interface{}{
+			"Launch":      l,
+			"ProductSlug": productSlugByID[l.ProductID],
+		}
+		if idxSvc != nil {
+			if idx, err := idxSvc.GetIndexByProductAndLaunchID(r.Context(), l.ProductID, l.ID); err == nil {
+				it["Index"] = idx
+			}
+		}
+		hiddenGemItems = append(hiddenGemItems, it)
 	}
 
 	// HTMX partial render for feed swap
@@ -130,6 +163,9 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 			"ActivePeriod":   period,
 			"token":          nosurf.Token(r),
 			"AwardsByLaunch": awards,
+			// aside
+			"FirstTimeItems": firstTimeItems,
+			"HiddenGemItems": hiddenGemItems,
 		})
 		if err != nil {
 			s.InternalServerError(w, r, err)
@@ -186,6 +222,9 @@ func (s *Handler) Home(w http.ResponseWriter, r *http.Request) {
 		"token":          nosurf.Token(r),
 		"meta":           meta,
 		"AwardsByLaunch": awards,
+		// aside
+		"FirstTimeItems": firstTimeItems,
+		"HiddenGemItems": hiddenGemItems,
 	})
 	if err != nil {
 		s.InternalServerError(w, r, err)

@@ -1,39 +1,78 @@
 {{ define "home-feed" }}
-<div id="home-feed-root" class="mt-4">
-  <div class="flex items-center gap-2 text-sm">
-    <a href="/?period=daily" 
-       hx-get="/?period=daily" 
-       hx-target="#home-feed-root" 
-       hx-swap="outerHTML"
-       hx-push-url="true"
-       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "daily" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Сегодня</a>
-    <a href="/?period=weekly" 
-       hx-get="/?period=weekly" 
-       hx-target="#home-feed-root" 
-       hx-swap="outerHTML"
-       hx-push-url="true"
-       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "weekly" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Неделя</a>
-    <a href="/?period=monthly" 
-       hx-get="/?period=monthly" 
-       hx-target="#home-feed-root" 
-       hx-swap="outerHTML"
-       hx-push-url="true"
-       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "monthly" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Месяц</a>
-    <a href="/?period=all_time" 
-       hx-get="/?period=all_time" 
-       hx-target="#home-feed-root" 
-       hx-swap="outerHTML"
-       hx-push-url="true"
-       class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "all_time" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">За всё время</a>
+<div id="home-feed-root" class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+  <div class="lg:col-span-2">
+    <div class="flex items-center gap-2 text-sm">
+      <a href="/?period=daily" 
+         hx-get="/?period=daily" 
+         hx-target="#home-feed-root" 
+         hx-swap="outerHTML"
+         hx-push-url="true"
+         class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "daily" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Сегодня</a>
+      <a href="/?period=weekly" 
+         hx-get="/?period=weekly" 
+         hx-target="#home-feed-root" 
+         hx-swap="outerHTML"
+         hx-push-url="true"
+         class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "weekly" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Неделя</a>
+      <a href="/?period=monthly" 
+         hx-get="/?period=monthly" 
+         hx-target="#home-feed-root" 
+         hx-swap="outerHTML"
+         hx-push-url="true"
+         class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "monthly" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">Месяц</a>
+      <a href="/?period=all_time" 
+         hx-get="/?period=all_time" 
+         hx-target="#home-feed-root" 
+         hx-swap="outerHTML"
+         hx-push-url="true"
+         class="px-3 py-1 rounded-full border {{ if eq .ActivePeriod "all_time" }}bg-gray-900 text-white border-gray-900{{ else }}bg-white hover:bg-gray-50{{ end }}">За всё время</a>
+    </div>
+
+    <div class="mt-6 space-y-8">
+      <div id="feed-list" class="flex flex-col justify-start gap-5">
+        {{ range .Items }}
+          {{ template "launch-card" (dict "Launch" .Launch "Categories" .Categories "Upvoted" .Upvoted "ProductSlug" .ProductSlug "token" $.token "Index" .Index "AwardsByLaunch" $.AwardsByLaunch) }}
+        {{ else }}
+          <div class="text-sm text-gray-500">Пока нет запусков за выбранный период.</div>
+        {{ end }}
+      </div>
+    </div>
   </div>
 
-  <div id="feed-list" class="flex flex-col justify-start gap-5 mt-6 max-w-xl">
-    {{ range .Items }}
-      {{ template "launch-card" (dict "Launch" .Launch "Categories" .Categories "Upvoted" .Upvoted "ProductSlug" .ProductSlug "token" $.token "Index" .Index "AwardsByLaunch" $.AwardsByLaunch) }}
-    {{ else }}
-      <div class="text-sm text-gray-500">Пока нет запусков за выбранный период.</div>
-    {{ end }}
-  </div>
+  <aside class="lg:col-span-1">
+    <div class="sticky top-20 space-y-6">
+      <div>
+        <div class="text-sm font-semibold text-gray-700 mb-2">🌱 Первые запуски</div>
+        <ul class="space-y-2">
+          {{ range .FirstTimeItems }}
+            <li>
+              <a href="/products/{{ .ProductSlug }}/launches/{{ .Index }}" class="block p-2 rounded hover:bg-gray-50">
+                <div class="text-sm font-medium text-gray-900 truncate">{{ .Launch.Name }}</div>
+                {{ if .Launch.Tagline }}<div class="text-xs text-gray-500 truncate">{{ .Launch.Tagline }}</div>{{ end }}
+              </a>
+            </li>
+          {{ else }}
+            <li class="text-sm text-gray-500">Пока нет</li>
+          {{ end }}
+        </ul>
+      </div>
+      <div>
+        <div class="text-sm font-semibold text-gray-700 mb-2">💎 Скрытые жемчужины</div>
+        <ul class="space-y-2">
+          {{ range .HiddenGemItems }}
+            <li>
+              <a href="/products/{{ .ProductSlug }}/launches/{{ .Index }}" class="block p-2 rounded hover:bg-gray-50">
+                <div class="text-sm font-medium text-gray-900 truncate">{{ .Launch.Name }}</div>
+                {{ if .Launch.Tagline }}<div class="text-xs text-gray-500 truncate">{{ .Launch.Tagline }}</div>{{ end }}
+              </a>
+            </li>
+          {{ else }}
+            <li class="text-sm text-gray-500">Пока нет</li>
+          {{ end }}
+        </ul>
+      </div>
+    </div>
+  </aside>
 </div>
 {{ end }}
 

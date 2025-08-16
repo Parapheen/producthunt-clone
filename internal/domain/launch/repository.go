@@ -40,6 +40,10 @@ type LaunchRepository interface {
 	ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error)
 	PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error
 
+	// Discovery sections
+	GetFirstTimeMakerLaunches(ctx context.Context, limit int) ([]*Launch, error)
+	GetHiddenGems(ctx context.Context, limit int) ([]*Launch, error)
+
 	// Index helpers
 	GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*Launch, error)
 	GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error)

@@ -309,3 +309,11 @@ func (s *LaunchService) HasAwardForPeriod(ctx context.Context, awardCode string,
 func (s *LaunchService) GetTopLaunchInRange(ctx context.Context, start, end time.Time) (*launch.Launch, error) {
 	return s.launchRepo.GetTopLaunchInRange(ctx, start, end)
 }
+
+func (s *LaunchService) GetFirstTimeMakerLaunches(ctx context.Context, limit int) ([]*launch.Launch, error) {
+	return s.launchRepo.GetFirstTimeMakerLaunches(ctx, limit)
+}
+
+func (s *LaunchService) GetHiddenGems(ctx context.Context, limit int) ([]*launch.Launch, error) {
+	return s.launchRepo.GetHiddenGems(ctx, limit)
+}
