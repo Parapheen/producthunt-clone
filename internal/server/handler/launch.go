@@ -15,7 +15,7 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-// GetProductLaunchByIndex renders a launch by 1-based index within product launches ordered by created_at DESC.
+// GetProductLaunchByIndex renders a launch by 1-based index within product launches ordered by created_at ASC (oldest first).
 func (h *Handler) GetProductLaunchByIndex(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
 

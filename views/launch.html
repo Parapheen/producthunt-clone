@@ -64,18 +64,6 @@
           {{ end }}
         {{ end }}
       </div>
-      {{ else if and (not .Launch.LaunchingSoon) .Launch.ImageURL }}
-      <div class="max-w-xl">
-        <div
-          class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200"
-        >
-          <img
-            src="{{ .Launch.ImageURL }}"
-            alt="{{ .Launch.Name }}"
-            class="absolute inset-0 w-full h-full object-cover"
-          />
-        </div>
-      </div>
       {{ end }} {{ if .Launch.URL }} {{ end }} {{ if .Makers }}
       <div class="mt-4 w-full">
         <div class="border rounded-lg p-3 bg-gray-50">
@@ -132,15 +120,7 @@
               class="m-slide absolute inset-0 w-full h-full object-cover rounded-xl {{ if ne $idx 0 }}hidden{{ end }}"
             />
             {{ end }}
-          {{ end }} {{ else if and (not .Launch.LaunchingSoon) .Launch.ImageURL
-          }}
-          <img
-            data-m-index="0"
-            src="{{ .Launch.ImageURL }}"
-            alt="{{ .Launch.Name }}"
-            class="m-slide absolute inset-0 w-full h-full object-cover rounded-xl"
-          />
-          {{ end }}
+          {{ end }} {{ end }}
 
           <button
             type="button"

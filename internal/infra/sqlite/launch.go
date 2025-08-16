@@ -336,7 +336,7 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 	return result, nil
 }
 
-// GetNthByProductOrderedByCreatedAt returns the nth published launch for a product ordered by created_at DESC.
+// GetNthByProductOrderedByCreatedAt returns the nth published launch for a product ordered by created_at ASC (oldest first).
 func (r *LaunchRepository) GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*launch.Launch, error) {
 	if index <= 0 {
 		return nil, sql.ErrNoRows
@@ -351,7 +351,7 @@ func (r *LaunchRepository) GetNthByProductOrderedByCreatedAt(ctx context.Context
         LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
         WHERE l.product_id = ? AND l.state = 'published'
         GROUP BY l.id
-        ORDER BY l.created_at DESC
+        ORDER BY l.created_at ASC
         LIMIT 1 OFFSET ?`
 	query = r.db.Rebind(query)
 	l := &LaunchModel{}
@@ -369,14 +369,14 @@ func (r *LaunchRepository) GetNthByProductOrderedByCreatedAt(ctx context.Context
 	return domainLaunch, nil
 }
 
-// GetIndexByProductAndLaunchID returns the 1-based index (created_at DESC) of the given launch within published launches of the product.
+// GetIndexByProductAndLaunchID returns the 1-based index (created_at ASC) of the given launch within published launches of the product.
 func (r *LaunchRepository) GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error) {
-	// Rank by created_at DESC; index = count of rows with created_at >= target's created_at
+	// Rank by created_at ASC; index = count of rows with created_at <= target's created_at
 	// Using a correlated subquery for simplicity
 	query := r.db.Rebind(`
         SELECT COUNT(*)
         FROM launches l
-        WHERE l.product_id = ? AND l.state = 'published' AND l.created_at >= (
+        WHERE l.product_id = ? AND l.state = 'published' AND l.created_at <= (
             SELECT created_at FROM launches WHERE id = ?
         )
     `)

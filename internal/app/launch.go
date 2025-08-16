@@ -122,7 +122,7 @@ func (s *LaunchService) GetFeedByPeriod(ctx context.Context, period string) ([]*
 	return s.launchRepo.GetFeed(ctx, normalized, 100, 0)
 }
 
-// GetNthByProductOrderedByCreatedAt returns the nth published launch of the product by created_at DESC.
+// GetNthByProductOrderedByCreatedAt returns the nth published launch of the product by created_at ASC (oldest first).
 func (s *LaunchService) GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*launch.Launch, error) {
 	if index <= 0 {
 		return nil, fmt.Errorf("invalid index")
@@ -130,7 +130,7 @@ func (s *LaunchService) GetNthByProductOrderedByCreatedAt(ctx context.Context, p
 	return s.launchRepo.GetNthByProductOrderedByCreatedAt(ctx, productID, index)
 }
 
-// GetIndexByProductAndLaunchID returns the 1-based index by created_at DESC for a launch within a product.
+// GetIndexByProductAndLaunchID returns the 1-based index by created_at ASC (oldest first) for a launch within a product.
 func (s *LaunchService) GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error) {
 	return s.launchRepo.GetIndexByProductAndLaunchID(ctx, productID, launchID)
 }
