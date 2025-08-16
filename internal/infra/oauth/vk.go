@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
-	"github.com/goforj/godump"
 	"github.com/google/uuid"
 )
 
@@ -177,9 +176,6 @@ func (v *VKOauthProvider) GetUserInfo(ctx context.Context, accessToken string) (
 	if err := json.Unmarshal(body, &ui); err != nil {
 		return nil, fmt.Errorf("vk: user_info decode failed: %w", err)
 	}
-
-	godump.Dump(accessToken)
-	godump.Dump(ui)
 
 	email := strings.TrimSpace(ui.User.Email)
 	if email == "" {
