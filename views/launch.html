@@ -4,32 +4,41 @@
     <div class="flex items-start justify-between gap-4 mb-4">
       <div class="flex items-start gap-4 min-w-0">
         <img
-          src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Launch.Name }}{{ end }}"
+          src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://ui-avatars.com/api/?name={{ .Launch.Name }}{{ end }}"
           alt="{{ .Launch.Name }}"
           class="w-16 h-16 rounded-lg object-cover ring-2 ring-indigo-100 flex-shrink-0"
         />
         <div class="min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            {{ if .Launch.LaunchDate }}
-            <span class="text-xs text-gray-500"
-              >{{ humanTime .Launch.LaunchDate }}</span
-            >
-            {{ end }}
-          </div>
           <h1 class="text-2xl font-bold text-gray-900 truncate">
             {{ .Launch.Name }}
           </h1>
           {{ if .Launch.Tagline }}
           <p class="text-gray-700 mt-1">{{ .Launch.Tagline }}</p>
           {{ end }}
-          <div class="mt-2 text-sm text-gray-500">
-            <a href="/products/{{ .Product.Slug }}" class="hover:underline"
+          <div class="flex items-center gap-2 mt-1">
+            {{ if .Launch.LaunchDate }}
+            <span class="text-xs text-gray-500">
+              {{ .Launch.LaunchDate.Format "02.01.2006" }}
+            <a href="/products/{{ .Product.Slug }}" class="hover:underline ml-1"
               >← К продукту: {{ .Product.Name }}</a
             >
+            </span>
+            {{ end }}
           </div>
         </div>
       </div>
       <div class="flex-shrink-0">
+        {{ $awards := (index .AwardsByLaunch .Launch.ID) }}
+        {{ if $awards }}
+        <div class="flex flex-wrap gap-2 mb-2">
+          {{ range $awards }}
+            <span class="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 rounded-full px-2.5 py-1" title="{{ .Award.Name }}">
+              <span>{{ .Award.Icon }}</span>
+              <span>{{ .Award.Name }}</span>
+            </span>
+          {{ end }}
+        </div>
+        {{ end }}
         {{ if and (not .Launch.LaunchingSoon) .Launch.IsPublished }} {{ template
         "launch-upvote" (dict "Launch" .Launch "token" .token "Upvoted"
         .Upvoted "WithText" true) }} {{ end }}
@@ -37,24 +46,26 @@
     </div>
 
     <div class="mt-2">
-      {{ if and (not .Launch.LaunchingSoon) (gt (len .Launch.Media) 0) }}
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-2xl">
+      {{ if and (not .Launch.LaunchingSoon) (or (gt (len .Launch.Media) 1) (and (eq (len .Launch.Media) 1) (ne (index .Launch.Media 0) .Launch.ImageURL))) }}
+      <div class="grid grid-cols-3 gap-2 max-w-xl">
         {{ range $idx, $url := .Launch.Media }}
-        <button
-          type="button"
-          class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200 thumb"
-          data-thumb-index="{{ $idx }}"
-        >
-          <img
-            src="{{ $url }}"
-            alt="media {{ $idx }}"
-            class="absolute inset-0 w-full h-full object-cover"
-          />
-        </button>
+          {{ if ne $url $.Launch.ImageURL }}
+          <button
+            type="button"
+            class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200 thumb"
+            data-thumb-index="{{ $idx }}"
+          >
+            <img
+              src="{{ $url }}"
+              alt="media {{ $idx }}"
+              class="absolute inset-0 w-full h-full object-cover"
+            />
+          </button>
+          {{ end }}
         {{ end }}
       </div>
       {{ else if and (not .Launch.LaunchingSoon) .Launch.ImageURL }}
-      <div class="max-w-2xl">
+      <div class="max-w-xl">
         <div
           class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200"
         >
@@ -111,14 +122,16 @@
       <div class="absolute inset-0 bg-black/70 m-overlay"></div>
       <div class="relative h-full w-full flex items-center justify-center p-4">
         <div class="relative w-[84vw] max-w-4xl aspect-[16/9]">
-          {{ if and (not .Launch.LaunchingSoon) (gt (len .Launch.Media) 0) }} {{
+          {{ if and (not .Launch.LaunchingSoon) (or (gt (len .Launch.Media) 1) (and (eq (len .Launch.Media) 1) (ne (index .Launch.Media 0) .Launch.ImageURL))) }} {{
           range $idx, $url := .Launch.Media }}
-          <img
-            data-m-index="{{ $idx }}"
-            src="{{ $url }}"
-            alt="media {{ $idx }}"
-            class="m-slide absolute inset-0 w-full h-full object-cover rounded-xl {{ if ne $idx 0 }}hidden{{ end }}"
-          />
+            {{ if ne $url $.Launch.ImageURL }}
+            <img
+              data-m-index="{{ $idx }}"
+              src="{{ $url }}"
+              alt="media {{ $idx }}"
+              class="m-slide absolute inset-0 w-full h-full object-cover rounded-xl {{ if ne $idx 0 }}hidden{{ end }}"
+            />
+            {{ end }}
           {{ end }} {{ else if and (not .Launch.LaunchingSoon) .Launch.ImageURL
           }}
           <img
@@ -161,12 +174,12 @@
     <div class="mt-6">
       {{ if not .Launch.LaunchingSoon }}
       <div
+        id="comments-{{ .Launch.ID }}"
         hx-get="/api/launches/{{ .Launch.ID }}/comments"
         hx-trigger="load"
         hx-target="#comments-{{ .Launch.ID }}"
         hx-swap="outerHTML"
       ></div>
-      <div id="comments-{{ .Launch.ID }}"></div>
       {{ end }}
     </div>
   </div>
@@ -219,12 +232,18 @@
       render();
     }
 
-    Array.from(document.querySelectorAll(".thumb")).forEach((b) =>
+    Array.from(document.querySelectorAll(".thumb")).forEach((b) => {
       b.addEventListener("click", () => {
-        const i = parseInt(b.getAttribute("data-thumb-index") || "0", 10);
-        openAt(i);
-      })
-    );
+        const img = b.querySelector("img");
+        const src = img ? img.getAttribute("src") : null;
+        if (!src) {
+          openAt(0);
+          return;
+        }
+        const index = slides.findIndex((el) => el.getAttribute("src") === src);
+        openAt(index >= 0 ? index : 0);
+      });
+    });
     if (btnNext) btnNext.addEventListener("click", next);
     if (btnPrev) btnPrev.addEventListener("click", prev);
     if (btnClose) btnClose.addEventListener("click", close);

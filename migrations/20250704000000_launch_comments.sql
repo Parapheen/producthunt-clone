@@ -6,6 +6,7 @@ CREATE TABLE launch_comments (
     author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     parent_id TEXT NULL REFERENCES launch_comments(id) ON DELETE CASCADE,
     content_html TEXT NOT NULL,
+    tag TEXT NULL CHECK (tag IN ('idea','question','like')),
     is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

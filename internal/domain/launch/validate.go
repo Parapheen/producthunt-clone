@@ -1,35 +1,27 @@
 package launch
 
 import (
-	"errors"
 	"net/url"
 	"strings"
 	"time"
 )
 
-var (
-	InvalidURLSchemeError = errors.New("invalid url scheme")
-	InvalidURL            = errors.New("invalid url")
-	LaunchDateInPast      = errors.New("launch date is in past")
-	TooManyMediaFiles     = errors.New("too many media files")
-)
-
 func (l *Launch) Validate() error {
 	u, err := url.Parse(l.URL)
 	if err != nil {
-		return InvalidURL
+		return ErrInvalidURL
 	}
 
 	if u.Scheme == "" {
-		return InvalidURLSchemeError
+		return ErrInvalidURL
 	}
 
 	if strings.HasPrefix(l.URL, "http://") {
-		return InvalidURLSchemeError
+		return ErrInvalidURL
 	}
 
 	if !strings.HasPrefix(l.URL, "https://") {
-		return InvalidURLSchemeError
+		return ErrInvalidURL
 	}
 
 	now := time.Now()
@@ -39,12 +31,12 @@ func (l *Launch) Validate() error {
 		launchDate := l.LaunchDate.Truncate(24 * time.Hour)
 		today := now.Truncate(24 * time.Hour)
 		if launchDate.Before(today) {
-			return LaunchDateInPast
+			return ErrLaunchDateInPast
 		}
 	}
 
 	if len(l.Media) > 4 {
-		return TooManyMediaFiles
+		return ErrTooManyMediaFiles
 	}
 
 	return nil

@@ -16,7 +16,7 @@ type UserModel struct {
 	Email     string         `db:"email"`
 	Name      string         `db:"name"`
 	AvatarURL sql.NullString `db:"avatar_url"`
-	Bio        sql.NullString `db:"bio"`
+	Bio       sql.NullString `db:"bio"`
 	CreatedAt time.Time      `db:"created_at"`
 	UpdatedAt time.Time      `db:"updated_at"`
 
@@ -46,19 +46,19 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, u *user.User) error {
 	return runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
-        userInsert := struct {
-            ID        uuid.UUID `db:"id"`
-            Email     string    `db:"email"`
-            Name      string    `db:"name"`
-            AvatarURL string    `db:"avatar_url"`
-        }{
-            ID:        u.ID,
-            Email:     u.Email,
-            Name:      u.Name,
-            AvatarURL: u.AvatarURL,
-        }
+		userInsert := struct {
+			ID        uuid.UUID `db:"id"`
+			Email     string    `db:"email"`
+			Name      string    `db:"name"`
+			AvatarURL string    `db:"avatar_url"`
+		}{
+			ID:        u.ID,
+			Email:     u.Email,
+			Name:      u.Name,
+			AvatarURL: u.AvatarURL,
+		}
 
-        _, err := tx.NamedExecContext(ctx, `
+		_, err := tx.NamedExecContext(ctx, `
             INSERT INTO users (id, email, name, avatar_url)
             VALUES (:id, :email, :name, :avatar_url)
         `, userInsert)

@@ -13,9 +13,9 @@ type Config struct {
 	Database DatabaseConfig
 	Auth     AuthConfig
 	Telegram TelegramConfig
-    App      AppConfig
-    Storage  StorageConfig
-    SMTP     SMTP
+	App      AppConfig
+	Storage  StorageConfig
+	SMTP     SMTP
 }
 
 type ServerConfig struct {
@@ -47,24 +47,24 @@ type AppConfig struct {
 }
 
 type StorageConfig struct {
-    Driver           string // "local" or "s3"
-    LocalUploadDir   string // e.g., "assets/uploads"
-    PublicUploadBase string // e.g., "/assets/uploads"
-    S3Bucket         string
-    S3BaseKey        string
-    S3Region         string
-    S3Endpoint       string
-    S3UsePathStyle   bool
-    S3PublicBaseURL  string
+	Driver           string // "local" or "s3"
+	LocalUploadDir   string // e.g., "assets/uploads"
+	PublicUploadBase string // e.g., "/assets/uploads"
+	S3Bucket         string
+	S3BaseKey        string
+	S3Region         string
+	S3Endpoint       string
+	S3UsePathStyle   bool
+	S3PublicBaseURL  string
 }
 
 // SMTP contains settings for sending emails via SMTP.
 type SMTP struct {
-    Host        string
-    Port        int
-    Username    string
-    Password    string
-    FromAddress string
+	Host        string
+	Port        int
+	Username    string
+	Password    string
+	FromAddress string
 }
 
 func Load() (*Config, error) {
@@ -92,24 +92,24 @@ func Load() (*Config, error) {
 			Environment: getEnv("ENVIRONMENT", "development"),
 			BaseURL:     getEnv("BASE_URL", "http://localhost:3333"),
 		},
-        Storage: StorageConfig{
-            Driver:           getEnv("STORAGE_DRIVER", "local"),
-            LocalUploadDir:   getEnv("LOCAL_UPLOAD_DIR", "assets/uploads"),
-            PublicUploadBase: getEnv("PUBLIC_UPLOAD_BASE", "/assets/uploads"),
-            S3Bucket:         getEnv("S3_BUCKET", ""),
-            S3BaseKey:        getEnv("S3_BASE_KEY", ""),
-            S3Region:         getEnv("S3_REGION", "us-east-1"),
-            S3Endpoint:       getEnv("S3_ENDPOINT", ""),
-            S3UsePathStyle:   getEnvAsBool("S3_USE_PATH_STYLE", false),
-            S3PublicBaseURL:  getEnv("S3_PUBLIC_BASE_URL", ""),
-        },
-        SMTP: SMTP{
-            Host:        getEnv("SMTP_HOST", ""),
-            Port:        getEnvAsInt("SMTP_PORT", 587),
-            Username:    getEnv("SMTP_USERNAME", ""),
-            Password:    getEnv("SMTP_PASSWORD", ""),
-            FromAddress: getEnv("SMTP_FROM", "noreply@example.com"),
-        },
+		Storage: StorageConfig{
+			Driver:           getEnv("STORAGE_DRIVER", "local"),
+			LocalUploadDir:   getEnv("LOCAL_UPLOAD_DIR", "assets/uploads"),
+			PublicUploadBase: getEnv("PUBLIC_UPLOAD_BASE", "/assets/uploads"),
+			S3Bucket:         getEnv("S3_BUCKET", ""),
+			S3BaseKey:        getEnv("S3_BASE_KEY", ""),
+			S3Region:         getEnv("S3_REGION", "us-east-1"),
+			S3Endpoint:       getEnv("S3_ENDPOINT", ""),
+			S3UsePathStyle:   getEnvAsBool("S3_USE_PATH_STYLE", false),
+			S3PublicBaseURL:  getEnv("S3_PUBLIC_BASE_URL", ""),
+		},
+		SMTP: SMTP{
+			Host:        getEnv("SMTP_HOST", ""),
+			Port:        getEnvAsInt("SMTP_PORT", 587),
+			Username:    getEnv("SMTP_USERNAME", ""),
+			Password:    getEnv("SMTP_PASSWORD", ""),
+			FromAddress: getEnv("SMTP_FROM", "noreply@example.com"),
+		},
 	}
 
 	// Validate required fields
@@ -130,9 +130,9 @@ func (c *Config) validate() error {
 	if c.Database.URL == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
-    if c.Storage.Driver == "s3" && c.Storage.S3Bucket == "" {
-        return fmt.Errorf("S3_BUCKET is required when STORAGE_DRIVER=s3")
-    }
+	if c.Storage.Driver == "s3" && c.Storage.S3Bucket == "" {
+		return fmt.Errorf("S3_BUCKET is required when STORAGE_DRIVER=s3")
+	}
 	return nil
 }
 
@@ -171,13 +171,13 @@ func getEnvAsInt(key string, defaultValue int) int {
 }
 
 func getEnvAsBool(key string, defaultValue bool) bool {
-    if value := os.Getenv(key); value != "" {
-        switch strings.ToLower(value) {
-        case "1", "true", "yes", "y":
-            return true
-        case "0", "false", "no", "n":
-            return false
-        }
-    }
-    return defaultValue
+	if value := os.Getenv(key); value != "" {
+		switch strings.ToLower(value) {
+		case "1", "true", "yes", "y":
+			return true
+		case "0", "false", "no", "n":
+			return false
+		}
+	}
+	return defaultValue
 }

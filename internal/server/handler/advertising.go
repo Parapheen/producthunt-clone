@@ -15,18 +15,18 @@ import (
 func (h *Handler) PromotingPage(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
 
-    t, err := template.New("promoting").Funcs(template.FuncMap{
+	t, err := template.New("promoting").Funcs(template.FuncMap{
 		"dict": tmpl.Dict,
 	}).ParseFiles(
 		"views/promoting.html",
 		"views/layout/layout.html",
 		"views/layout/header.html",
 		"views/layout/footer.html",
-        "views/layout/head.html",
-        "views/partials/promotion-result.html",
+		"views/layout/head.html",
+		"views/partials/promotion-result.html",
 	)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -36,12 +36,12 @@ func (h *Handler) PromotingPage(w http.ResponseWriter, r *http.Request) {
 		"Canonical":   h.BaseURL + "/promoting",
 	}
 
-    if err := t.ExecuteTemplate(w, "layout", map[string]any{
+	if err := t.ExecuteTemplate(w, "layout", map[string]any{
 		"User":  u,
 		"token": nosurf.Token(r),
 		"meta":  meta,
 	}); err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -49,22 +49,22 @@ func (h *Handler) PromotingPage(w http.ResponseWriter, r *http.Request) {
 // RequestPromotion handles CTA: sends a Telegram message with logged-in user's email
 func (h *Handler) RequestPromotion(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
-    if u == nil {
-        w.WriteHeader(http.StatusUnauthorized)
-        t, err := template.ParseFiles("views/partials/promotion-result.html")
-        if err != nil {
-            h.InternalServerError(w, r, err)
-            return
-        }
-        _ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
-            "Title":        "Требуется вход",
-            "Message":      "Пожалуйста, войдите, чтобы отправить заявку на продвижение",
-            "RequireLogin": true,
-            "Support":      true,
-            "ShowBack":     false,
-        })
-        return
-    }
+	if u == nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		t, err := template.ParseFiles("views/partials/promotion-result.html")
+		if err != nil {
+			h.InternalServerError(w, r, err)
+			return
+		}
+		_ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
+			"Title":        "Требуется вход",
+			"Message":      "Пожалуйста, войдите, чтобы отправить заявку на продвижение",
+			"RequireLogin": true,
+			"Support":      true,
+			"ShowBack":     false,
+		})
+		return
+	}
 
 	// Compose admin notification
 	msg := fmt.Sprintf(
@@ -80,34 +80,32 @@ When: %s
 		time.Now().Format(time.RFC3339),
 	)
 
-    if err := h.LaunchService.SendAdminNotification(r.Context(), msg); err != nil {
+	if err := h.LaunchService.SendAdminNotification(r.Context(), msg); err != nil {
 		h.Logger.ErrorContext(r.Context(), "error sending promotion request", "error", err)
-        w.WriteHeader(http.StatusInternalServerError)
-        t, tplErr := template.ParseFiles("views/partials/promotion-result.html")
-        if tplErr != nil {
-            http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-            return
-        }
-        _ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
-            "Title":   "Ошибка",
-            "Message": "Не удалось отправить запрос. Попробуйте позже",
-            "Support": true,
-            "ShowBack": false,
-        })
+		w.WriteHeader(http.StatusInternalServerError)
+		t, tplErr := template.ParseFiles("views/partials/promotion-result.html")
+		if tplErr != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		_ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
+			"Title":    "Ошибка",
+			"Message":  "Не удалось отправить запрос. Попробуйте позже",
+			"Support":  true,
+			"ShowBack": false,
+		})
 		return
 	}
 
-    t, err := template.ParseFiles("views/partials/promotion-result.html")
+	t, err := template.ParseFiles("views/partials/promotion-result.html")
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
-    _ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
-        "Title":   "Заявка отправлена",
-        "Message": "Спасибо! Мы свяжемся с вами в течение 24 часов",
-        "Support": true,
-        "ShowBack": false,
-    })
+	_ = t.ExecuteTemplate(w, "promotion-result", map[string]any{
+		"Title":    "Заявка отправлена",
+		"Message":  "Спасибо! Мы свяжемся с вами в течение 24 часов",
+		"Support":  true,
+		"ShowBack": false,
+	})
 }
-
-

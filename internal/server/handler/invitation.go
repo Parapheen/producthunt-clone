@@ -30,7 +30,7 @@ func (h *Handler) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
 			Expires:  time.Now().Add(30 * time.Minute),
 		})
 
-        t, err := template.ParseFiles(
+		t, err := template.ParseFiles(
 			"views/invitations/accept.html",
 			"views/layout/layout.html",
 			"views/layout/header.html",
@@ -38,21 +38,20 @@ func (h *Handler) AcceptInvitation(w http.ResponseWriter, r *http.Request) {
 			"views/layout/head.html",
 		)
 		if err != nil {
-            h.InternalServerError(w, r, err)
+			h.InternalServerError(w, r, err)
 			return
 		}
 		if err := t.ExecuteTemplate(w, "layout", map[string]interface{}{}); err != nil {
-            h.InternalServerError(w, r, err)
+			h.InternalServerError(w, r, err)
 		}
 		return
 	}
 
 	// Authenticated: accept and redirect to product page
-    productID, err := h.ProductService.AcceptInvitation(r.Context(), token, u.ID)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
+	productID, err := h.ProductService.AcceptInvitation(r.Context(), token, u.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	http.Redirect(w, r, "/products/u/"+productID.String(), http.StatusFound)
 }
-

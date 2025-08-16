@@ -29,23 +29,23 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r := chi.NewRouter()
 
 	// Middleware
-    r.Use(middleware.Logger)
+	r.Use(middleware.Logger)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-    r.Use(m.SessionMiddleware)
+	r.Use(m.SessionMiddleware)
 
-    // Custom recoverer that renders our 500 page instead of plain text
-    r.Use(func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            defer func() {
-                if rec := recover(); rec != nil {
-                    // Render generic 500 page; avoid exposing panic detail to user
-                    h.InternalServerError(w, r, fmt.Errorf("panic: %v", rec))
-                }
-            }()
-            next.ServeHTTP(w, r)
-        })
-    })
+	// Custom recoverer that renders our 500 page instead of plain text
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rec := recover(); rec != nil {
+					// Render generic 500 page; avoid exposing panic detail to user
+					h.InternalServerError(w, r, fmt.Errorf("panic: %v", rec))
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// Add security headers
 	r.Use(func(next http.Handler) http.Handler {
@@ -65,17 +65,18 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Get("/categories/{categorySlug}", h.CategoryPage)
 	r.Get("/promoting", h.PromotingPage)
 	r.Get("/rules", h.Rules)
+	r.Get("/values", h.Values)
 	r.Get("/policy", h.Policy)
 	r.Get("/new-product", h.NewProductForm)
 	r.Get("/u/{userID}", h.UserProfile)
 	r.Get("/u/{userID}/edit", h.EditProfileForm)
-    r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
-    r.Get("/products/{productSlug}", h.GetProduct)
-    // Nested launch page under product slug
-    // New index-based route: e.g., /products/foo/launches/1
-    r.Get("/products/{productSlug}/launches/{index:[0-9]+}", h.GetProductLaunchByIndex)
-    // Only index-based route is supported for public launch pages
-    r.Get("/products/{productSlug}/edit", h.EditProductForm)
+	r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
+	r.Get("/products/{productSlug}", h.GetProduct)
+	// Nested launch page under product slug
+	// New index-based route: e.g., /products/foo/launches/1
+	r.Get("/products/{productSlug}/launches/{index:[0-9]+}", h.GetProductLaunchByIndex)
+	// Only index-based route is supported for public launch pages
+	r.Get("/products/{productSlug}/edit", h.EditProductForm)
 	r.Get("/products/u/{productID}", h.GetProductByID)
 	r.Get("/my/products", h.MyProducts)
 	r.Get("/products/{productSlug}/launches", h.ProductLaunches)
@@ -94,17 +95,22 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Group(func(r chi.Router) {
 		r.Use(m.AdminMiddleware)
 		r.Get("/admin/moderation/launches", h.ModLaunches)
+		// Award pages
+		r.Get("/admin/launches/{launchID}/awards", h.LaunchAwardsPage)
+		r.Get("/admin/products/{productSlug}/launches/{index:[0-9]+}/awards", h.LaunchAwardsPageByIndex)
 		r.Post("/api/decline-launch", h.DeclineLaunch)
 		r.Post("/api/proceed-launch", h.ProceedLaunch)
+		// Award management
+		r.Post("/api/launches/{launchID}/awards", h.AssignLaunchAward)
 	})
 
-    // Auth routes
-    r.Get("/auth/yandex", h.YandexAuth)
-    r.Get("/auth/yandex/callback", h.YandexAuthCallback)
-    r.Get("/auth/google", h.GoogleAuth)
-    r.Get("/auth/google/callback", h.GoogleAuthCallback)
-    r.Get("/auth/vk", h.VKAuth)
-    r.Get("/auth/vk/callback", h.VKAuthCallback)
+	// Auth routes
+	r.Get("/auth/yandex", h.YandexAuth)
+	r.Get("/auth/yandex/callback", h.YandexAuthCallback)
+	r.Get("/auth/google", h.GoogleAuth)
+	r.Get("/auth/google/callback", h.GoogleAuthCallback)
+	r.Get("/auth/vk", h.VKAuth)
+	r.Get("/auth/vk/callback", h.VKAuthCallback)
 
 	// API routes
 	r.Get("/api/login", h.LoginModal)
@@ -114,9 +120,9 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Post("/api/new-launch", h.NewLaunch)
 	r.Post("/api/update-launch", h.UpdateLaunch)
 	r.Delete("/api/launches/{launchID}", h.DeleteLaunch)
-    r.Post("/api/send-launch-to-moderation", h.SendLaunchToModeration)
-    r.Post("/api/products/{productID}/profile", h.UpdateProduct)
-    r.Post("/api/products/{productID}/invite", h.InviteMember)
+	r.Post("/api/send-launch-to-moderation", h.SendLaunchToModeration)
+	r.Post("/api/products/{productID}/profile", h.UpdateProduct)
+	r.Post("/api/products/{productID}/invite", h.InviteMember)
 	r.Post("/api/users/{userID}/profile", h.UpdateProfile)
 	r.Post("/api/launches/{launchID}/upvote", h.ToggleLaunchUpvote)
 
@@ -131,9 +137,9 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	// Partials
 	r.Get("/api/nav/categories", h.NavCategories)
 
-    // robots.txt and sitemap.xml
-    r.Get("/robots.txt", h.Robots)
-    r.Get("/sitemap.xml", h.Sitemap)
+	// robots.txt and sitemap.xml
+	r.Get("/robots.txt", h.Robots)
+	r.Get("/sitemap.xml", h.Sitemap)
 
 	// CSRF protection
 	csrfHandler := nosurf.New(r)
@@ -156,7 +162,7 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 
 func (s *Server) Run() error {
 	addr := ":" + s.config.Server.Port
-	
+
 	httpServer := &http.Server{
 		Addr:         addr,
 		Handler:      s.router,
@@ -204,5 +210,3 @@ func shutdown() chan os.Signal {
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	return ch
 }
-
-

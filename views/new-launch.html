@@ -62,7 +62,7 @@
             name="tagline"
             type="text"
             id="tagline"
-            value="{{ .Launch.Tagline }}"
+            value="{{ if .Launch.Tagline }}{{ .Launch.Tagline }}{{ else }}{{ .Product.Tagline }}{{ end }}"
             placeholder="Лучшее место для запуска"
           />
           <p class="text-gray-500 text-sm">
@@ -89,7 +89,7 @@
             <img
               id="image-preview"
               class="w-16 h-16 rounded-lg object-cover ring-2 ring-gray-200"
-              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}{{ .Product.ImageURL }}{{ end }}"
+              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://ui-avatars.com/api/?name={{ .Product.Name }}{{ end }}"
               alt="preview"
             />
             <input type="file" id="image" name="image" accept="image/*" />

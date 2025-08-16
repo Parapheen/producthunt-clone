@@ -18,7 +18,7 @@ type productModel struct {
 	URL       string         `db:"url"`
 	Slug      string         `db:"slug"`
 	Tagline   sql.NullString `db:"tagline"`
-    ImageURL  sql.NullString `db:"image_url"`
+	ImageURL  sql.NullString `db:"image_url"`
 	CreatedAt time.Time      `db:"created_at"`
 	UpdatedAt time.Time      `db:"updated_at"`
 }
@@ -30,14 +30,14 @@ type memberModel struct {
 }
 
 type inviteModel struct {
-    ID        uuid.UUID `db:"id"`
-    ProductID uuid.UUID `db:"product_id"`
-    Email     string    `db:"email"`
-    Role      string    `db:"role"`
-    Token     string    `db:"token"`
-    Status    string    `db:"status"`
-    CreatedAt time.Time `db:"created_at"`
-    UpdatedAt time.Time `db:"updated_at"`
+	ID        uuid.UUID `db:"id"`
+	ProductID uuid.UUID `db:"product_id"`
+	Email     string    `db:"email"`
+	Role      string    `db:"role"`
+	Token     string    `db:"token"`
+	Status    string    `db:"status"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 type categoryModel struct {
@@ -58,8 +58,8 @@ func (r *ProductRepository) Create(ctx context.Context, p *product.Product) erro
 	model := toProductModel(p)
 
 	return runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
-        // Insert the main product using the complete model
-        productQuery := `INSERT INTO products (id, name, url, slug, tagline, image_url, created_at, updated_at)
+		// Insert the main product using the complete model
+		productQuery := `INSERT INTO products (id, name, url, slug, tagline, image_url, created_at, updated_at)
                          VALUES (:id, :name, :url, :slug, :tagline, :image_url, :created_at, :updated_at)`
 		if _, err := tx.NamedExecContext(ctx, productQuery, model); err != nil {
 			return fmt.Errorf("error inserting product: %w", err)
@@ -142,32 +142,32 @@ func (r *ProductRepository) GetByID(ctx context.Context, id uuid.UUID) (*product
 
 // GetByIDs fetches multiple products and their relations in bulk.
 func (r *ProductRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*product.Product, error) {
-    if len(ids) == 0 {
-        return []*product.Product{}, nil
-    }
-    var productModels []productModel
-    query, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, ids)
-    if err != nil {
-        return nil, err
-    }
-    query = r.db.Rebind(query)
-    if err := r.db.SelectContext(ctx, &productModels, query, args...); err != nil {
-        return nil, err
-    }
+	if len(ids) == 0 {
+		return []*product.Product{}, nil
+	}
+	var productModels []productModel
+	query, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+	if err := r.db.SelectContext(ctx, &productModels, query, args...); err != nil {
+		return nil, err
+	}
 
-    // Fetch relations for all
-    _, categories, err := r.fetchAllRelations(ctx, ids)
-    if err != nil {
-        return nil, err
-    }
+	// Fetch relations for all
+	_, categories, err := r.fetchAllRelations(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 
-    result := make([]*product.Product, 0, len(productModels))
-    for _, m := range productModels {
-        p := toDomainProduct(&m)
-        p.Categories = categories[p.ID]
-        result = append(result, p)
-    }
-    return result, nil
+	result := make([]*product.Product, 0, len(productModels))
+	for _, m := range productModels {
+		p := toDomainProduct(&m)
+		p.Categories = categories[p.ID]
+		result = append(result, p)
+	}
+	return result, nil
 }
 
 func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*product.Product, error) {
@@ -189,80 +189,88 @@ func (r *ProductRepository) GetBySlug(ctx context.Context, slug string) (*produc
 
 // GetByCategorySlug returns products that belong to a category identified by slug, newest first.
 func (r *ProductRepository) GetByCategorySlug(ctx context.Context, slug string) ([]*product.Product, error) {
-    // 1. Select product IDs for the category
-    var ids []uuid.UUID
-    query := `SELECT pc.product_id FROM product_categories pc JOIN categories c ON pc.category_id = c.id WHERE c.slug = $1 ORDER BY pc.product_id DESC`
-    if err := r.db.SelectContext(ctx, &ids, query, slug); err != nil {
-        return nil, err
-    }
-    if len(ids) == 0 {
-        return []*product.Product{}, nil
-    }
-    // 2. Load products
-    var models []productModel
-    inQ, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, ids)
-    if err != nil { return nil, err }
-    inQ = r.db.Rebind(inQ)
-    if err := r.db.SelectContext(ctx, &models, inQ, args...); err != nil { return nil, err }
-    // 3. Relations
-    members, categories, err := r.fetchAllRelations(ctx, ids)
-    if err != nil { return nil, err }
-    // 4. Assemble and preserve order of ids
-    byID := make(map[uuid.UUID]*product.Product, len(models))
-    for _, m := range models {
-        p := toDomainProduct(&m)
-        p.Members = members[p.ID]
-        p.Categories = categories[p.ID]
-        byID[p.ID] = p
-    }
-    result := make([]*product.Product, 0, len(ids))
-    for _, id := range ids { result = append(result, byID[id]) }
-    return result, nil
+	// 1. Select product IDs for the category
+	var ids []uuid.UUID
+	query := `SELECT pc.product_id FROM product_categories pc JOIN categories c ON pc.category_id = c.id WHERE c.slug = $1 ORDER BY pc.product_id DESC`
+	if err := r.db.SelectContext(ctx, &ids, query, slug); err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return []*product.Product{}, nil
+	}
+	// 2. Load products
+	var models []productModel
+	inQ, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	inQ = r.db.Rebind(inQ)
+	if err := r.db.SelectContext(ctx, &models, inQ, args...); err != nil {
+		return nil, err
+	}
+	// 3. Relations
+	members, categories, err := r.fetchAllRelations(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	// 4. Assemble and preserve order of ids
+	byID := make(map[uuid.UUID]*product.Product, len(models))
+	for _, m := range models {
+		p := toDomainProduct(&m)
+		p.Members = members[p.ID]
+		p.Categories = categories[p.ID]
+		byID[p.ID] = p
+	}
+	result := make([]*product.Product, 0, len(ids))
+	for _, id := range ids {
+		result = append(result, byID[id])
+	}
+	return result, nil
 }
 
 // Invitations
 func (r *ProductRepository) CreateInvitation(ctx context.Context, inv *product.Invitation) error {
-    _, err := r.db.NamedExecContext(ctx, `INSERT INTO product_invitations (id, product_id, email, role, token, status) VALUES (:id, :product_id, :email, :role, :token, :status)`, map[string]interface{}{
-        "id": inv.ID,
-        "product_id": inv.ProductID,
-        "email": inv.Email,
-        "role": inv.Role.String(),
-        "token": inv.Token,
-        "status": string(inv.Status),
-    })
-    return err
+	_, err := r.db.NamedExecContext(ctx, `INSERT INTO product_invitations (id, product_id, email, role, token, status) VALUES (:id, :product_id, :email, :role, :token, :status)`, map[string]interface{}{
+		"id":         inv.ID,
+		"product_id": inv.ProductID,
+		"email":      inv.Email,
+		"role":       inv.Role.String(),
+		"token":      inv.Token,
+		"status":     string(inv.Status),
+	})
+	return err
 }
 
 func (r *ProductRepository) GetInvitationByToken(ctx context.Context, token string) (*product.Invitation, error) {
-    var m inviteModel
-    if err := r.db.GetContext(ctx, &m, `SELECT * FROM product_invitations WHERE token = $1`, token); err != nil {
-        return nil, err
-    }
-    return &product.Invitation{
-        ID:        m.ID,
-        ProductID: m.ProductID,
-        Email:     m.Email,
-        Role:      product.ParseRole(m.Role),
-        Token:     m.Token,
-        Status:    product.InviteStatus(m.Status),
-        CreatedAt: m.CreatedAt,
-        UpdatedAt: m.UpdatedAt,
-    }, nil
+	var m inviteModel
+	if err := r.db.GetContext(ctx, &m, `SELECT * FROM product_invitations WHERE token = $1`, token); err != nil {
+		return nil, err
+	}
+	return &product.Invitation{
+		ID:        m.ID,
+		ProductID: m.ProductID,
+		Email:     m.Email,
+		Role:      product.ParseRole(m.Role),
+		Token:     m.Token,
+		Status:    product.InviteStatus(m.Status),
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
+	}, nil
 }
 
 func (r *ProductRepository) MarkInvitationAccepted(ctx context.Context, token string) error {
-    _, err := r.db.ExecContext(ctx, `UPDATE product_invitations SET status = 'accepted', updated_at = current_timestamp WHERE token = $1`, token)
-    return err
+	_, err := r.db.ExecContext(ctx, `UPDATE product_invitations SET status = 'accepted', updated_at = current_timestamp WHERE token = $1`, token)
+	return err
 }
 
 func (r *ProductRepository) RevokeInvitation(ctx context.Context, token string) error {
-    _, err := r.db.ExecContext(ctx, `UPDATE product_invitations SET status = 'revoked', updated_at = current_timestamp WHERE token = $1`, token)
-    return err
+	_, err := r.db.ExecContext(ctx, `UPDATE product_invitations SET status = 'revoked', updated_at = current_timestamp WHERE token = $1`, token)
+	return err
 }
 
 func (r *ProductRepository) AddMember(ctx context.Context, productID, userID uuid.UUID, role product.Role) error {
-    _, err := r.db.ExecContext(ctx, `INSERT INTO product_members (product_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, productID, userID, role.String())
-    return err
+	_, err := r.db.ExecContext(ctx, `INSERT INTO product_members (product_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, productID, userID, role.String())
+	return err
 }
 
 // GetByOwner is optimized to prevent N+1 queries.
@@ -314,49 +322,49 @@ func (r *ProductRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) (
 
 // GetByMember returns products where the given user is a member (any role) ordered by membership created_at desc.
 func (r *ProductRepository) GetByMember(ctx context.Context, userID uuid.UUID) ([]*product.Product, error) {
-    // 1. Collect product IDs for this user membership
-    var productIDs []uuid.UUID
-    idQuery := `SELECT product_id FROM product_members WHERE user_id = $1 ORDER BY created_at DESC`
-    if err := r.db.SelectContext(ctx, &productIDs, idQuery, userID); err != nil {
-        return nil, fmt.Errorf("error getting product ids by member: %w", err)
-    }
-    if len(productIDs) == 0 {
-        return []*product.Product{}, nil
-    }
+	// 1. Collect product IDs for this user membership
+	var productIDs []uuid.UUID
+	idQuery := `SELECT product_id FROM product_members WHERE user_id = $1 ORDER BY created_at DESC`
+	if err := r.db.SelectContext(ctx, &productIDs, idQuery, userID); err != nil {
+		return nil, fmt.Errorf("error getting product ids by member: %w", err)
+	}
+	if len(productIDs) == 0 {
+		return []*product.Product{}, nil
+	}
 
-    // 2. Fetch all products at once
-    var productModels []productModel
-    query, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, productIDs)
-    if err != nil {
-        return nil, err
-    }
-    query = r.db.Rebind(query)
-    if err := r.db.SelectContext(ctx, &productModels, query, args...); err != nil {
-        return nil, fmt.Errorf("error getting products by ids: %w", err)
-    }
+	// 2. Fetch all products at once
+	var productModels []productModel
+	query, args, err := sqlx.In(`SELECT * FROM products WHERE id IN (?)`, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+	if err := r.db.SelectContext(ctx, &productModels, query, args...); err != nil {
+		return nil, fmt.Errorf("error getting products by ids: %w", err)
+	}
 
-    // 3. Fetch all relations for these products at once
-    allMembers, allCategories, err := r.fetchAllRelations(ctx, productIDs)
-    if err != nil {
-        return nil, err
-    }
+	// 3. Fetch all relations for these products at once
+	allMembers, allCategories, err := r.fetchAllRelations(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
 
-    // 4. Map and assemble
-    productMap := make(map[uuid.UUID]*product.Product)
-    for _, model := range productModels {
-        p := toDomainProduct(&model)
-        p.Members = allMembers[p.ID]
-        p.Categories = allCategories[p.ID]
-        productMap[p.ID] = p
-    }
+	// 4. Map and assemble
+	productMap := make(map[uuid.UUID]*product.Product)
+	for _, model := range productModels {
+		p := toDomainProduct(&model)
+		p.Members = allMembers[p.ID]
+		p.Categories = allCategories[p.ID]
+		productMap[p.ID] = p
+	}
 
-    // Preserve the original order from productIDs
-    result := make([]*product.Product, len(productIDs))
-    for i, id := range productIDs {
-        result[i] = productMap[id]
-    }
+	// Preserve the original order from productIDs
+	result := make([]*product.Product, len(productIDs))
+	for i, id := range productIDs {
+		result[i] = productMap[id]
+	}
 
-    return result, nil
+	return result, nil
 }
 
 // fetchRelations loads relations for a single product.
@@ -442,7 +450,7 @@ func toDomainProduct(model *productModel) *product.Product {
 		URL:       model.URL,
 		Slug:      model.Slug,
 		Tagline:   model.Tagline.String,
-        ImageURL:  model.ImageURL.String,
+		ImageURL:  model.ImageURL.String,
 		CreatedAt: model.CreatedAt,
 	}
 }
@@ -455,22 +463,22 @@ func toProductModel(p *product.Product) *productModel {
 		URL:       p.URL,
 		Slug:      p.Slug,
 		Tagline:   sql.NullString{String: p.Tagline, Valid: p.Tagline != ""},
-        ImageURL:  sql.NullString{String: p.ImageURL, Valid: p.ImageURL != ""},
+		ImageURL:  sql.NullString{String: p.ImageURL, Valid: p.ImageURL != ""},
 		CreatedAt: p.CreatedAt,
 		UpdatedAt: now,
 	}
 }
 
 func (r *ProductRepository) UpdateImageURL(ctx context.Context, productID uuid.UUID, imageURL string) error {
-    query := `UPDATE products SET image_url = $1, updated_at = current_timestamp WHERE id = $2`
-    _, err := r.db.ExecContext(ctx, query, imageURL, productID)
-    return err
+	query := `UPDATE products SET image_url = $1, updated_at = current_timestamp WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, imageURL, productID)
+	return err
 }
 
 func (r *ProductRepository) UpdateTagline(ctx context.Context, productID uuid.UUID, tagline string) error {
-    query := `UPDATE products SET tagline = $1, updated_at = current_timestamp WHERE id = $2`
-    _, err := r.db.ExecContext(ctx, query, tagline, productID)
-    return err
+	query := `UPDATE products SET tagline = $1, updated_at = current_timestamp WHERE id = $2`
+	_, err := r.db.ExecContext(ctx, query, tagline, productID)
+	return err
 }
 
 func toDomainMember(model *memberModel) *product.Member {

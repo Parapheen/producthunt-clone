@@ -1,8 +1,6 @@
-{{ define "subject" }}Ваш запуск отклонён — {{ .LaunchName }}{{ end }} {{ define
-"plainBody" }} К сожалению, ваш запуск "{{ .LaunchName }}" для продукта "{{
-.ProductName }}" отклонён модератором. Вы можете отредактировать запуск и
-отправить на модерацию снова. Ссылка: {{ .LaunchURL }} {{ end }} {{ define
-"htmlBody" }}
+{{ define "subject" }}Ваш запуск отклонён — {{ .LaunchName }}{{ end }} 
+{{ define "plainBody" }} К сожалению, ваш запуск "{{ .LaunchName }}" для продукта "{{ .ProductName }}" отклонён модератором. Вы можете отредактировать запуск и отправить на модерацию снова. Ссылка: {{ .LaunchURL }} {{ end }} 
+{{ define "htmlBody" }}
 <div
   style="
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,

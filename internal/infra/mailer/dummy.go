@@ -20,11 +20,11 @@ func NewDummyMailer(logger *slog.Logger) *DummyMailer {
 
 // Send logs the email details instead of sending a real email.
 func (m *DummyMailer) Send(ctx context.Context, recipient, templateFile string, data interface{}) error {
-    // 1. Parse the template file (kept consistent with SMTP mailer path under views/emails).
-    tmpl, err := template.New("email").ParseFiles(filepath.Join("views/emails", templateFile))
-    if err != nil {
-        return fmt.Errorf("failed to parse email template %s: %w", templateFile, err)
-    }
+	// 1. Parse the template file (kept consistent with SMTP mailer path under views/emails).
+	tmpl, err := template.New("email").ParseFiles(filepath.Join("views/emails", templateFile))
+	if err != nil {
+		return fmt.Errorf("failed to parse email template %s: %w", templateFile, err)
+	}
 
 	// 2. Execute the "subject" block of the template to get the email subject.
 	subject := new(bytes.Buffer)

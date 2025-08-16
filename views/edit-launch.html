@@ -98,7 +98,7 @@
             <img
               id="image-preview"
               class="w-16 h-16 rounded-lg object-cover ring-2 ring-gray-200"
-              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Launch.Name }}{{ end }}"
+              src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://ui-avatars.com/api/?name={{ .Product.Name }}{{ end }}"
               alt="preview"
             />
             <input type="file" id="image" name="image" accept="image/*" />

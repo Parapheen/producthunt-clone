@@ -1,34 +1,77 @@
 {{ define "footer" }}
 
-
 <footer class="bg-gray-100 mt-16">
-  <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-    <div class="flex flex-col justify-center">
-      <h2 class="text-2xl font-bold text-center text-gray-900">justlaunch</h2>
-      <p class="mx-auto mt-2 max-w-md text-center leading-relaxed text-gray-500">
+  <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+    <div class="flex flex-col items-center text-center">
+      <h2 class="text-2xl font-bold text-gray-900">justlaunch</h2>
+      <p class="mx-auto mt-2 max-w-md leading-relaxed text-gray-500">
         Сделано с любовью в России
       </p>
     </div>
 
-    <ul class="mt-6 flex flex-wrap justify-center gap-6 md:gap-8 lg:gap-12">
-      <li>
-        <a class="text-gray-700 transition hover:text-gray-700/75" href="/rules"> Пользовательское соглашение </a>
-      </li>
+    <div class="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-600">
+          Разделы
+        </h3>
+        <ul class="mt-4 space-y-2">
+          <li>
+            <a class="text-gray-700 hover:text-gray-900" href="/values">
+              Ценности
+            </a>
+          </li>
+          <li>
+            <a class="text-gray-700 hover:text-gray-900" href="/promoting">
+              Продвижение
+            </a>
+          </li>
+          <li>
+            <a class="text-gray-700 hover:text-gray-900" href="/rules">
+              Пользовательское соглашение
+            </a>
+          </li>
+          <li>
+            <a class="text-gray-700 hover:text-gray-900" href="/policy">
+              Политика конфиденциальности
+            </a>
+          </li>
+        </ul>
+      </div>
 
-      <li>
-        <a class="text-gray-700 transition hover:text-gray-700/75" href="/policy"> Политика конфиденциальности </a>
-      </li>
-    </ul>
+      <div class="sm:col-span-1 lg:col-span-2">
+        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-600">
+          Категории
+        </h3>
+        <div
+          id="footer-categories"
+          class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2"
+          hx-get="/api/nav/categories"
+          hx-trigger="load"
+          hx-swap="innerHTML"
+        >
+          <div class="text-sm text-gray-500 px-2 py-1">Загрузка...</div>
+        </div>
+      </div>
+    </div>
 
-    <ul class="mt-6 flex justify-center gap-6 md:gap-8">
-      <li>
-        <a href="https://t.me/evpetrovich_tech" rel="noreferrer" target="_blank"
-          class="text-gray-700 transition hover:text-gray-700/75">
-          <span class="sr-only">Telegram</span>
-          <i class="bi bi-telegram text-xl"></i>
-        </a>
-      </li>
-    </ul>
+    <div
+      class="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-between"
+    >
+      <ul class="flex justify-center gap-6 md:gap-8">
+        <li>
+          <a
+            href="https://t.me/evpetrovich_tech"
+            rel="noreferrer"
+            target="_blank"
+            class="text-gray-700 transition hover:text-gray-700/75"
+          >
+            <span class="sr-only">Telegram</span>
+            <i class="bi bi-telegram text-xl"></i>
+          </a>
+        </li>
+      </ul>
+      <p class="text-xs text-gray-500">© 2025 justlaunch</p>
+    </div>
   </div>
 </footer>
 

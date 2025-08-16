@@ -1,7 +1,6 @@
 {{ define "subject" }}Новый комментарий к запуску — {{ .LaunchName }}{{ end }}
-{{ define "plainBody" }} Появился новый комментарий к запуску "{{ .LaunchName
-}}" продукта "{{ .ProductName }}" от {{ .AuthorName }}. Открыть запуск: {{
-.LaunchURL }} {{ end }} {{ define "htmlBody" }}
+{{ define "plainBody" }} Появился новый комментарий к запуску "{{ .LaunchName }}" продукта "{{ .ProductName }}" от {{ .AuthorName }}. Открыть запуск: {{ .LaunchURL }} {{ end }} 
+{{ define "htmlBody" }}
 <div
   style="
     font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,

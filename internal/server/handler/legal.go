@@ -8,76 +8,109 @@ import (
 	"github.com/Parapheen/ph-clone/internal/pkg/tmpl"
 )
 
-
 func (s *Handler) Rules(w http.ResponseWriter, r *http.Request) {
 	user := user.GetUserFromContext(r.Context())
 
-    t, err := template.New("rules").Funcs(template.FuncMap{
-        "dict": tmpl.Dict,
-    }).ParseFiles(
-        "views/rules.html",
-        "views/layout/layout.html",
-        "views/layout/header.html",
-        "views/layout/footer.html",
-        "views/layout/head.html",
-    )
-    if err != nil {
-        s.InternalServerError(w, r, err)
-        return
-    }
+	t, err := template.New("rules").Funcs(template.FuncMap{
+		"dict": tmpl.Dict,
+	}).ParseFiles(
+		"views/rules.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
+	)
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
 
-    // SEO meta for Rules
-    baseURL := s.BaseURL
-    meta := map[string]any{
-        "Title":       "Пользовательское соглашение — justlaunch",
-        "Description": "Пользовательское соглашение для justlaunch",
-        "Canonical":   baseURL + "/",
-        "OGType":      "website",
-    }
+	// SEO meta for Rules
+	baseURL := s.BaseURL
+	meta := map[string]any{
+		"Title":       "Пользовательское соглашение — justlaunch",
+		"Description": "Пользовательское соглашение для justlaunch",
+		"Canonical":   baseURL + "/",
+		"OGType":      "website",
+	}
 
-    err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-        "User":         user,
-        "meta":         meta,
-    })
-    if err != nil {
-        s.InternalServerError(w, r, err)
-        return
-    }
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+		"User": user,
+		"meta": meta,
+	})
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
 }
-
 
 func (s *Handler) Policy(w http.ResponseWriter, r *http.Request) {
 	user := user.GetUserFromContext(r.Context())
 
-    t, err := template.New("policy").Funcs(template.FuncMap{
-        "dict": tmpl.Dict,
-    }).ParseFiles(
-        "views/policy.html",
-        "views/layout/layout.html",
-        "views/layout/header.html",
-        "views/layout/footer.html",
-        "views/layout/head.html",
-    )
-    if err != nil {
-        s.InternalServerError(w, r, err)
-        return
-    }
+	t, err := template.New("policy").Funcs(template.FuncMap{
+		"dict": tmpl.Dict,
+	}).ParseFiles(
+		"views/policy.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
+	)
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
 
-    // SEO meta for Policy
-    baseURL := s.BaseURL
-    meta := map[string]any{
-        "Title":       "Политика конфиденциальности — justlaunch",
-        "Description": "Политика конфиденциальности для justlaunch",
-        "Canonical":   baseURL + "/",
-        "OGType":      "website",
-    }
+	// SEO meta for Policy
+	baseURL := s.BaseURL
+	meta := map[string]any{
+		"Title":       "Политика конфиденциальности — justlaunch",
+		"Description": "Политика конфиденциальности для justlaunch",
+		"Canonical":   baseURL + "/",
+		"OGType":      "website",
+	}
 
-    err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-        "User":         user,
-        "meta":         meta,
-    })
-    if err != nil {
-        s.InternalServerError(w, r, err)
-        return
-    }
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+		"User": user,
+		"meta": meta,
+	})
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
+}
+
+func (s *Handler) Values(w http.ResponseWriter, r *http.Request) {
+	user := user.GetUserFromContext(r.Context())
+
+	t, err := template.New("values").Funcs(template.FuncMap{
+		"dict": tmpl.Dict,
+	}).ParseFiles(
+		"views/values.html",
+		"views/layout/layout.html",
+		"views/layout/header.html",
+		"views/layout/footer.html",
+		"views/layout/head.html",
+	)
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
+
+	baseURL := s.BaseURL
+	meta := map[string]any{
+		"Title":       "Ценности — justlaunch",
+		"Description": "Наши ценности платформы",
+		"Canonical":   baseURL + "/",
+		"OGType":      "website",
+	}
+
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+		"User": user,
+		"meta": meta,
+	})
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
 }

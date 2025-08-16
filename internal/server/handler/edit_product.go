@@ -92,9 +92,9 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		h.renderErrors(w, r, []string{verr.Error()})
 		return
 	}
-    if err := h.ProductService.UpdateTagline(r.Context(), p.ID, tagline); err != nil {
+	if err := h.ProductService.UpdateTagline(r.Context(), p.ID, tagline); err != nil {
 		h.Logger.ErrorContext(r.Context(), "error updating product tagline", slog.Any("error", err))
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -105,9 +105,9 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		limited := &io.LimitedReader{R: file, N: maxImageBytes + 1}
-        if _, err := h.ProductService.UpdateImage(r.Context(), p.ID, header.Filename, limited); err != nil {
+		if _, err := h.ProductService.UpdateImage(r.Context(), p.ID, header.Filename, limited); err != nil {
 			h.Logger.ErrorContext(r.Context(), "error updating product image", slog.Any("error", err))
-            h.InternalServerError(w, r, err)
+			h.InternalServerError(w, r, err)
 			return
 		}
 		if limited.N <= 0 {
@@ -126,49 +126,49 @@ func (h *Handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 // InviteMember handles inviting a member by email to a product
 func (h *Handler) InviteMember(w http.ResponseWriter, r *http.Request) {
-    u := user.GetUserFromContext(r.Context())
-    if u == nil {
-        http.Error(w, "Unauthorized", http.StatusUnauthorized)
-        return
-    }
-    productIDParam := r.PathValue("productID")
-    productID, err := uuid.Parse(productIDParam)
-    if err != nil {
-        http.Error(w, "invalid product id", http.StatusBadRequest)
-        return
-    }
-    p, err := h.ProductService.GetByID(r.Context(), productID)
-    if err != nil || p == nil {
-        http.Error(w, "Not found", http.StatusNotFound)
-        return
-    }
-    if !p.IsOwner(u.ID) {
-        http.Error(w, "Forbidden", http.StatusForbidden)
-        return
-    }
+	u := user.GetUserFromContext(r.Context())
+	if u == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	productIDParam := r.PathValue("productID")
+	productID, err := uuid.Parse(productIDParam)
+	if err != nil {
+		http.Error(w, "invalid product id", http.StatusBadRequest)
+		return
+	}
+	p, err := h.ProductService.GetByID(r.Context(), productID)
+	if err != nil || p == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	if !p.IsOwner(u.ID) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 
-    if err := r.ParseForm(); err != nil {
-        http.Error(w, "invalid form", http.StatusBadRequest)
-        return
-    }
-    email := r.FormValue("email")
-    roleStr := r.FormValue("role")
-    role := product.ParseRole(roleStr)
-    v := validation.NewValidator()
-    if verr := v.ValidateEmail(email, "email", true); verr != nil {
-        h.renderErrors(w, r, []string{verr.Error()})
-        return
-    }
-    inv, err := h.ProductService.InviteMember(r.Context(), p.ID, email, role)
-    if err != nil {
-        h.Logger.ErrorContext(r.Context(), "error inviting member", slog.Any("error", err))
-        h.InternalServerError(w, r, err)
-        return
-    }
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "invalid form", http.StatusBadRequest)
+		return
+	}
+	email := r.FormValue("email")
+	roleStr := r.FormValue("role")
+	role := product.ParseRole(roleStr)
+	v := validation.NewValidator()
+	if verr := v.ValidateEmail(email, "email", true); verr != nil {
+		h.renderErrors(w, r, []string{verr.Error()})
+		return
+	}
+	inv, err := h.ProductService.InviteMember(r.Context(), p.ID, email, role)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "error inviting member", slog.Any("error", err))
+		h.InternalServerError(w, r, err)
+		return
+	}
 
-    w.Header().Set("Content-Type", "text/html; charset=utf-8")
-    w.WriteHeader(http.StatusOK)
-    _, _ = w.Write([]byte(`<div class="p-3 border border-green-200 bg-green-50 text-green-800 rounded-md">` +
-        `Письмо-приглашение отправлено на <strong>` + template.HTMLEscapeString(inv.Email) + `</strong>. ` +
-        `Попросите пользователя проверить почту и перейти по ссылке для подтверждения.</div>`))
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`<div class="p-3 border border-green-200 bg-green-50 text-green-800 rounded-md">` +
+		`Письмо-приглашение отправлено на <strong>` + template.HTMLEscapeString(inv.Email) + `</strong>. ` +
+		`Попросите пользователя проверить почту и перейти по ссылке для подтверждения.</div>`))
 }

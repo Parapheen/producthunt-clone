@@ -8,15 +8,15 @@ import (
 )
 
 type Handler struct {
-    Logger         *slog.Logger
-    DB             *sqlx.DB
-    AuthService    AuthService
-    UserService    UserService
-    ProductService ProductService
-    LaunchService  LaunchService
-    Storage        Storage
-    BaseURL        string
-    Mailer         app.Mailer
+	Logger         *slog.Logger
+	DB             *sqlx.DB
+	AuthService    AuthService
+	UserService    UserService
+	ProductService ProductService
+	LaunchService  LaunchService
+	Storage        Storage
+	BaseURL        string
+	Mailer         app.Mailer
 }
 
 func NewHandler(
@@ -26,9 +26,9 @@ func NewHandler(
 	userService UserService,
 	productService ProductService,
 	launchService LaunchService,
-    storage Storage,
-    baseURL string,
-    mailer app.Mailer,
+	storage Storage,
+	baseURL string,
+	mailer app.Mailer,
 ) *Handler {
 	return &Handler{
 		Logger:         logger,
@@ -37,8 +37,8 @@ func NewHandler(
 		UserService:    userService,
 		ProductService: productService,
 		LaunchService:  launchService,
-        Storage:        storage,
-        BaseURL:        baseURL,
-        Mailer:         mailer,
+		Storage:        storage,
+		BaseURL:        baseURL,
+		Mailer:         mailer,
 	}
 }

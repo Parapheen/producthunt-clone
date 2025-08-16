@@ -49,9 +49,9 @@ func (m *Middleware) SessionMiddleware(next http.Handler) http.Handler {
 				Path:     "/",
 				Expires:  time.Unix(0, 0),
 			})
-        default:
-            slog.Error("error getting user by session", slog.Any("err", err))
-            http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		default:
+			slog.Error("error getting user by session", slog.Any("err", err))
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 	})
 }

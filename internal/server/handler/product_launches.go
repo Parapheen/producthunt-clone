@@ -15,10 +15,10 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 
 	productSlug := r.PathValue("productSlug")
 
-    p, err := s.ProductService.GetBySlug(r.Context(), productSlug)
+	p, err := s.ProductService.GetBySlug(r.Context(), productSlug)
 	if err != nil {
 		s.Logger.ErrorContext(r.Context(), "error getting product", slog.Any("error", err))
-        s.InternalServerError(w, r, err)
+		s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -31,9 +31,9 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		p.ID,
 	)
-    if err != nil {
-        s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-        s.InternalServerError(w, r, err)
+	if err != nil {
+		s.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
+		s.InternalServerError(w, r, err)
 		return
 	}
 
@@ -50,31 +50,31 @@ func (s *Handler) EditProductLaunches(w http.ResponseWriter, r *http.Request) {
 			"views/layout/head.html",
 			"views/partials/launch-edit-card.html",
 		)
-    if err != nil {
-        s.InternalServerError(w, r, err)
+	if err != nil {
+		s.InternalServerError(w, r, err)
 		return
 	}
 
-    // Add SEO meta to layout data
-    canonical := s.BaseURL + "/products/" + p.Slug
-    meta := map[string]any{
-        "Title":       p.Name + " — запуски и новости",
-        "Description": p.Tagline,
-        "Canonical":   canonical,
-        "OGType":      "product",
-        "Image":       p.ImageURL,
-    }
+	// Add SEO meta to layout data
+	canonical := s.BaseURL + "/products/" + p.Slug
+	meta := map[string]any{
+		"Title":       p.Name + " — запуски и новости",
+		"Description": p.Tagline,
+		"Canonical":   canonical,
+		"OGType":      "product",
+		"Image":       p.ImageURL,
+	}
 
-    err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-        "User":      user,
-        "Launches":  launches,
-        "Product":   p,
-        "ActiveTab": "launches",
-        "token":     nosurf.Token(r),
-        "meta":      meta,
-    })
-    if err != nil {
-        s.InternalServerError(w, r, err)
-        return
-    }
+	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
+		"User":      user,
+		"Launches":  launches,
+		"Product":   p,
+		"ActiveTab": "launches",
+		"token":     nosurf.Token(r),
+		"meta":      meta,
+	})
+	if err != nil {
+		s.InternalServerError(w, r, err)
+		return
+	}
 }

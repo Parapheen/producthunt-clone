@@ -12,20 +12,20 @@ import (
 
 // LaunchModel represents the database schema for a launch.
 type LaunchModel struct {
-	ID          uuid.UUID      `db:"id"`
-	ProductID   uuid.UUID      `db:"product_id"`
-	ProductSlug string         `db:"product_slug"`
-	Name        string         `db:"name"`
-	URL         string         `db:"url"`
-	Description sql.NullString `db:"description"`
-	Tagline     sql.NullString `db:"tagline"`
-    ImageURL    sql.NullString `db:"image_url"`
-	State       string         `db:"state"`
-	Slug        string         `db:"slug"`
-	LaunchDate  *time.Time     `db:"launch_date"`
-	UpdatedAt   time.Time      `db:"updated_at"`
-	UpvoteCount int            `db:"upvote_count"` // For aggregate queries
-    CommentCount int           `db:"comment_count"`
+	ID           uuid.UUID      `db:"id"`
+	ProductID    uuid.UUID      `db:"product_id"`
+	ProductSlug  string         `db:"product_slug"`
+	Name         string         `db:"name"`
+	URL          string         `db:"url"`
+	Description  sql.NullString `db:"description"`
+	Tagline      sql.NullString `db:"tagline"`
+	ImageURL     sql.NullString `db:"image_url"`
+	State        string         `db:"state"`
+	Slug         string         `db:"slug"`
+	LaunchDate   *time.Time     `db:"launch_date"`
+	UpdatedAt    time.Time      `db:"updated_at"`
+	UpvoteCount  int            `db:"upvote_count"` // For aggregate queries
+	CommentCount int            `db:"comment_count"`
 }
 
 // LaunchRepository handles database operations for launches.
@@ -42,20 +42,20 @@ func NewLaunchRepository(db *sqlx.DB) *LaunchRepository {
 
 func toDomain(l *LaunchModel) *launch.Launch {
 	return &launch.Launch{
-		ID:          l.ID,
-		ProductID:   l.ProductID,
-		Name:        l.Name,
-		URL:         l.URL,
-		Description: l.Description.String,
-		Tagline:     l.Tagline.String,
-        ImageURL:    l.ImageURL.String,
-        Media:       []string{},
-		State:       launch.ParseState(l.State),
-		Slug:        l.Slug,
-		LaunchDate:  l.LaunchDate,
-		Upvotes:     l.UpvoteCount,
-        CommentsCount: l.CommentCount,
-		UpdatedAt:   l.UpdatedAt,
+		ID:            l.ID,
+		ProductID:     l.ProductID,
+		Name:          l.Name,
+		URL:           l.URL,
+		Description:   l.Description.String,
+		Tagline:       l.Tagline.String,
+		ImageURL:      l.ImageURL.String,
+		Media:         []string{},
+		State:         launch.ParseState(l.State),
+		Slug:          l.Slug,
+		LaunchDate:    l.LaunchDate,
+		Upvotes:       l.UpvoteCount,
+		CommentsCount: l.CommentCount,
+		UpdatedAt:     l.UpdatedAt,
 	}
 }
 
@@ -68,7 +68,7 @@ func fromDomain(l *launch.Launch) *LaunchModel {
 		URL:         l.URL,
 		Description: sql.NullString{String: l.Description, Valid: l.Description != ""},
 		Tagline:     sql.NullString{String: l.Tagline, Valid: l.Tagline != ""},
-        ImageURL:    sql.NullString{String: l.ImageURL, Valid: l.ImageURL != ""},
+		ImageURL:    sql.NullString{String: l.ImageURL, Valid: l.ImageURL != ""},
 		State:       l.State.String(),
 		Slug:        l.Slug,
 		LaunchDate:  l.LaunchDate,
@@ -79,7 +79,7 @@ func fromDomain(l *launch.Launch) *LaunchModel {
 // Create inserts a new launch into the database.
 func (r *LaunchRepository) Create(ctx context.Context, l *launch.Launch) error {
 	model := fromDomain(l)
-    query := `INSERT INTO launches (id, product_id, name, url, description, tagline, image_url, state, slug, launch_date)
+	query := `INSERT INTO launches (id, product_id, name, url, description, tagline, image_url, state, slug, launch_date)
         VALUES (:id, :product_id, :name, :url, :description, :tagline, :image_url, :state, :slug, :launch_date)`
 
 	_, err := r.db.NamedExecContext(ctx, query, model)
@@ -88,7 +88,7 @@ func (r *LaunchRepository) Create(ctx context.Context, l *launch.Launch) error {
 
 // GetBySlug retrieves a launch by its slug, including its upvote count and tags.
 func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.Launch, error) {
-    query := `SELECT
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
             COUNT(lu.launch_id) as upvote_count,
             (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
@@ -102,13 +102,13 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
 	if err := r.db.GetContext(ctx, l, query, slug); err != nil {
 		if err == sql.ErrNoRows {
 			// Consider defining a domain-specific error, e.g., launch.ErrNotFound
-			return nil, sql.ErrNoRows
+			return nil, launch.ErrLaunchNotFound
 		}
 		return nil, err
 	}
 
 	domainLaunch := toDomain(l)
-	
+
 	// Load media for this launch
 	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
 	if err == nil {
@@ -120,7 +120,7 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
 
 // GetByProductAndSlug retrieves a launch by its product ID and slug pair
 func (r *LaunchRepository) GetByProductAndSlug(ctx context.Context, productID uuid.UUID, slug string) (*launch.Launch, error) {
-    query := `SELECT
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
             COUNT(lu.launch_id) as upvote_count,
             (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
@@ -129,26 +129,26 @@ func (r *LaunchRepository) GetByProductAndSlug(ctx context.Context, productID uu
         WHERE l.product_id = ? AND l.slug = ?
         GROUP BY l.id`
 
-    query = r.db.Rebind(query)
-    l := &LaunchModel{}
-    if err := r.db.GetContext(ctx, l, query, productID, slug); err != nil {
-        if err == sql.ErrNoRows {
-            return nil, sql.ErrNoRows
-        }
-        return nil, err
-    }
+	query = r.db.Rebind(query)
+	l := &LaunchModel{}
+	if err := r.db.GetContext(ctx, l, query, productID, slug); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
 
-    domainLaunch := toDomain(l)
-    // Load media
-    mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
-    if err == nil {
-        domainLaunch.Media = mediaMap[domainLaunch.ID]
-    }
-    return domainLaunch, nil
+	domainLaunch := toDomain(l)
+	// Load media
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+	if err == nil {
+		domainLaunch.Media = mediaMap[domainLaunch.ID]
+	}
+	return domainLaunch, nil
 }
 
 func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.Launch, error) {
-    query := `SELECT
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
             COUNT(lu.launch_id) as upvote_count,
             (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
@@ -168,7 +168,7 @@ func (r *LaunchRepository) GetByID(ctx context.Context, id uuid.UUID) (*launch.L
 	}
 
 	domainLaunch := toDomain(l)
-	
+
 	// Load media for this launch
 	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
 	if err == nil {
@@ -207,7 +207,7 @@ func (r *LaunchRepository) Update(ctx context.Context, l *launch.Launch) error {
 
 // GetByOwner retrieves all launches for a given owner.
 func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([]*launch.Launch, error) {
-    query := `SELECT
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at,
             (SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count,
             (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
@@ -234,7 +234,7 @@ func (r *LaunchRepository) GetByOwner(ctx context.Context, ownerID uuid.UUID) ([
 
 // GetByProduct retrieves all launches for a given product.
 func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID) ([]*launch.Launch, error) {
-    query := `SELECT
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at,
             (SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count,
             (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
@@ -253,20 +253,20 @@ func (r *LaunchRepository) GetByProduct(ctx context.Context, productID uuid.UUID
 		result = append(result, toDomain(l))
 	}
 
-    // Attach media in bulk
-    mediaMap, err := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
-    if err == nil {
-        for _, dl := range result {
-            dl.Media = mediaMap[dl.ID]
-        }
-    }
+	// Attach media in bulk
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
+	if err == nil {
+		for _, dl := range result {
+			dl.Media = mediaMap[dl.ID]
+		}
+	}
 
 	return result, nil
 }
 
 // GetLatestByProduct retrieves the most recent launch for a given product.
 func (r *LaunchRepository) GetLatestByProduct(ctx context.Context, productID uuid.UUID) (*launch.Launch, error) {
-    query := `SELECT
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
 			(SELECT COUNT(*) FROM launch_upvotes lu WHERE lu.launch_id = l.id) as upvote_count
 		FROM launches l
@@ -284,7 +284,7 @@ func (r *LaunchRepository) GetLatestByProduct(ctx context.Context, productID uui
 	}
 
 	domainLaunch := toDomain(l)
-	
+
 	// Load media for this launch
 	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
 	if err == nil {
@@ -298,7 +298,7 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 	var query string
 
 	if len(states) == 0 {
-        query = `
+		query = `
 			SELECT
                 l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at
 			FROM launches l
@@ -306,7 +306,7 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 			ORDER BY l.launch_date DESC
 		`
 	} else {
-        query = `
+		query = `
 			SELECT
                 l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date, l.updated_at
 			FROM launches l
@@ -338,12 +338,12 @@ func (r *LaunchRepository) GetByState(ctx context.Context, states []launch.State
 
 // GetNthByProductOrderedByCreatedAt returns the nth published launch for a product ordered by created_at DESC.
 func (r *LaunchRepository) GetNthByProductOrderedByCreatedAt(ctx context.Context, productID uuid.UUID, index int) (*launch.Launch, error) {
-    if index <= 0 {
-        return nil, sql.ErrNoRows
-    }
-    // OFFSET is 0-based; index is 1-based
-    offset := index - 1
-    query := `SELECT
+	if index <= 0 {
+		return nil, sql.ErrNoRows
+	}
+	// OFFSET is 0-based; index is 1-based
+	offset := index - 1
+	query := `SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
             COUNT(lu.launch_id) as upvote_count,
             (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
@@ -353,47 +353,47 @@ func (r *LaunchRepository) GetNthByProductOrderedByCreatedAt(ctx context.Context
         GROUP BY l.id
         ORDER BY l.created_at DESC
         LIMIT 1 OFFSET ?`
-    query = r.db.Rebind(query)
-    l := &LaunchModel{}
-    if err := r.db.GetContext(ctx, l, query, productID, offset); err != nil {
-        if err == sql.ErrNoRows {
-            return nil, sql.ErrNoRows
-        }
-        return nil, err
-    }
-    domainLaunch := toDomain(l)
-    mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
-    if err == nil {
-        domainLaunch.Media = mediaMap[domainLaunch.ID]
-    }
-    return domainLaunch, nil
+	query = r.db.Rebind(query)
+	l := &LaunchModel{}
+	if err := r.db.GetContext(ctx, l, query, productID, offset); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
+	domainLaunch := toDomain(l)
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, []uuid.UUID{domainLaunch.ID})
+	if err == nil {
+		domainLaunch.Media = mediaMap[domainLaunch.ID]
+	}
+	return domainLaunch, nil
 }
 
 // GetIndexByProductAndLaunchID returns the 1-based index (created_at DESC) of the given launch within published launches of the product.
 func (r *LaunchRepository) GetIndexByProductAndLaunchID(ctx context.Context, productID, launchID uuid.UUID) (int, error) {
-    // Rank by created_at DESC; index = count of rows with created_at >= target's created_at
-    // Using a correlated subquery for simplicity
-    query := r.db.Rebind(`
+	// Rank by created_at DESC; index = count of rows with created_at >= target's created_at
+	// Using a correlated subquery for simplicity
+	query := r.db.Rebind(`
         SELECT COUNT(*)
         FROM launches l
         WHERE l.product_id = ? AND l.state = 'published' AND l.created_at >= (
             SELECT created_at FROM launches WHERE id = ?
         )
     `)
-    var idx int
-    if err := r.db.GetContext(ctx, &idx, query, productID, launchID); err != nil {
-        return 0, err
-    }
-    if idx <= 0 {
-        return 0, sql.ErrNoRows
-    }
-    return idx, nil
+	var idx int
+	if err := r.db.GetContext(ctx, &idx, query, productID, launchID); err != nil {
+		return 0, err
+	}
+	if idx <= 0 {
+		return 0, sql.ErrNoRows
+	}
+	return idx, nil
 }
 
 // GetFeed retrieves a paginated and ordered feed of launches based on a time period.
 // Valid periods are "daily", "weekly", "monthly", and "all_time".
 func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, offset int) ([]*launch.Launch, error) {
-    baseQuery := `
+	baseQuery := `
         SELECT
             l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
             COUNT(lu.launch_id) as upvote_count,
@@ -455,15 +455,68 @@ func (r *LaunchRepository) GetFeed(ctx context.Context, period string, limit, of
 		result = append(result, toDomain(l))
 	}
 
-    // Attach media in bulk
-    mediaMap, err := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
-    if err == nil {
-        for _, dl := range result {
-            dl.Media = mediaMap[dl.ID]
-        }
-    }
+	// Attach media in bulk
+	mediaMap, err := r.GetMediaByLaunchIDs(ctx, extractLaunchIDs(result))
+	if err == nil {
+		for _, dl := range result {
+			dl.Media = mediaMap[dl.ID]
+		}
+	}
 
 	return result, nil
+}
+
+// HasAwardForPeriod returns true if the given award has been assigned for the given period date
+func (r *LaunchRepository) HasAwardForPeriod(ctx context.Context, awardCode string, periodDate time.Time) (bool, error) {
+	// Normalize the date similarly to AssignAward
+	normalized := periodDate
+	switch awardCode {
+	case launch.AwardCodeProductOfDay:
+		normalized = time.Date(periodDate.Year(), periodDate.Month(), periodDate.Day(), 0, 0, 0, 0, time.UTC)
+	case launch.AwardCodeProductOfWeek:
+		wd := int(periodDate.Weekday())
+		if wd == 0 {
+			wd = 7
+		}
+		delta := wd - 1
+		normalized = time.Date(periodDate.Year(), periodDate.Month(), periodDate.Day()-delta, 0, 0, 0, 0, time.UTC)
+	case launch.AwardCodeProductOfMonth:
+		normalized = time.Date(periodDate.Year(), periodDate.Month(), 1, 0, 0, 0, 0, time.UTC)
+	case launch.AwardCodeProductOfYear:
+		normalized = time.Date(periodDate.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	var exists int
+	q := r.db.Rebind(`SELECT 1 FROM launch_awards la JOIN awards a ON a.id = la.award_id WHERE a.code = ? AND date(la.period_date) = date(?) LIMIT 1`)
+	err := r.db.GetContext(ctx, &exists, q, awardCode, normalized)
+	if err != nil && err != sql.ErrNoRows {
+		return false, err
+	}
+	return exists == 1, nil
+}
+
+// GetTopLaunchInRange returns the published launch with the highest upvotes in [start, end)
+func (r *LaunchRepository) GetTopLaunchInRange(ctx context.Context, start, end time.Time) (*launch.Launch, error) {
+	query := `
+        SELECT
+            l.id, l.product_id, l.name, l.url, l.description, l.tagline, l.image_url, l.state, l.slug, l.launch_date,
+            COUNT(lu.launch_id) as upvote_count,
+            (SELECT COUNT(*) FROM launch_comments c WHERE c.launch_id = l.id) as comment_count
+        FROM launches l
+        LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
+        WHERE l.state = 'published' AND l.launch_date >= ? AND l.launch_date < ?
+        GROUP BY l.id
+        ORDER BY upvote_count DESC, l.launch_date DESC
+        LIMIT 1`
+	query = r.db.Rebind(query)
+	l := &LaunchModel{}
+	if err := r.db.GetContext(ctx, l, query, start, end); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
+	return toDomain(l), nil
 }
 
 // Delete deletes a launch from the database.
@@ -476,202 +529,310 @@ func (r *LaunchRepository) Delete(ctx context.Context, launchID uuid.UUID) error
 // --- Media ---
 
 func (r *LaunchRepository) AddMedia(ctx context.Context, launchID uuid.UUID, url string) error {
-    _, err := r.db.ExecContext(ctx, `INSERT INTO launch_media (id, launch_id, url) VALUES (?, ?, ?)`, uuid.New(), launchID, url)
-    return err
+	_, err := r.db.ExecContext(ctx, `INSERT INTO launch_media (id, launch_id, url) VALUES (?, ?, ?)`, uuid.New(), launchID, url)
+	return err
 }
 
 func (r *LaunchRepository) ReplaceMedia(ctx context.Context, launchID uuid.UUID, urls []string) error {
-    tx, err := r.db.BeginTx(ctx, nil)
-    if err != nil {
-        return err
-    }
-    defer tx.Rollback()
-    
-    // Delete existing media
-    if _, err := tx.ExecContext(ctx, `DELETE FROM launch_media WHERE launch_id = ?`, launchID); err != nil {
-        return err
-    }
-    
-    // Insert new media
-    for _, url := range urls {
-        if _, err := tx.ExecContext(ctx, `INSERT INTO launch_media (id, launch_id, url) VALUES (?, ?, ?)`, uuid.New(), launchID, url); err != nil {
-            return err
-        }
-    }
-    
-    return tx.Commit()
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete existing media
+	if _, err := tx.ExecContext(ctx, `DELETE FROM launch_media WHERE launch_id = ?`, launchID); err != nil {
+		return err
+	}
+
+	// Insert new media
+	for _, url := range urls {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO launch_media (id, launch_id, url) VALUES (?, ?, ?)`, uuid.New(), launchID, url); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *LaunchRepository) GetMediaByLaunchIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]string, error) {
-    if len(ids) == 0 {
-        return map[uuid.UUID][]string{}, nil
-    }
-    query, args, err := sqlx.In(`SELECT launch_id, url FROM launch_media WHERE launch_id IN (?) ORDER BY created_at ASC`, ids)
-    if err != nil {
-        return nil, err
-    }
-    query = r.db.Rebind(query)
-    type row struct {
-        LaunchID uuid.UUID `db:"launch_id"`
-        URL      string    `db:"url"`
-    }
-    var rows []row
-    if err := r.db.SelectContext(ctx, &rows, query, args...); err != nil {
-        return nil, err
-    }
-    result := make(map[uuid.UUID][]string)
-    for _, r := range rows {
-        result[r.LaunchID] = append(result[r.LaunchID], r.URL)
-    }
-    return result, nil
+	if len(ids) == 0 {
+		return map[uuid.UUID][]string{}, nil
+	}
+	query, args, err := sqlx.In(`SELECT launch_id, url FROM launch_media WHERE launch_id IN (?) ORDER BY created_at ASC`, ids)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+	type row struct {
+		LaunchID uuid.UUID `db:"launch_id"`
+		URL      string    `db:"url"`
+	}
+	var rows []row
+	if err := r.db.SelectContext(ctx, &rows, query, args...); err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID][]string)
+	for _, r := range rows {
+		result[r.LaunchID] = append(result[r.LaunchID], r.URL)
+	}
+	return result, nil
 }
 
 func extractLaunchIDs(launches []*launch.Launch) []uuid.UUID {
-    ids := make([]uuid.UUID, 0, len(launches))
-    for _, l := range launches {
-        ids = append(ids, l.ID)
-    }
-    return ids
+	ids := make([]uuid.UUID, 0, len(launches))
+	for _, l := range launches {
+		ids = append(ids, l.ID)
+	}
+	return ids
 }
 
 // UpdateImageURL sets the avatar image URL for a launch
 func (r *LaunchRepository) UpdateImageURL(ctx context.Context, launchID uuid.UUID, imageURL string) error {
-    _, err := r.db.ExecContext(ctx, `UPDATE launches SET image_url = ?, updated_at = current_timestamp WHERE id = ?`, imageURL, launchID)
-    return err
+	_, err := r.db.ExecContext(ctx, `UPDATE launches SET image_url = ?, updated_at = current_timestamp WHERE id = ?`, imageURL, launchID)
+	return err
 }
 
 // ToggleUpvote toggles the upvote for a user and returns whether it's upvoted now and the new count.
 func (r *LaunchRepository) ToggleUpvote(ctx context.Context, launchID uuid.UUID, userID uuid.UUID) (bool, int, error) {
-    upvoted := false
-    var count int
-    err := runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
-        var exists int
-        if err := tx.GetContext(ctx, &exists, r.db.Rebind(`SELECT 1 FROM launch_upvotes WHERE launch_id = ? AND user_id = ?`), launchID, userID); err != nil && err != sql.ErrNoRows {
-            return err
-        }
+	upvoted := false
+	var count int
+	err := runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
+		var exists int
+		if err := tx.GetContext(ctx, &exists, r.db.Rebind(`SELECT 1 FROM launch_upvotes WHERE launch_id = ? AND user_id = ?`), launchID, userID); err != nil && err != sql.ErrNoRows {
+			return err
+		}
 
-        if exists == 1 {
-            if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM launch_upvotes WHERE launch_id = ? AND user_id = ?`), launchID, userID); err != nil {
-                return err
-            }
-        } else {
-            if _, err := tx.ExecContext(ctx, r.db.Rebind(`INSERT INTO launch_upvotes(launch_id, user_id) VALUES(?, ?)`), launchID, userID); err != nil {
-                return err
-            }
-            upvoted = true
-        }
+		if exists == 1 {
+			if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM launch_upvotes WHERE launch_id = ? AND user_id = ?`), launchID, userID); err != nil {
+				return err
+			}
+		} else {
+			if _, err := tx.ExecContext(ctx, r.db.Rebind(`INSERT INTO launch_upvotes(launch_id, user_id) VALUES(?, ?)`), launchID, userID); err != nil {
+				return err
+			}
+			upvoted = true
+		}
 
-        if err := tx.GetContext(ctx, &count, r.db.Rebind(`SELECT COUNT(*) FROM launch_upvotes WHERE launch_id = ?`), launchID); err != nil {
-            return err
-        }
-        return nil
-    })
-    if err != nil {
-        return false, 0, err
-    }
-    return upvoted, count, nil
+		if err := tx.GetContext(ctx, &count, r.db.Rebind(`SELECT COUNT(*) FROM launch_upvotes WHERE launch_id = ?`), launchID); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return false, 0, err
+	}
+	return upvoted, count, nil
 }
 
 // GetUpvotedByUserForLaunchIDs returns a map of launchID->true for the IDs upvoted by the user
 func (r *LaunchRepository) GetUpvotedByUserForLaunchIDs(ctx context.Context, userID uuid.UUID, ids []uuid.UUID) (map[uuid.UUID]bool, error) {
-    result := make(map[uuid.UUID]bool)
-    if len(ids) == 0 {
-        return result, nil
-    }
-    query, args, err := sqlx.In(`SELECT launch_id FROM launch_upvotes WHERE user_id = ? AND launch_id IN (?)`, userID, ids)
-    if err != nil {
-        return nil, err
-    }
-    query = r.db.Rebind(query)
-    var upvotedIDs []uuid.UUID
-    if err := r.db.SelectContext(ctx, &upvotedIDs, query, args...); err != nil {
-        return nil, err
-    }
-    for _, id := range upvotedIDs {
-        result[id] = true
-    }
-    return result, nil
+	result := make(map[uuid.UUID]bool)
+	if len(ids) == 0 {
+		return result, nil
+	}
+	query, args, err := sqlx.In(`SELECT launch_id FROM launch_upvotes WHERE user_id = ? AND launch_id IN (?)`, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+	query = r.db.Rebind(query)
+	var upvotedIDs []uuid.UUID
+	if err := r.db.SelectContext(ctx, &upvotedIDs, query, args...); err != nil {
+		return nil, err
+	}
+	for _, id := range upvotedIDs {
+		result[id] = true
+	}
+	return result, nil
 }
 
 // --- Comments ---
 
 type commentRow struct {
-    ID          uuid.UUID  `db:"id"`
-    LaunchID    uuid.UUID  `db:"launch_id"`
-    AuthorID    uuid.UUID  `db:"author_id"`
-    ParentID    *uuid.UUID `db:"parent_id"`
-    ContentHTML string     `db:"content_html"`
-    IsPinned    bool       `db:"is_pinned"`
-    CreatedAt   time.Time  `db:"created_at"`
-    Upvotes     int        `db:"upvotes"`
+	ID          uuid.UUID      `db:"id"`
+	LaunchID    uuid.UUID      `db:"launch_id"`
+	AuthorID    uuid.UUID      `db:"author_id"`
+	ParentID    *uuid.UUID     `db:"parent_id"`
+	ContentHTML string         `db:"content_html"`
+	Tag         sql.NullString `db:"tag"`
+	IsPinned    bool           `db:"is_pinned"`
+	CreatedAt   time.Time      `db:"created_at"`
+	Upvotes     int            `db:"upvotes"`
 }
 
 func (r *LaunchRepository) CreateComment(ctx context.Context, c *launch.Comment) error {
-    _, err := r.db.ExecContext(ctx, `INSERT INTO launch_comments (id, launch_id, author_id, parent_id, content_html, is_pinned, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, c.ID, c.LaunchID, c.AuthorID, c.ParentID, c.ContentHTML, c.IsPinned)
-    return err
+	var tag interface{}
+	if string(c.Tag) != "" {
+		tag = string(c.Tag)
+	} else {
+		tag = nil
+	}
+	_, err := r.db.ExecContext(ctx, `INSERT INTO launch_comments (id, launch_id, author_id, parent_id, content_html, tag, is_pinned, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`, c.ID, c.LaunchID, c.AuthorID, c.ParentID, c.ContentHTML, tag, c.IsPinned)
+	return err
 }
 
 func (r *LaunchRepository) GetCommentsTree(ctx context.Context, launchID uuid.UUID) ([]*launch.Comment, map[uuid.UUID][]*launch.Comment, error) {
-    // Fetch all comments with upvote counts for the launch
-    query := r.db.Rebind(`SELECT c.id, c.launch_id, c.author_id, c.parent_id, c.content_html, c.is_pinned, c.created_at,
+	// Fetch all comments with upvote counts for the launch
+	query := r.db.Rebind(`SELECT c.id, c.launch_id, c.author_id, c.parent_id, c.content_html, c.tag, c.is_pinned, c.created_at,
         COALESCE((SELECT COUNT(*) FROM launch_comment_upvotes u WHERE u.comment_id = c.id), 0) AS upvotes
         FROM launch_comments c WHERE c.launch_id = ? ORDER BY c.is_pinned DESC, c.created_at ASC`)
-    var rows []commentRow
-    if err := r.db.SelectContext(ctx, &rows, query, launchID); err != nil {
-        return nil, nil, err
-    }
-    topLevel := make([]*launch.Comment, 0)
-    replies := make(map[uuid.UUID][]*launch.Comment)
-    for _, rrow := range rows {
-        c := &launch.Comment{
-            ID:          rrow.ID,
-            LaunchID:    rrow.LaunchID,
-            AuthorID:    rrow.AuthorID,
-            ParentID:    rrow.ParentID,
-            ContentHTML: rrow.ContentHTML,
-            IsPinned:    rrow.IsPinned,
-            Upvotes:     rrow.Upvotes,
-            CreatedAt:   rrow.CreatedAt,
-        }
-        if rrow.ParentID == nil {
-            topLevel = append(topLevel, c)
-        } else {
-            replies[*rrow.ParentID] = append(replies[*rrow.ParentID], c)
-        }
-    }
-    return topLevel, replies, nil
+	var rows []commentRow
+	if err := r.db.SelectContext(ctx, &rows, query, launchID); err != nil {
+		return nil, nil, err
+	}
+	topLevel := make([]*launch.Comment, 0)
+	replies := make(map[uuid.UUID][]*launch.Comment)
+	for _, rrow := range rows {
+		c := &launch.Comment{
+			ID:          rrow.ID,
+			LaunchID:    rrow.LaunchID,
+			AuthorID:    rrow.AuthorID,
+			ParentID:    rrow.ParentID,
+			ContentHTML: rrow.ContentHTML,
+			Tag:         launch.CommentTag(rrow.Tag.String),
+			IsPinned:    rrow.IsPinned,
+			Upvotes:     rrow.Upvotes,
+			CreatedAt:   rrow.CreatedAt,
+		}
+		if rrow.ParentID == nil {
+			topLevel = append(topLevel, c)
+		} else {
+			replies[*rrow.ParentID] = append(replies[*rrow.ParentID], c)
+		}
+	}
+	return topLevel, replies, nil
 }
 
 func (r *LaunchRepository) ToggleCommentUpvote(ctx context.Context, commentID, userID uuid.UUID) (bool, int, error) {
-    upvoted := false
-    var count int
-    err := runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
-        var exists int
-        if err := tx.GetContext(ctx, &exists, r.db.Rebind(`SELECT 1 FROM launch_comment_upvotes WHERE comment_id = ? AND user_id = ?`), commentID, userID); err != nil && err != sql.ErrNoRows {
-            return err
-        }
-        if exists == 1 {
-            if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM launch_comment_upvotes WHERE comment_id = ? AND user_id = ?`), commentID, userID); err != nil {
-                return err
-            }
-        } else {
-            if _, err := tx.ExecContext(ctx, r.db.Rebind(`INSERT INTO launch_comment_upvotes(comment_id, user_id) VALUES(?, ?)`), commentID, userID); err != nil {
-                return err
-            }
-            upvoted = true
-        }
-        if err := tx.GetContext(ctx, &count, r.db.Rebind(`SELECT COUNT(*) FROM launch_comment_upvotes WHERE comment_id = ?`), commentID); err != nil {
-            return err
-        }
-        return nil
-    })
-    if err != nil {
-        return false, 0, err
-    }
-    return upvoted, count, nil
+	upvoted := false
+	var count int
+	err := runInTx(ctx, r.db, func(tx *sqlx.Tx) error {
+		var exists int
+		if err := tx.GetContext(ctx, &exists, r.db.Rebind(`SELECT 1 FROM launch_comment_upvotes WHERE comment_id = ? AND user_id = ?`), commentID, userID); err != nil && err != sql.ErrNoRows {
+			return err
+		}
+		if exists == 1 {
+			if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM launch_comment_upvotes WHERE comment_id = ? AND user_id = ?`), commentID, userID); err != nil {
+				return err
+			}
+		} else {
+			if _, err := tx.ExecContext(ctx, r.db.Rebind(`INSERT INTO launch_comment_upvotes(comment_id, user_id) VALUES(?, ?)`), commentID, userID); err != nil {
+				return err
+			}
+			upvoted = true
+		}
+		if err := tx.GetContext(ctx, &count, r.db.Rebind(`SELECT COUNT(*) FROM launch_comment_upvotes WHERE comment_id = ?`), commentID); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return false, 0, err
+	}
+	return upvoted, count, nil
 }
 
 func (r *LaunchRepository) PinComment(ctx context.Context, commentID uuid.UUID, pinned bool) error {
-    _, err := r.db.ExecContext(ctx, r.db.Rebind(`UPDATE launch_comments SET is_pinned = ?, created_at = created_at WHERE id = ?`), pinned, commentID)
-    return err
+	_, err := r.db.ExecContext(ctx, r.db.Rebind(`UPDATE launch_comments SET is_pinned = ?, created_at = created_at WHERE id = ?`), pinned, commentID)
+	return err
+}
+
+// --- Awards ---
+
+// ListAwards returns all available award types from dictionary
+func (r *LaunchRepository) ListAwards(ctx context.Context) ([]*launch.Award, error) {
+	rows, err := r.db.QueryxContext(ctx, `SELECT id, code, name, COALESCE(description, ''), COALESCE(icon, '') FROM awards ORDER BY name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []*launch.Award
+	for rows.Next() {
+		var a launch.Award
+		if err := rows.Scan(&a.ID, &a.Code, &a.Name, &a.Description, &a.Icon); err != nil {
+			return nil, err
+		}
+		result = append(result, &a)
+	}
+	return result, rows.Err()
+}
+
+// AssignAward assigns an award by code to a launch for a given period date; enforces unique per award/period
+func (r *LaunchRepository) AssignAward(ctx context.Context, launchID uuid.UUID, awardCode string, periodDate time.Time) error {
+	// Resolve award id by code
+	var awardID string
+	if err := r.db.GetContext(ctx, &awardID, r.db.Rebind(`SELECT id FROM awards WHERE code = ?`), awardCode); err != nil {
+		return err
+	}
+
+	// Normalize period date depending on award type
+	normalized := periodDate
+	switch awardCode {
+	case launch.AwardCodeProductOfDay:
+		normalized = time.Date(periodDate.Year(), periodDate.Month(), periodDate.Day(), 0, 0, 0, 0, time.UTC)
+	case launch.AwardCodeProductOfWeek:
+		// Set to Monday of that ISO week in UTC
+		wd := int(periodDate.Weekday())
+		if wd == 0 {
+			wd = 7
+		} // Sunday -> 7
+		delta := wd - 1
+		normalized = time.Date(periodDate.Year(), periodDate.Month(), periodDate.Day()-delta, 0, 0, 0, 0, time.UTC)
+	case launch.AwardCodeProductOfMonth:
+		normalized = time.Date(periodDate.Year(), periodDate.Month(), 1, 0, 0, 0, 0, time.UTC)
+	case launch.AwardCodeProductOfYear:
+		normalized = time.Date(periodDate.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	// Insert row; rely on UNIQUE(award_id, period_date)
+	_, err := r.db.ExecContext(ctx, `INSERT INTO launch_awards (id, launch_id, award_id, period_date) VALUES (?, ?, ?, date(?))`, uuid.New().String(), launchID, awardID, normalized)
+	return err
+}
+
+// GetAwardsByLaunchIDs returns awards keyed by launch id
+func (r *LaunchRepository) GetAwardsByLaunchIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*launch.LaunchAward, error) {
+	result := make(map[uuid.UUID][]*launch.LaunchAward)
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	// Build IN clause
+	q, args, err := sqlx.In(`
+        SELECT la.id, la.launch_id, la.period_date, la.awarded_at,
+               a.id, a.code, a.name, COALESCE(a.description, ''), COALESCE(a.icon, '')
+        FROM launch_awards la
+        JOIN awards a ON a.id = la.award_id
+        WHERE la.launch_id IN (?)
+        ORDER BY la.awarded_at DESC
+    `, ids)
+	if err != nil {
+		return nil, err
+	}
+	q = r.db.Rebind(q)
+
+	rows, err := r.db.QueryxContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var laID string
+		var lID uuid.UUID
+		var period time.Time
+		var awardedAt time.Time
+		var aID, code, name, desc, icon string
+		if err := rows.Scan(&laID, &lID, &period, &awardedAt, &aID, &code, &name, &desc, &icon); err != nil {
+			return nil, err
+		}
+		aw := &launch.LaunchAward{
+			ID:         laID,
+			LaunchID:   lID,
+			PeriodDate: period,
+			AwardedAt:  awardedAt,
+			Award:      launch.Award{ID: aID, Code: code, Name: name, Description: desc, Icon: icon},
+		}
+		result[lID] = append(result[lID], aw)
+	}
+	return result, rows.Err()
 }

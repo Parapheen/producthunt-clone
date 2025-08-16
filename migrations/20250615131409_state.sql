@@ -96,12 +96,16 @@ INSERT INTO categories (id, name, slug) VALUES
 (NULL, 'Найм', 'recruiting'),
 (NULL, 'Инвестиции', 'investing'),
 (NULL, 'Маркетплейс', 'marketplace'),
+(NULL, 'Маркетинг', 'marketing'),
 (NULL, 'Мессенджеры', 'messengers'),
 (NULL, 'Музыка', 'music'),
 (NULL, 'Платежи', 'payments'),
 (NULL, 'Продуктивность', 'productivity'),
 (NULL, 'Продажи', 'sales'),
 (NULL, 'Безопасность', 'security'),
+(NULL, 'Индихакеры', 'indiehackers'),
+(NULL, 'Legaltech', 'legaltech'),
+(NULL, 'Здоровье', 'health'),
 (NULL, 'Путешествия', 'travel');
 
 CREATE TABLE product_categories (

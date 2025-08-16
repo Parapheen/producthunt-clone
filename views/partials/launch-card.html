@@ -7,7 +7,7 @@
   tabindex="0"
 >
   <img
-    src="{{ if $l.ImageURL }}{{ $l.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ $l.Name }}{{ end }}"
+    src="{{ if $l.ImageURL }}{{ $l.ImageURL }}{{ else }}https://ui-avatars.com/api/?name={{ $l.Name }}{{ end }}"
     alt="{{ $l.Name }}"
     class="w-16 h-16 md:w-20 md:h-20 rounded-lg object-cover"
   />
@@ -16,6 +16,17 @@
     <div class="flex justify-between items-start gap-3">
       <div class="min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
+          {{ $awards := (index $.AwardsByLaunch $l.ID) }} {{ if not $awards }}{{
+          if .AwardsByLaunch }}{{ $awards = (index .AwardsByLaunch $l.ID) }}{{
+          end }}{{ end }} {{ if $awards }} {{ range $awards }}
+          <span
+            class="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-800 rounded-full px-2 py-0.5"
+            title="{{ .Award.Name }}"
+          >
+            <span>{{ .Award.Icon }}</span>
+            <span>{{ .Award.Name }}</span>
+          </span>
+          {{ end }} {{ end }}
           <a
             href="/products/{{ if .ProductSlug }}{{ .ProductSlug }}{{ else }}{{ $.Product.Slug }}{{ end }}/launches/{{ if .Index }}{{ .Index }}{{ else if $l.Index }}{{ $l.Index }}{{ else }}{{ $l.Slug }}{{ end }}"
             class="font-semibold text-base md:text-lg text-gray-900 truncate hover:underline"

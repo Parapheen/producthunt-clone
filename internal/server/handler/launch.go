@@ -9,6 +9,7 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
+	humantime "github.com/Parapheen/ph-clone/internal/pkg/human_time"
 	"github.com/Parapheen/ph-clone/internal/pkg/tmpl"
 	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
@@ -26,23 +27,23 @@ func (h *Handler) GetProductLaunchByIndex(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-    p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
+	p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
 	var l *launch.Launch
-    l, err = h.LaunchService.GetNthByProductOrderedByCreatedAt(r.Context(), p.ID, idx)
-    if err !=nil || l == nil {
-        http.NotFound(w, r)
-        return
-    }
+	l, err = h.LaunchService.GetNthByProductOrderedByCreatedAt(r.Context(), p.ID, idx)
+	if err != nil || l == nil {
+		http.NotFound(w, r)
+		return
+	}
 
-    if !l.IsPublic() {
-        http.NotFound(w, r)
-        return
-    }
+	if !l.IsPublic() {
+		http.NotFound(w, r)
+		return
+	}
 
 	// Determine if current user upvoted this launch
 	var upvoted bool
@@ -72,38 +73,22 @@ func (h *Handler) GetProductLaunchByIndex(w http.ResponseWriter, r *http.Request
 		users, err := h.UserService.GetByIDs(r.Context(), memberIDs)
 		if err == nil {
 			userMap := make(map[uuid.UUID]*user.User)
-			for _, usr := range users { userMap[usr.ID] = usr }
+			for _, usr := range users {
+				userMap[usr.ID] = usr
+			}
 			makers = make([]*MemberView, 0, len(memberIDs))
 			for _, m := range p.Members {
 				if usr, ok := userMap[m.UserID]; ok {
-					makers = append(makers, &MemberView{ ID: usr.ID, Name: usr.Name, Role: memberRoles[m.UserID], AvatarURL: usr.AvatarURL, Bio: usr.Bio })
+					makers = append(makers, &MemberView{ID: usr.ID, Name: usr.Name, Role: memberRoles[m.UserID], AvatarURL: usr.AvatarURL, Bio: usr.Bio})
 				}
 			}
 		}
 	}
 
-	humanTime := func(ts time.Time) string {
-		d := time.Since(ts)
-		if d < time.Minute {
-			return "только что"
-		}
-		if d < time.Hour {
-			return strconv.Itoa(int(d.Minutes())) + " мин назад"
-		}
-		if d < 24*time.Hour {
-			return strconv.Itoa(int(d.Hours())) + " ч назад"
-		}
-		days := int(d.Hours() / 24)
-		if days < 30 {
-			return strconv.Itoa(days) + " дн назад"
-		}
-		months := days / 30
-		if months < 12 {
-			return strconv.Itoa(months) + " мес назад"
-		}
-		years := months / 12
-		return strconv.Itoa(years) + " г назад"
-	}
+	humanTime := humantime.HumanTime
+
+	// Awards for this launch
+	awardsByLaunch, _ := h.LaunchService.GetAwardsByLaunchIDs(r.Context(), []uuid.UUID{l.ID})
 
 	t, err := template.New("launch.html").Funcs(template.FuncMap{
 		"dict":           tmpl.Dict,
@@ -119,8 +104,8 @@ func (h *Handler) GetProductLaunchByIndex(w http.ResponseWriter, r *http.Request
 		"views/partials/launch-upvote.html",
 		"views/partials/launch-comments.html",
 	)
-    if err != nil {
-        h.InternalServerError(w, r, err)
+	if err != nil {
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -134,17 +119,17 @@ func (h *Handler) GetProductLaunchByIndex(w http.ResponseWriter, r *http.Request
 	}
 
 	err = t.ExecuteTemplate(w, "layout", map[string]any{
-		"User":    u,
-		"Product": p,
-		"Launch":  l,
-		"Upvoted": upvoted,
-		"Makers":  makers,
-		"token":   nosurf.Token(r),
-		"meta":    meta,
+		"User":           u,
+		"Product":        p,
+		"Launch":         l,
+		"Upvoted":        upvoted,
+		"Makers":         makers,
+		"token":          nosurf.Token(r),
+		"meta":           meta,
+		"AwardsByLaunch": awardsByLaunch,
 	})
-    if err != nil {
-        h.InternalServerError(w, r, err)
+	if err != nil {
+		h.InternalServerError(w, r, err)
 		return
 	}
 }
-

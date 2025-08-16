@@ -14,28 +14,28 @@ func (h *Handler) UserProfile(w http.ResponseWriter, r *http.Request) {
 
 	loggedUser := user.GetUserFromContext(r.Context())
 
-    u, err := h.UserService.GetByID(r.Context(), uuid.MustParse(userID))
+	u, err := h.UserService.GetByID(r.Context(), uuid.MustParse(userID))
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting user", slog.Any("error", err))
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
-    products, err := h.ProductService.GetByOwner(r.Context(), u.ID)
+	products, err := h.ProductService.GetByOwner(r.Context(), u.ID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting products", slog.Any("error", err))
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
-    launches, err := h.LaunchService.GetByOwner(r.Context(), u.ID)
+	launches, err := h.LaunchService.GetByOwner(r.Context(), u.ID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting launches", slog.Any("error", err))
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
-    t, err := template.ParseFiles(
+	t, err := template.ParseFiles(
 		"views/profile.html",
 		"views/layout/layout.html",
 		"views/layout/header.html",
@@ -44,7 +44,7 @@ func (h *Handler) UserProfile(w http.ResponseWriter, r *http.Request) {
 		"views/partials/product-card.html",
 	)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -54,8 +54,8 @@ func (h *Handler) UserProfile(w http.ResponseWriter, r *http.Request) {
 		"Products": products,
 		"Launches": launches,
 	})
-    if err != nil {
-        h.InternalServerError(w, r, err)
+	if err != nil {
+		h.InternalServerError(w, r, err)
 		return
 	}
 }

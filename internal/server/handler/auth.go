@@ -1,8 +1,13 @@
 package handler
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,16 +16,17 @@ import (
 const oauthStateCookie = "oauth_state"
 const sessionCookieName = "session"
 const inviteTokenCookie = "invite_token"
+const vkPKCECookie = "vk_pkce_verifier"
 
 func (h *Handler) LoginModal(w http.ResponseWriter, r *http.Request) {
-    t, err := template.ParseFiles("views/partials/auth-modal.html")
+	t, err := template.ParseFiles("views/partials/auth-modal.html")
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 	err = t.Execute(w, nil)
-    if err != nil {
-        h.InternalServerError(w, r, err)
+	if err != nil {
+		h.InternalServerError(w, r, err)
 		return
 	}
 }
@@ -42,23 +48,23 @@ func (h *Handler) YandexAuth(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) YandexAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// validate state
-    cookie, err := r.Cookie(oauthStateCookie)
+	cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
 	state := r.URL.Query().Get("state")
-    if cookie.Value != state {
-        http.Error(w, "Invalid state", http.StatusInternalServerError)
+	if cookie.Value != state {
+		http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 
-    user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "yandex", code)
+	user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "yandex", code)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -115,23 +121,23 @@ func (h *Handler) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GoogleAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// validate state
-    cookie, err := r.Cookie(oauthStateCookie)
+	cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
 	state := r.URL.Query().Get("state")
-    if cookie.Value != state {
-        http.Error(w, "Invalid state", http.StatusInternalServerError)
+	if cookie.Value != state {
+		http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
 
 	code := r.URL.Query().Get("code")
 
-    user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "google", code)
+	user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "google", code)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -181,34 +187,73 @@ func (h *Handler) VKAuth(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(time.Minute * 10),
 	})
 
-	url := h.AuthService.GetSocialRedirectURL("vk", state)
+	// PKCE for VK ID
+	verifier := generatePKCEVerifier()
+	challenge := pkceS256(verifier)
+	http.SetCookie(w, &http.Cookie{
+		Name:     vkPKCECookie,
+		Value:    verifier,
+		HttpOnly: true,
+		Path:     "/",
+		Expires:  time.Now().Add(time.Minute * 10),
+	})
+
+	url := h.AuthService.GetVKAuthURL(state, challenge)
 
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (h *Handler) VKAuthCallback(w http.ResponseWriter, r *http.Request) {
-    cookie, err := r.Cookie(oauthStateCookie)
+	cookie, err := r.Cookie(oauthStateCookie)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
-	state := r.URL.Query().Get("state")
-    if cookie.Value != state {
-        http.Error(w, "Invalid state", http.StatusInternalServerError)
+	// Parse VK ID payload
+	type vkPayload struct {
+		Code     string `json:"code"`
+		State    string `json:"state"`
+		Type     string `json:"type"`
+		DeviceID string `json:"device_id"`
+	}
+	var p vkPayload
+	if payloadStr := r.URL.Query().Get("payload"); payloadStr != "" {
+		_ = json.Unmarshal([]byte(payloadStr), &p)
+	}
+	if p.Code == "" {
+		p.Code = r.URL.Query().Get("code")
+	}
+	if p.State == "" {
+		p.State = r.URL.Query().Get("state")
+	}
+
+	if cookie.Value != p.State || p.State == "" {
+		http.Error(w, "Invalid state", http.StatusInternalServerError)
 		return
 	}
 
-	code := r.URL.Query().Get("code")
+	verifierCookie, err := r.Cookie(vkPKCECookie)
+	if err != nil || strings.TrimSpace(verifierCookie.Value) == "" {
+		http.Error(w, "Missing PKCE verifier", http.StatusInternalServerError)
+		return
+	}
 
-    user, err := h.AuthService.AuthenticateWithSocial(r.Context(), "vk", code)
+	user, err := h.AuthService.AuthenticateWithVK(r.Context(), p.Code, verifierCookie.Value, p.DeviceID, p.State)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     oauthStateCookie,
+		Value:    "",
+		HttpOnly: true,
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     vkPKCECookie,
 		Value:    "",
 		HttpOnly: true,
 		Path:     "/",
@@ -242,15 +287,15 @@ func (h *Handler) VKAuthCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-    cookie, err := r.Cookie(sessionCookieName)
+	cookie, err := r.Cookie(sessionCookieName)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
-    err = h.AuthService.Logout(r.Context(), cookie.Value)
+	err = h.AuthService.Logout(r.Context(), cookie.Value)
 	if err != nil {
-        h.InternalServerError(w, r, err)
+		h.InternalServerError(w, r, err)
 		return
 	}
 
@@ -263,4 +308,17 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func generatePKCEVerifier() string {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return uuid.NewString()
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func pkceS256(verifier string) string {
+	sum := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }

@@ -1,0 +1,11 @@
+{{ define "content" }}
+<section class="container max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold mb-4">Модерация запусков</h1>
+  <div class="space-y-4">
+    {{ range .Launches }} {{ template "launch-moderation-card" (dict "Launch" .
+    "token" $.token) }} {{ else }}
+    <div class="text-gray-600">Нет запусков на модерации.</div>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

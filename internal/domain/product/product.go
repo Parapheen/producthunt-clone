@@ -8,12 +8,12 @@ import (
 )
 
 type Product struct {
-	ID      uuid.UUID
-	Name    string
-	URL     string
-	Slug    string
-	Tagline string
-    ImageURL string
+	ID       uuid.UUID
+	Name     string
+	URL      string
+	Slug     string
+	Tagline  string
+	ImageURL string
 
 	CreatedAt time.Time
 
@@ -28,7 +28,7 @@ func NewProduct(name, url, tagline string, categories []*Category, ownerID uuid.
 		URL:        url,
 		Slug:       slugify.Slugify(name),
 		Tagline:    tagline,
-        ImageURL:   "",
+		ImageURL:   "",
 		CreatedAt:  time.Now(),
 		Categories: categories,
 		Members:    []*Member{},

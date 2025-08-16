@@ -1,0 +1,40 @@
+{{ define "launch-moderation-card" }} {{ $l := .Launch }}
+<div class="bg-white border rounded-lg p-4">
+  <div class="flex items-start gap-3 justify-between">
+    <div class="flex items-start gap-3">
+      <img
+        src="{{ if $l.ImageURL }}{{ $l.ImageURL }}{{ else }}https://placehold.co/80x80/e0e7ff/4338ca?text={{ $l.Name }}{{ end }}"
+        class="w-16 h-16 rounded-md object-cover"
+        alt="{{ $l.Name }}"
+      />
+      <div>
+        <div class="font-semibold">{{ $l.Name }}</div>
+        {{ if $l.Tagline }}
+        <div class="text-sm text-gray-600">{{ $l.Tagline }}</div>
+        {{ end }}
+        <div class="text-xs mt-1">{{ template "launch-state" $l }}</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <form
+        hx-post="/api/proceed-launch"
+        hx-target="closest div"
+        hx-swap="outerHTML"
+        hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
+      >
+        <input type="hidden" name="launch_id" value="{{ $l.ID }}" />
+        <button class="px-3 py-1 border rounded-md">Опубликовать</button>
+      </form>
+      <form
+        hx-post="/api/decline-launch"
+        hx-target="closest div"
+        hx-swap="outerHTML"
+        hx-headers='{"X-CSRF-Token": "{{ $.token }}"}'
+      >
+        <input type="hidden" name="launch_id" value="{{ $l.ID }}" />
+        <button class="px-3 py-1 border rounded-md">Отклонить</button>
+      </form>
+    </div>
+  </div>
+</div>
+{{ end }}

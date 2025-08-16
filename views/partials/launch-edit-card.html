@@ -5,7 +5,7 @@
   class="bg-white rounded-md flex items-start gap-4 border border-gray-200 p-4"
 >
   <img
-    src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://placehold.co/160x160/e0e7ff/4338ca?text={{ .Launch.Name }}{{ end }}"
+    src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://ui-avatars.com/api/?name={{ .Launch.Name }}{{ end }}"
     alt="{{ .Launch.Name }}"
     class="w-20 h-20 rounded-lg object-cover"
   />

@@ -14,16 +14,16 @@ type Launch struct {
 	Tagline     string
 	URL         string
 	Description string
-    ImageURL    string
-    // Media contains URLs to story-like images for the launch
-    Media       []string
+	ImageURL    string
+	// Media contains URLs to story-like images for the launch
+	Media []string
 	State
 	Slug       string
 	LaunchDate *time.Time
 	Upvotes    int
-    // CommentsCount stores total number of comments (including replies)
-    CommentsCount int
-	UpdatedAt  time.Time
+	// CommentsCount stores total number of comments (including replies)
+	CommentsCount int
+	UpdatedAt     time.Time
 }
 
 func NewLaunch(productID uuid.UUID, name, url string) *Launch {
@@ -32,7 +32,7 @@ func NewLaunch(productID uuid.UUID, name, url string) *Launch {
 		ProductID: productID,
 		Name:      name,
 		URL:       url,
-        Media:     []string{},
+		Media:     []string{},
 		State:     Draft,
 		Slug:      slugify.Slugify(name),
 	}
@@ -72,7 +72,7 @@ func (l *Launch) InModeration() bool {
 
 func (l *Launch) ProceedState() {
 	switch l.State {
-case Draft:
+	case Draft:
 		l.State = Review
 	case Review:
 		l.State = Published

@@ -9,138 +9,186 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
+	"strings"
 
 	"github.com/Parapheen/ph-clone/internal/domain/user"
 	"github.com/google/uuid"
-	"golang.org/x/oauth2"
 )
 
-// VK OAuth2 endpoints are not included in x/oauth2 providers by default, so we define them.
-var vkEndpoint = oauth2.Endpoint{
-    AuthURL:  "https://oauth.vk.com/authorize",
-    TokenURL: "https://oauth.vk.com/access_token",
-}
+// VKOauthProvider implements VK ID (id.vk.com) OAuth without SDK using PKCE
+// Docs: https://id.vk.com/about/business/go/docs/ru/vkid/latest/vk-id/connection/start-integration/auth-without-sdk/auth-without-sdk-web
 
 type VKOauthProvider struct {
-    config *oauth2.Config
-    apiVer string
+	clientID    string
+	redirectURL string
+	scope       string
+	httpClient  *http.Client
 }
 
 func NewVKOauthProvider() *VKOauthProvider {
-    return &VKOauthProvider{
-        config: &oauth2.Config{
-            ClientID:     os.Getenv("VK_CLIENT_ID"),
-            ClientSecret: os.Getenv("VK_CLIENT_SECRET"),
-            Endpoint:     vkEndpoint,
-            RedirectURL:  os.Getenv("VK_REDIRECT_URL"),
-            Scopes:       []string{"email"},
-        },
-        apiVer: "5.131",
-    }
+	scope := os.Getenv("VK_SCOPE")
+	if strings.TrimSpace(scope) == "" {
+		// Request email and phone; VK ID defaults also include vkid.personal_info
+		scope = "email phone"
+	}
+	return &VKOauthProvider{
+		clientID:    os.Getenv("VK_CLIENT_ID"),
+		redirectURL: os.Getenv("VK_REDIRECT_URL"),
+		scope:       scope,
+		httpClient:  http.DefaultClient,
+	}
 }
 
-func (v *VKOauthProvider) GetAuthCodeURL(state string) string {
-    // VK supports adding display or scope params; oauth2.Config already includes scope
-    return v.config.AuthCodeURL(state)
+// BuildAuthURL constructs the VK ID authorization URL including PKCE challenge.
+func (v *VKOauthProvider) BuildAuthURL(state string, codeChallenge string) string {
+	q := url.Values{}
+	q.Set("response_type", "code")
+	q.Set("client_id", v.clientID)
+	if v.scope != "" {
+		q.Set("scope", v.scope)
+	}
+	q.Set("redirect_uri", v.redirectURL)
+	q.Set("state", state)
+	if codeChallenge != "" {
+		q.Set("code_challenge", codeChallenge)
+		q.Set("code_challenge_method", "S256")
+	}
+	return "https://id.vk.com/authorize?" + q.Encode()
 }
 
-func (v *VKOauthProvider) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
-    token, err := v.config.Exchange(ctx, code)
-    if err != nil {
-        return nil, fmt.Errorf("vk: error exchanging code: %w", err)
-    }
-    return token, nil
+// vkTokenResponse matches VK ID token exchange response
+
+type vkTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	IDToken      string `json:"id_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	UserID       int64  `json:"user_id"`
+	State        string `json:"state"`
+	Scope        string `json:"scope"`
 }
 
-type vkUsersGetResponse struct {
-    Response []struct {
-        ID        int    `json:"id"`
-        FirstName string `json:"first_name"`
-        LastName  string `json:"last_name"`
-        Photo200  string `json:"photo_200"`
-    } `json:"response"`
-    Error *struct {
-        ErrorCode int    `json:"error_code"`
-        ErrorMsg  string `json:"error_msg"`
-    } `json:"error"`
+// ExchangeCode exchanges authorization code for tokens using PKCE verifier and device_id.
+func (v *VKOauthProvider) ExchangeCode(ctx context.Context, code string, codeVerifier string, deviceID string, state string) (*vkTokenResponse, error) {
+	form := url.Values{}
+	form.Set("client_id", v.clientID)
+	form.Set("grant_type", "authorization_code")
+	form.Set("code_verifier", codeVerifier)
+	form.Set("device_id", deviceID)
+	form.Set("code", code)
+	form.Set("redirect_uri", v.redirectURL)
+	if state != "" {
+		form.Set("state", state)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://id.vk.com/oauth2/auth", strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("vk: building token request failed: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := v.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("vk: token request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("vk: token endpoint status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var tok vkTokenResponse
+	if err := json.Unmarshal(body, &tok); err != nil {
+		return nil, fmt.Errorf("vk: token response decode failed: %w", err)
+	}
+	return &tok, nil
 }
 
-func (v *VKOauthProvider) GetUserInfo(ctx context.Context, token *oauth2.Token) (*user.SocialAccount, error) {
-    if !token.Valid() {
-        return nil, errors.New("vk: invalid token")
-    }
+// RefreshAccessToken exchanges refresh_token for a new access token
+func (v *VKOauthProvider) RefreshAccessToken(ctx context.Context, refreshToken string, deviceID string, state string) (*vkTokenResponse, error) {
+	form := url.Values{}
+	form.Set("client_id", v.clientID)
+	form.Set("grant_type", "refresh_token")
+	form.Set("refresh_token", refreshToken)
+	form.Set("device_id", deviceID)
+	if state != "" {
+		form.Set("state", state)
+	}
 
-    // Try to read email from token extras (VK returns email in token response when scope includes email)
-    email := ""
-    if e := token.Extra("email"); e != nil {
-        email = fmt.Sprint(e)
-    }
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://id.vk.com/oauth2/auth", strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("vk: building refresh request failed: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-    // Also capture user_id from token extras if provided
-    providerID := ""
-    if uid := token.Extra("user_id"); uid != nil {
-        switch u := uid.(type) {
-        case string:
-            providerID = u
-        case json.Number:
-            providerID = u.String()
-        case float64:
-            providerID = strconv.FormatInt(int64(u), 10)
-        case int64:
-            providerID = strconv.FormatInt(u, 10)
-        case int:
-            providerID = strconv.Itoa(u)
-        default:
-            providerID = fmt.Sprint(uid)
-        }
-    }
-
-    // Call VK API to get profile info (name, etc.)
-    // Even if providerID is empty, users.get will return it from the API
-    values := url.Values{}
-    values.Set("access_token", token.AccessToken)
-    values.Set("v", v.apiVer)
-    values.Set("fields", "photo_200")
-
-    apiURL := "https://api.vk.com/method/users.get?" + values.Encode()
-    req, _ := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
-    resp, err := http.DefaultClient.Do(req)
-    if err != nil {
-        return nil, fmt.Errorf("vk: error calling users.get: %w", err)
-    }
-    defer resp.Body.Close()
-    body, _ := io.ReadAll(resp.Body)
-
-    var vkr vkUsersGetResponse
-    if err := json.Unmarshal(body, &vkr); err != nil {
-        return nil, fmt.Errorf("vk: error decoding users.get response: %w", err)
-    }
-    if vkr.Error != nil {
-        return nil, fmt.Errorf("vk: api error %d: %s", vkr.Error.ErrorCode, vkr.Error.ErrorMsg)
-    }
-    if len(vkr.Response) == 0 {
-        return nil, errors.New("vk: empty users.get response")
-    }
-
-    u := vkr.Response[0]
-    if providerID == "" {
-        providerID = strconv.Itoa(u.ID)
-    }
-    name := fmt.Sprintf("%s %s", u.FirstName, u.LastName)
-
-    if email == "" {
-        return nil, errors.New("vk: email permission not granted or email not available")
-    }
-
-    return &user.SocialAccount{
-        ID:         uuid.New(),
-        Provider:   "vk",
-        ProviderID: providerID,
-        Email:      email,
-        Name:       name,
-        AvatarURL:  u.Photo200,
-    }, nil
+	resp, err := v.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("vk: refresh request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("vk: refresh endpoint status %d: %s", resp.StatusCode, string(body))
+	}
+	var tok vkTokenResponse
+	if err := json.Unmarshal(body, &tok); err != nil {
+		return nil, fmt.Errorf("vk: refresh response decode failed: %w", err)
+	}
+	return &tok, nil
 }
 
+// vkUserInfoResponse matches VK ID user_info endpoint
 
+type vkUserInfoResponse struct {
+	User struct {
+		UserID    string `json:"user_id"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Avatar    string `json:"avatar"`
+		Email     string `json:"email"`
+	} `json:"user"`
+}
+
+// GetUserInfo retrieves user info using access_token
+func (v *VKOauthProvider) GetUserInfo(ctx context.Context, accessToken string) (*user.SocialAccount, error) {
+	form := url.Values{}
+	form.Set("access_token", accessToken)
+	form.Set("client_id", v.clientID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://id.vk.com/oauth2/user_info", strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("vk: building user_info request failed: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := v.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("vk: user_info request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("vk: user_info status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var ui vkUserInfoResponse
+	if err := json.Unmarshal(body, &ui); err != nil {
+		return nil, fmt.Errorf("vk: user_info decode failed: %w", err)
+	}
+
+	email := strings.TrimSpace(ui.User.Email)
+	if email == "" {
+		return nil, errors.New("vk: email permission not granted or email not available")
+	}
+
+	name := strings.TrimSpace(strings.Trim(ui.User.FirstName+" "+ui.User.LastName, " "))
+	return &user.SocialAccount{
+		ID:         uuid.New(),
+		Provider:   "vk",
+		ProviderID: ui.User.UserID,
+		Email:      email,
+		Name:       name,
+		AvatarURL:  ui.User.Avatar,
+	}, nil
+} 

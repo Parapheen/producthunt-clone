@@ -21,7 +21,7 @@
               >
               {{ if $featured.LaunchDate }}
               <span class="text-xs text-gray-500"
-                >{{ humanTime $featured.LaunchDate }}</span
+                >{{ $featured.LaunchDate.Format "02.01.2006" }}</span
               >
               {{ end }}
             </div>
@@ -166,12 +166,13 @@
     "ID" $l.ID "Name" $l.Name "Tagline" $l.Tagline "ImageURL" $l.ImageURL
     "Media" $l.Media "LaunchingSoon" $l.LaunchingSoon "IsPublished"
     $l.IsPublished "URL" $l.URL "Index" $idx) "Categories" $.Product.Categories
-    "Upvoted" (index $.UpvotedMap $l.ID) "ProductSlug" $.Product.Slug) }} {{
-    else }} {{ template "launch-card" (dict "Launch" (dict "ID" $l.ID "Name"
-    $l.Name "Tagline" $l.Tagline "ImageURL" $l.ImageURL "Media" $l.Media
-    "LaunchingSoon" $l.LaunchingSoon "IsPublished" $l.IsPublished "URL" $l.URL
-    "Index" $idx) "Categories" $.Product.Categories "ProductSlug"
-    $.Product.Slug) }} {{ end }} {{ end }} {{ end }}
+    "Upvoted" (index $.UpvotedMap $l.ID) "ProductSlug" $.Product.Slug
+    "AwardsByLaunch" $.AwardsByLaunch) }} {{ else }} {{ template "launch-card"
+    (dict "Launch" (dict "ID" $l.ID "Name" $l.Name "Tagline" $l.Tagline
+    "ImageURL" $l.ImageURL "Media" $l.Media "LaunchingSoon" $l.LaunchingSoon
+    "IsPublished" $l.IsPublished "URL" $l.URL "Index" $idx) "Categories"
+    $.Product.Categories "ProductSlug" $.Product.Slug "AwardsByLaunch"
+    $.AwardsByLaunch) }} {{ end }} {{ end }} {{ end }}
   </div>
   {{ else }}
   <div class="bg-white p-6 text-center rounded-2xl border">
