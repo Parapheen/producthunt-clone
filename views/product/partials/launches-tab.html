@@ -59,18 +59,6 @@
           </button>
           {{ end }}
         </div>
-        {{ else if and (not $featured.LaunchingSoon) $featured.ImageURL }}
-        <div class="max-w-2xl">
-          <div
-            class="relative aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 ring-1 ring-gray-200"
-          >
-            <img
-              src="{{ $featured.ImageURL }}"
-              alt="{{ $featured.Name }}"
-              class="absolute inset-0 w-full h-full object-cover"
-            />
-          </div>
-        </div>
         {{ end }} {{ if $featured.URL }}
         <div class="mt-4 w-full">
           <a
