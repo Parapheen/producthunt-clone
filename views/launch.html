@@ -1,7 +1,7 @@
 {{ define "content" }}
 <div class="container max-w-4xl mx-auto">
   <div class="bg-white">
-    <div class="flex items-start justify-between gap-4 mb-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
       <div class="flex items-start gap-4 min-w-0">
         <img
           src="{{ if .Launch.ImageURL }}{{ .Launch.ImageURL }}{{ else }}https://ui-avatars.com/api/?name={{ .Launch.Name }}{{ end }}"
@@ -27,7 +27,12 @@
           </div>
         </div>
       </div>
-      <div class="flex-shrink-0">
+      {{ if and (not .Launch.LaunchingSoon) .Launch.IsPublished }}
+      <div class="sm:hidden">
+        {{ template "launch-upvote" (dict "Launch" .Launch "token" .token "Upvoted" .Upvoted "WithText" true) }}
+      </div>
+      {{ end }}
+      <div class="flex-shrink-0 self-start sm:self-auto">
         {{ $awards := (index .AwardsByLaunch .Launch.ID) }}
         {{ if $awards }}
         <div class="flex flex-wrap gap-2 mb-2">
@@ -39,15 +44,17 @@
           {{ end }}
         </div>
         {{ end }}
-        {{ if and (not .Launch.LaunchingSoon) .Launch.IsPublished }} {{ template
-        "launch-upvote" (dict "Launch" .Launch "token" .token "Upvoted"
-        .Upvoted "WithText" true) }} {{ end }}
+        {{ if and (not .Launch.LaunchingSoon) .Launch.IsPublished }}
+        <div class="hidden sm:block">
+          {{ template "launch-upvote" (dict "Launch" .Launch "token" .token "Upvoted" .Upvoted "WithText" true) }}
+        </div>
+        {{ end }}
       </div>
     </div>
 
     <div class="mt-2">
       {{ if and (not .Launch.LaunchingSoon) (or (gt (len .Launch.Media) 1) (and (eq (len .Launch.Media) 1) (ne (index .Launch.Media 0) .Launch.ImageURL))) }}
-      <div class="grid grid-cols-3 gap-2 max-w-xl">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-xl">
         {{ range $idx, $url := .Launch.Media }}
           {{ if ne $url $.Launch.ImageURL }}
           <button
