@@ -3,6 +3,7 @@ package product
 import (
 	"net/url"
 	"strings"
+	"unicode/utf8"
 )
 
 const (
@@ -52,7 +53,7 @@ func (p *Product) Validate() error {
 		return ErrTooManyCategories
 	}
 
-	if len(p.Tagline) > 140 {
+	if utf8.RuneCountInString(p.Tagline) > 140 {
 		return ErrProductTaglineTooLong
 	}
 
