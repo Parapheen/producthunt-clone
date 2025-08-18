@@ -11,12 +11,14 @@ import (
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 type LaunchService struct {
 	launchRepo     launch.LaunchRepository
 	telegramCleint TelegramClient
 	storage        Storage
+	sanitizer      *bluemonday.Policy
 }
 
 func NewLaunchService(
@@ -26,6 +28,13 @@ func NewLaunchService(
 	return &LaunchService{
 		launchRepo:     launchRepo,
 		telegramCleint: telegramCleint,
+		sanitizer: func() *bluemonday.Policy {
+			p := bluemonday.UGCPolicy()
+			p.AllowAttrs("href").OnElements("a")
+			p.AllowAttrs("target").OnElements("a")
+			p.AllowAttrs("rel").OnElements("a")
+			return p
+		}(),
 	}
 }
 
@@ -263,6 +272,9 @@ func (s *LaunchService) ToggleUpvote(ctx context.Context, launchID, userID uuid.
 // --- Comments ---
 
 func (s *LaunchService) CreateComment(ctx context.Context, c *launch.Comment) error {
+	if s.sanitizer != nil {
+		c.ContentHTML = s.sanitizer.Sanitize(c.ContentHTML)
+	}
 	if err := c.Validate(); err != nil {
 		return err
 	}

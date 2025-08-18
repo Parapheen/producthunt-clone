@@ -168,33 +168,18 @@ func (h *Handler) NewLaunch(w http.ResponseWriter, r *http.Request) {
 
 	case launch.ErrLaunchAlreadyExists:
 		errors = append(errors, "Запуск с таким названием уже существует")
-		redirectTo := "/products/" + productID.String() + "/launches/edit"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
 
 	case launch.ErrProductNotFound:
 		errors = append(errors, "Продукт не найден")
-		redirectTo := "/products"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
 
 	case launch.ErrLaunchDateInPast:
 		errors = append(errors, "Дата запуска не может быть в прошлом")
-		redirectTo := "/products/" + productID.String() + "/launches/edit"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
 
 	case launch.ErrTooManyMediaFiles:
 		errors = append(errors, "Можно загрузить не более 4 изображений")
-		redirectTo := "/products/" + productID.String() + "/launches/edit"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
 
 	case launch.ErrInvalidURL:
 		errors = append(errors, "Неверный URL")
-		redirectTo := "/products/" + productID.String() + "/launches/edit"
-		w.Header().Add("HX-Redirect", redirectTo)
-		return
 	default:
 		h.Logger.ErrorContext(r.Context(), "error creating launch", slog.Any("error", err))
 		errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")

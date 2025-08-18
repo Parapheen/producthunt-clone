@@ -1293,6 +1293,9 @@
   .inline {
     display: inline;
   }
+  .inline\! {
+    display: inline !important;
+  }
   .inline-block {
     display: inline-block;
   }
@@ -3424,6 +3427,9 @@
   }
   .italic {
     font-style: italic;
+  }
+  .italic\! {
+    font-style: italic !important;
   }
   .not-italic {
     font-style: normal;

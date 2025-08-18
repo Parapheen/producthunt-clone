@@ -20,6 +20,12 @@ import (
 func (h *Handler) NewProductForm(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
 
+	categories, err := h.ProductService.ListCategories(r.Context())
+	if err != nil {
+		h.InternalServerError(w, r, err)
+		return
+	}
+
 	t, err := template.ParseFiles(
 		"views/new-product.html",
 		"views/partials/select-categories.html",
@@ -34,8 +40,9 @@ func (h *Handler) NewProductForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = t.ExecuteTemplate(w, "layout", map[string]interface{}{
-		"User":  u,
-		"token": nosurf.Token(r),
+		"User":       u,
+		"token":      nosurf.Token(r),
+		"Categories": categories,
 	})
 	if err != nil {
 		h.InternalServerError(w, r, err)

@@ -8,30 +8,9 @@
   autocomplete="off"
 >
   <option value="">Выберите категорию...</option>
-  <option value="ai">AI</option>
-  <option value="analytics">Аналитика</option>
-  <option value="art">Искусство</option>
-  <option value="books">Книги</option>
-  <option value="support">Поддержка</option>
-  <option value="design">Дизайн</option>
-  <option value="dev-tools">Инструменты разработчика</option>
-  <option value="ecommerce">E-commerce</option>
-  <option value="education">Образование</option>
-  <option value="events">Мероприятия</option>
-  <option value="fashion">Мода</option>
-  <option value="fintech">Fintech</option>
-  <option value="games">Игры</option>
-  <option value="sport">Спорт</option>
-  <option value="recruiting">Найм</option>
-  <option value="investing">Инвестиции</option>
-  <option value="marketplace">Маркетплейс</option>
-  <option value="messengers">Мессенджеры</option>
-  <option value="music">Музыка</option>
-  <option value="payments">Платежи</option>
-  <option value="productivity">Продуктивность</option>
-  <option value="sales">Продажи</option>
-  <option value="security">Безопасность</option>
-  <option value="travel">Путешествия</option>
+  {{ range .Categories }}
+  <option value="{{ .Slug }}">{{ .Name }}</option>
+  {{ end }}
 </select>
 
 {{ end }}

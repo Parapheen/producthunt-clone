@@ -209,8 +209,8 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 			errors = append(errors, "Дата запуска не может быть в прошлом")
 
 		default:
-			h.InternalServerError(w, r, err)
-			return
+			h.Logger.ErrorContext(r.Context(), "error updating launch", slog.Any("error", err))
+			errors = append(errors, "Что-то пошло не так. Пожалуйста, попробуйте еще раз.")
 		}
 	}
 
