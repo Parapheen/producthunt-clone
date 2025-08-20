@@ -100,7 +100,9 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 		// Blog admin
 		r.Get("/admin/blogs", h.AdminBlogsIndex)
 		r.Get("/admin/blogs/new", h.AdminBlogsNew)
+		r.Get("/admin/blogs/{slug}/edit", h.AdminBlogsEdit)
 		r.Post("/api/admin/blogs", h.AdminBlogsCreate)
+		r.Post("/api/admin/blogs/{slug}", h.AdminBlogsUpdate)
 		// Award pages
 		r.Get("/admin/launches/{launchID}/awards", h.LaunchAwardsPage)
 		r.Get("/admin/products/{productSlug}/launches/{index:[0-9]+}/awards", h.LaunchAwardsPageByIndex)

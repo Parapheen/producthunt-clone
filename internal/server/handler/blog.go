@@ -128,11 +128,11 @@ func (h *Handler) BlogShow(w http.ResponseWriter, r *http.Request) {
 					awardsByLaunch = m
 				}
 				launchItem = map[string]any{
-					"Launch":          l,
-					"ProductSlug":     prodSlug,
-					"Index":           idx,
-					"Upvoted":         false,
-					"AwardsByLaunch":  awardsByLaunch,
+					"Launch":         l,
+					"ProductSlug":    prodSlug,
+					"Index":          idx,
+					"Upvoted":        false,
+					"AwardsByLaunch": awardsByLaunch,
 				}
 			}
 		}

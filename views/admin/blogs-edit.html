@@ -1,0 +1,68 @@
+{{ define "content" }}
+<section class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold mb-6">Редактировать пост</h1>
+  <form
+    method="post"
+    action="/api/admin/blogs/{{ .Post.Slug }}"
+    class="space-y-4"
+  >
+    <input type="hidden" name="csrf_token" value="{{ .token }}" />
+    <div class="grid gap-2">
+      <label class="label" for="title">Заголовок</label>
+      <input
+        name="title"
+        class="input"
+        type="text"
+        id="title"
+        required
+        value="{{ .Post.Title }}"
+      />
+    </div>
+    <div class="grid gap-2">
+      <label class="label" for="excerpt">Короткое описание (эксперт)</label>
+      <textarea
+        name="excerpt"
+        id="excerpt"
+        class="textarea textarea-bordered w-full h-28"
+        maxlength="300"
+        placeholder="Короткий анонс поста"
+      >
+{{ .Post.Excerpt }}</textarea
+      >
+    </div>
+    <div class="grid gap-2">
+      <label for="content" class="label">Контент (Markdown)</label>
+      <textarea
+        id="content"
+        name="content"
+        class="textarea textarea-bordered w-full h-72"
+        required
+      >
+{{ .Post.ContentMD }}</textarea
+      >
+      <p class="text-xs text-gray-500 mt-1">
+        Вставки: [[product:product-slug]] или [[launch:product-slug:index]]
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <input
+        type="checkbox"
+        id="published"
+        name="published"
+        class="checkbox"
+        {{
+        if
+        .Post.Published
+        }}checked{{
+        end
+        }}
+      />
+      <label for="published">Опубликован</label>
+    </div>
+    <div class="flex gap-3">
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="/admin/blogs" class="btn">Отмена</a>
+    </div>
+  </form>
+</section>
+{{ end }}

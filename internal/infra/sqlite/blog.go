@@ -10,14 +10,14 @@ import (
 )
 
 type blogPostModel struct {
-	ID        uuid.UUID      `db:"id"`
-	Title     string         `db:"title"`
-	Slug      string         `db:"slug"`
-	Excerpt   string         `db:"excerpt"`
-	ContentMD string         `db:"content_md"`
-	Published bool           `db:"published"`
-	CreatedAt time.Time      `db:"created_at"`
-	UpdatedAt time.Time      `db:"updated_at"`
+	ID        uuid.UUID `db:"id"`
+	Title     string    `db:"title"`
+	Slug      string    `db:"slug"`
+	Excerpt   string    `db:"excerpt"`
+	ContentMD string    `db:"content_md"`
+	Published bool      `db:"published"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 type BlogRepository struct {
@@ -98,5 +98,3 @@ func (r *BlogRepository) ListPublished(ctx context.Context, limit, offset int) (
 	}
 	return res, nil
 }
-
-

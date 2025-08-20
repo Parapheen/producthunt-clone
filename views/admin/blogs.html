@@ -17,7 +17,13 @@
       <tbody>
         {{ range .Posts }}
         <tr class="border-t">
-          <td class="p-3 truncate">{{ .Title }}</td>
+          <td class="p-3 truncate">
+            <a
+              href="/admin/blogs/{{ .Slug }}/edit"
+              class="text-blue-600 hover:underline"
+              >{{ .Title }}</a
+            >
+          </td>
           <td class="p-3 truncate">{{ .Slug }}</td>
           <td class="p-3">
             {{ if .Published }}Опубликован{{ else }}Черновик{{ end }}

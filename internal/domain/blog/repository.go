@@ -13,5 +13,3 @@ type PostRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*Post, error)
 	ListPublished(ctx context.Context, limit, offset int) ([]*Post, error)
 }
-
-

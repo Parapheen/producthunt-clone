@@ -95,6 +95,7 @@ type BlogService interface {
 	Create(ctx context.Context, p *blog.Post) error
 	Update(ctx context.Context, p *blog.Post) error
 	GetBySlug(ctx context.Context, slug string) (*blog.Post, error)
+	GetRawBySlug(ctx context.Context, slug string) (*blog.Post, error)
 	ListPublished(ctx context.Context, limit, offset int) ([]*blog.Post, error)
 }
 

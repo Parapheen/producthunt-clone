@@ -50,22 +50,25 @@ func (s *BlogService) Update(ctx context.Context, p *blog.Post) error {
 }
 
 func (s *BlogService) GetBySlug(ctx context.Context, slug string) (*blog.Post, error) {
-    p, err := s.repo.GetBySlug(ctx, slug)
-    if err != nil {
-        return nil, err
-    }
-    var buf bytes.Buffer
-    if err := goldmark.Convert([]byte(p.ContentMD), &buf); err == nil {
-        safe := s.sanitizer.SanitizeBytes(buf.Bytes())
-        p.ContentMD = string(safe)
-    } else {
-        p.ContentMD = s.sanitizer.Sanitize(p.ContentMD)
-    }
-    return p, nil
+	p, err := s.repo.GetBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	if err := goldmark.Convert([]byte(p.ContentMD), &buf); err == nil {
+		safe := s.sanitizer.SanitizeBytes(buf.Bytes())
+		p.ContentMD = string(safe)
+	} else {
+		p.ContentMD = s.sanitizer.Sanitize(p.ContentMD)
+	}
+	return p, nil
+}
+
+// GetRawBySlug returns the post without converting markdown to HTML.
+func (s *BlogService) GetRawBySlug(ctx context.Context, slug string) (*blog.Post, error) {
+	return s.repo.GetBySlug(ctx, slug)
 }
 
 func (s *BlogService) ListPublished(ctx context.Context, limit, offset int) ([]*blog.Post, error) {
 	return s.repo.ListPublished(ctx, limit, offset)
 }
-
-

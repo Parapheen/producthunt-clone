@@ -44,4 +44,3 @@ func (p *Post) Validate() error {
 func (p *Post) Touch() {
 	p.UpdatedAt = time.Now()
 }
-
