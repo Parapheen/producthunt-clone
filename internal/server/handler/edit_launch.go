@@ -19,7 +19,7 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 	u := user.GetUserFromContext(r.Context())
 
 	productID := uuid.MustParse(r.PathValue("productID"))
-	launchSlug := r.PathValue("launchSlug")
+	launchID := uuid.MustParse(r.PathValue("launchID"))
 
 	p, err := h.ProductService.GetByID(r.Context(), productID)
 
@@ -34,7 +34,7 @@ func (h *Handler) GetEditLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	launch, err := h.LaunchService.GetBySlug(r.Context(), launchSlug)
+	launch, err := h.LaunchService.GetByID(r.Context(), launchID)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
 		h.InternalServerError(w, r, err)
@@ -81,7 +81,7 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productSlug := r.FormValue("product_slug")
-	launchSlug := r.FormValue("launch_slug")
+	launchID := r.FormValue("launch_id")
 
 	p, err := h.ProductService.GetBySlug(r.Context(), productSlug)
 	if err != nil {
@@ -95,7 +95,7 @@ func (h *Handler) UpdateLaunch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	l, err := h.LaunchService.GetBySlug(r.Context(), launchSlug)
+	l, err := h.LaunchService.GetByID(r.Context(), uuid.MustParse(launchID))
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "error getting launch", slog.Any("error", err))
 		h.InternalServerError(w, r, err)

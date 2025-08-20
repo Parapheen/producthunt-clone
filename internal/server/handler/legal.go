@@ -100,7 +100,7 @@ func (s *Handler) Values(w http.ResponseWriter, r *http.Request) {
 	baseURL := s.BaseURL
 	meta := map[string]any{
 		"Title":       "Ценности — justlaunch",
-		"Description": "Наши ценности платформы",
+		"Description": "Ценности платформы",
 		"Canonical":   baseURL + "/",
 		"OGType":      "website",
 	}

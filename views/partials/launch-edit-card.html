@@ -52,7 +52,7 @@
     {{ if eq .Launch.State.String "draft" }}
     <a
       class="border border-gray-200 rounded-md p-2 w-16 flex items-center justify-center hover:bg-gray-50 hover:text-gray-900"
-      href="/products/{{ .Launch.ProductID }}/launches/{{ .Launch.Slug }}/edit"
+      href="/products/{{ .Launch.ProductID }}/launches/{{ .Launch.ID }}/edit"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

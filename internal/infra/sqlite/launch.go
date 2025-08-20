@@ -95,7 +95,9 @@ func (r *LaunchRepository) GetBySlug(ctx context.Context, slug string) (*launch.
         FROM launches l
         LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
         WHERE l.slug = ?
-        GROUP BY l.id`
+        GROUP BY l.id
+        ORDER BY l.launch_date DESC, l.created_at DESC
+        LIMIT 1`
 
 	query = r.db.Rebind(query)
 	l := &LaunchModel{}
@@ -127,7 +129,9 @@ func (r *LaunchRepository) GetByProductAndSlug(ctx context.Context, productID uu
         FROM launches l
         LEFT JOIN launch_upvotes lu ON l.id = lu.launch_id
         WHERE l.product_id = ? AND l.slug = ?
-        GROUP BY l.id`
+        GROUP BY l.id
+        ORDER BY l.launch_date DESC, l.created_at DESC
+        LIMIT 1`
 
 	query = r.db.Rebind(query)
 	l := &LaunchModel{}

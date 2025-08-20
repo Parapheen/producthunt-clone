@@ -70,7 +70,7 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Get("/new-product", h.NewProductForm)
 	r.Get("/u/{userID}", h.UserProfile)
 	r.Get("/u/{userID}/edit", h.EditProfileForm)
-	r.Get("/products/{productID}/launches/{launchSlug}/edit", h.GetEditLaunch)
+	r.Get("/products/{productID}/launches/{launchID}/edit", h.GetEditLaunch)
 	r.Get("/products/{productSlug}", h.GetProduct)
 	// Nested launch page under product slug
 	// New index-based route: e.g., /products/foo/launches/1

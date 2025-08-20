@@ -1,9 +1,13 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
@@ -13,6 +17,8 @@ import (
 	"github.com/Parapheen/ph-clone/internal/pkg/tmpl"
 	"github.com/google/uuid"
 	"github.com/justinas/nosurf"
+	xhtml "golang.org/x/net/html"
+	xatom "golang.org/x/net/html/atom"
 )
 
 // GetLaunchComments renders the HTMX partial with comments and editor
@@ -116,7 +122,7 @@ func (h *Handler) PostLaunchComment(w http.ResponseWriter, r *http.Request) {
 	}
 	content := r.FormValue("content_html")
 	tag := r.FormValue("tag")
-	c := launch.NewComment(launchID, u.ID, content)
+	c := launch.NewComment(launchID, u.ID, "")
 	switch tag {
 	case string(launch.CommentTagIdea), string(launch.CommentTagQuestion), string(launch.CommentTagLike):
 		c.Tag = launch.CommentTag(tag)
@@ -124,6 +130,13 @@ func (h *Handler) PostLaunchComment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid tag", http.StatusBadRequest)
 		return
 	}
+	// Persist embedded data URL images and rewrite HTML
+	rewritten, err := h.persistDataURLImages(r, c.LaunchID, c.ID, content)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid image: %v", err), http.StatusBadRequest)
+		return
+	}
+	c.ContentHTML = rewritten
 	if err := h.LaunchService.CreateComment(r.Context(), c); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -181,8 +194,15 @@ func (h *Handler) ReplyLaunchComment(w http.ResponseWriter, r *http.Request) {
 	}
 	// Only allow replying to top-level comments: we rely on UI to provide only top-level IDs.
 	content := r.FormValue("content_html")
-	c := launch.NewComment(launchID, u.ID, content)
+	c := launch.NewComment(launchID, u.ID, "")
 	c.ParentID = &parentID
+	// Persist embedded data URL images and rewrite HTML
+	rewritten, err := h.persistDataURLImages(r, c.LaunchID, c.ID, content)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid image: %v", err), http.StatusBadRequest)
+		return
+	}
+	c.ContentHTML = rewritten
 	if err := h.LaunchService.CreateComment(r.Context(), c); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -313,4 +333,100 @@ func unauthorizedAuthModal(w http.ResponseWriter) {
 	w.Header().Set("HX-Retarget", "body")
 	w.Header().Set("HX-Reswap", "beforeend")
 	_ = t.Execute(w, nil)
+}
+
+// persistDataURLImages scans the provided HTML, finds <img src="data:...">,
+// stores them via Storage and rewrites the HTML to point to public URLs.
+func (h *Handler) persistDataURLImages(r *http.Request, launchID, commentID uuid.UUID, htmlContent string) (string, error) {
+	// Parse as HTML fragment within a container element
+	container := &xhtml.Node{Type: xhtml.ElementNode, DataAtom: xatom.Div, Data: "div"}
+	nodes, err := xhtml.ParseFragment(strings.NewReader(htmlContent), container)
+	if err != nil {
+		return "", fmt.Errorf("parse html: %w", err)
+	}
+	var firstErr error
+	var walk func(n *xhtml.Node)
+	walk = func(n *xhtml.Node) {
+		if n.Type == xhtml.ElementNode && n.Data == "img" {
+			for i := range n.Attr {
+				if n.Attr[i].Key == "src" {
+					src := n.Attr[i].Val
+					if strings.HasPrefix(src, "data:") {
+						url, err := h.saveImageDataURL(r, launchID, commentID, src)
+						if err != nil {
+							firstErr = err
+							return
+						}
+						n.Attr[i].Val = url
+					}
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if firstErr != nil {
+				return
+			}
+			walk(c)
+		}
+	}
+	for _, n := range nodes {
+		walk(n)
+		if firstErr != nil {
+			return "", firstErr
+		}
+	}
+	var buf bytes.Buffer
+	for _, n := range nodes {
+		if err := xhtml.Render(&buf, n); err != nil {
+			return "", fmt.Errorf("render html: %w", err)
+		}
+	}
+	return buf.String(), nil
+}
+
+func (h *Handler) saveImageDataURL(r *http.Request, launchID, commentID uuid.UUID, dataURL string) (string, error) {
+	// Expect format: data:<mediatype>;base64,<payload>
+	if !strings.HasPrefix(dataURL, "data:") {
+		return "", fmt.Errorf("not a data url")
+	}
+	comma := strings.IndexByte(dataURL, ',')
+	if comma < 0 {
+		return "", fmt.Errorf("invalid data url")
+	}
+	meta := dataURL[5:comma]
+	payload := dataURL[comma+1:]
+	if !strings.Contains(meta, ";base64") {
+		return "", fmt.Errorf("only base64 data urls are supported")
+	}
+	mediaType := meta[:strings.Index(meta, ";base64")]
+	var ext string
+	switch mediaType {
+	case "image/png":
+		ext = ".png"
+	case "image/jpeg", "image/jpg":
+		ext = ".jpg"
+	case "image/gif":
+		ext = ".gif"
+	case "image/webp":
+		ext = ".webp"
+	default:
+		return "", fmt.Errorf("unsupported image type: %s", mediaType)
+	}
+	// Size guard (base64 ~4/3 of raw)
+	if len(payload) > 14_000_000 { // ~10MB raw
+		return "", fmt.Errorf("image too large")
+	}
+	raw, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		return "", fmt.Errorf("decode image: %w", err)
+	}
+	if len(raw) > 10<<20 {
+		return "", fmt.Errorf("image too large")
+	}
+	pathPrefix := fmt.Sprintf("launches/%s/comments/%s", launchID.String(), commentID.String())
+	url, err := h.Storage.Save(r.Context(), pathPrefix, "image"+ext, bytes.NewReader(raw))
+	if err != nil {
+		return "", fmt.Errorf("store image: %w", err)
+	}
+	return url, nil
 }

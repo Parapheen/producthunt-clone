@@ -168,7 +168,7 @@ func (h *Handler) DeclineLaunch(w http.ResponseWriter, r *http.Request) {
 				users, uErr := h.UserService.GetByIDs(r.Context(), ownerIDs)
 				if uErr == nil {
 					// Link to edit page to fix and resubmit
-					productURL := h.BaseURL + "/products/" + p.ID.String() + "/launches/" + l.Slug + "/edit"
+					productURL := h.BaseURL + "/products/" + p.ID.String() + "/launches/" + l.ID.String() + "/edit"
 					data := map[string]any{
 						"ProductName": p.Name,
 						"LaunchName":  l.Name,

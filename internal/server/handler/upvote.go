@@ -28,8 +28,8 @@ func (h *Handler) ToggleLaunchUpvote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Restrict upvoting for accounts younger than 3 days
-	if time.Since(u.CreatedAt) < 3*24*time.Hour {
+	// Restrict upvoting for accounts younger than 2 days
+	if time.Since(u.CreatedAt) < 2*24*time.Hour {
 		t, err := template.ParseFiles("views/partials/restricted-upvote-modal.html")
 		if err != nil {
 			h.InternalServerError(w, r, err)

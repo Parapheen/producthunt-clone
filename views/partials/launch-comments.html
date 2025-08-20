@@ -105,6 +105,15 @@
           <span class="w-px h-5 bg-gray-300 mx-1"></span>
           <button
             type="button"
+            data-cmd="image"
+            class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+            title="Вставить изображение"
+          >
+            <i class="bi bi-image"></i>
+          </button>
+          <span class="w-px h-5 bg-gray-300 mx-1"></span>
+          <button
+            type="button"
             data-cmd="undo"
             class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
             title="Undo"
@@ -119,6 +128,7 @@
           >
             <i class="bi bi-arrow-clockwise"></i>
           </button>
+          <input id="image-input-{{ $l.ID }}" type="file" accept="image/*" multiple class="hidden" data-image-input="true" />
         </div>
         <div id="editor-{{ $l.ID }}" class="hidden p-2 tiptap"></div>
         <input
@@ -335,6 +345,15 @@
                   <span class="w-px h-5 bg-gray-300 mx-1"></span>
                   <button
                     type="button"
+                    data-cmd="image"
+                    class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
+                    title="Вставить изображение"
+                  >
+                    <i class="bi bi-image"></i>
+                  </button>
+                  <span class="w-px h-5 bg-gray-300 mx-1"></span>
+                  <button
+                    type="button"
                     data-cmd="undo"
                     class="px-2 py-1 rounded hover:bg-gray-100 text-gray-700"
                     title="Отменить"
@@ -349,6 +368,7 @@
                   >
                     <i class="bi bi-arrow-clockwise"></i>
                   </button>
+                  <input id="image-input-reply-{{ $c.ID }}" type="file" accept="image/*" multiple class="hidden" data-image-input="true" />
                 </div>
                 <div
                   id="editor-reply-{{ $c.ID }}"
@@ -387,6 +407,7 @@
   import { Editor } from 'https://esm.sh/@tiptap/core'
   import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
   import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
+  import Image from 'https://esm.sh/@tiptap/extension-image'
 
   function setupToolbar(editor, toolbar) {
     if (!toolbar) return;
@@ -478,6 +499,11 @@
         case "unlink":
           editor.chain().focus().unsetLink().run();
           break;
+        case "image": {
+          const input = toolbar.querySelector('input[data-image-input]');
+          if (input) input.click();
+          break;
+        }
         case "undo":
           editor.chain().focus().undo().run();
           break;
@@ -488,6 +514,72 @@
       updateActive();
     });
   }
+
+  async function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function setupMediaHandlers(editor, editorEl, fileInput) {
+    if (fileInput) {
+      fileInput.addEventListener('change', async () => {
+        const files = Array.from(fileInput.files || []);
+        for (const f of files) {
+          if (!f.type.startsWith('image/')) continue;
+          try {
+            const dataUrl = await fileToDataURL(f);
+            editor.chain().focus().setImage({ src: dataUrl }).run();
+          } catch (_) {}
+        }
+        fileInput.value = '';
+      });
+    }
+    if (editorEl) {
+      editorEl.addEventListener('paste', async (e) => {
+        const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+        const imageItems = items.filter(it => it.kind === 'file' && it.type && it.type.startsWith('image/'));
+        if (imageItems.length > 0) {
+          e.preventDefault();
+          for (const it of imageItems) {
+            const file = it.getAsFile();
+            if (!file) continue;
+            try {
+              const dataUrl = await fileToDataURL(file);
+              editor.chain().focus().setImage({ src: dataUrl }).run();
+            } catch (_) {}
+          }
+        }
+      });
+      editorEl.addEventListener('drop', async (e) => {
+        const files = e.dataTransfer ? Array.from(e.dataTransfer.files || []) : [];
+        const imageFiles = files.filter(f => f.type && f.type.startsWith('image/'));
+        if (imageFiles.length > 0) {
+          e.preventDefault();
+          for (const f of imageFiles) {
+            try {
+              const dataUrl = await fileToDataURL(f);
+              editor.chain().focus().setImage({ src: dataUrl }).run();
+            } catch (_) {}
+          }
+        }
+      });
+    }
+  }
+
+  // Open images full-size on click
+  (function () {
+    const root = document.getElementById("comments-{{ $l.ID }}");
+    if (!root) return;
+    root.addEventListener('click', (e) => {
+      const img = e.target.closest('.comments-scope .prose img');
+      if (!img) return;
+      try { window.open(img.src, '_blank', 'noopener'); } catch (_) {}
+    });
+  })();
 
   // Main editor: tabs + lazy activate on click
   (function () {
@@ -501,6 +593,7 @@
     const cancelBtn = document.getElementById("composer-cancel-{{ $l.ID }}");
     const tagInput = document.getElementById("composer-tag-{{ $l.ID }}");
     const tabButtons = Array.from(document.querySelectorAll("#composer-{{ $l.ID }} .tag-tab"));
+    const fileInput = document.getElementById("image-input-{{ $l.ID }}");
     function updateTabs(activeTag) {
       tabButtons.forEach((b) => {
         const isActive = b.getAttribute("data-tag") === activeTag;
@@ -524,6 +617,7 @@
               linkOnPaste: true,
             },
           }),
+          Image.configure({ inline: false, allowBase64: true }),
           Placeholder.configure({ placeholder: "Напишите вашу обратную связь…" }),
         ],
         content: "",
@@ -532,6 +626,7 @@
         },
       });
       setupToolbar(editor, toolbar);
+      setupMediaHandlers(editor, editorEl, fileInput);
       editors.set("main", editor);
       return editor;
     }
@@ -566,7 +661,7 @@
   // Reply editors: open on demand
   (function () {
     const editors = new Map();
-    function ensureEditor(id, el, hidden, toolbar) {
+    function ensureEditor(id, el, hidden, toolbar, fileInput) {
       const key = "reply-" + id;
       if (editors.has(key)) return editors.get(key);
       const editor = new Editor({
@@ -579,6 +674,7 @@
               linkOnPaste: true,
             },
           }),
+          Image.configure({ inline: false, allowBase64: true }),
           Placeholder.configure({ placeholder: "Напишите ответ…" }),
         ],
         content: "",
@@ -587,6 +683,7 @@
         },
       });
       setupToolbar(editor, toolbar);
+      setupMediaHandlers(editor, el, fileInput);
       editors.set(key, editor);
       return editor;
     }
@@ -597,13 +694,14 @@
       const hidden = document.getElementById("content-reply-html-" + id);
       const toolbar = document.getElementById("toolbar-reply-" + id);
       const actions = document.getElementById("actions-reply-" + id);
+      const fileInput = document.getElementById("image-input-reply-" + id);
       btn.addEventListener("click", () => {
         btn.classList.add("hidden");
         box.classList.remove("hidden");
         toolbar.classList.remove("hidden");
         editorEl.classList.remove("hidden");
         actions.classList.remove("hidden");
-        const ed = ensureEditor(id, editorEl, hidden, toolbar);
+        const ed = ensureEditor(id, editorEl, hidden, toolbar, fileInput);
         setTimeout(() => ed.chain().focus().run(), 0);
       });
     });
@@ -687,6 +785,14 @@
   }
   .comments-scope .prose a:hover {
     color: #1d4ed8; /* indigo-700 */
+  }
+  .comments-scope .prose img {
+    max-width: 100%;
+    height: auto;
+    max-height: 20vh; /* cap very tall images */
+    border-radius: 0.25rem;
+    margin: 0.25rem 0;
+    cursor: zoom-in;
   }
 </style>
 {{ end }}
