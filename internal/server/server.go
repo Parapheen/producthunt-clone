@@ -62,6 +62,8 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 
 	// Routes
 	r.Get("/", h.Home)
+	r.Get("/blog", h.BlogsIndex)
+	r.Get("/blog/{slug}", h.BlogShow)
 	r.Get("/categories/{categorySlug}", h.CategoryPage)
 	r.Get("/promoting", h.PromotingPage)
 	r.Get("/rules", h.Rules)
@@ -95,6 +97,10 @@ func NewServer(h *handler.Handler, m *mw.Middleware, cfg *config.Config) *Server
 	r.Group(func(r chi.Router) {
 		r.Use(m.AdminMiddleware)
 		r.Get("/admin/moderation/launches", h.ModLaunches)
+		// Blog admin
+		r.Get("/admin/blogs", h.AdminBlogsIndex)
+		r.Get("/admin/blogs/new", h.AdminBlogsNew)
+		r.Post("/api/admin/blogs", h.AdminBlogsCreate)
 		// Award pages
 		r.Get("/admin/launches/{launchID}/awards", h.LaunchAwardsPage)
 		r.Get("/admin/products/{productSlug}/launches/{index:[0-9]+}/awards", h.LaunchAwardsPageByIndex)

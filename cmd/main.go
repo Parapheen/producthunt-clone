@@ -54,12 +54,14 @@ func main() {
 	productRepository := sqlite.NewProductRepository(db)
 	launchRepository := sqlite.NewLaunchRepository(db)
 	categoryRepository := sqlite.NewCategoryRepository(db)
+	blogRepository := sqlite.NewBlogRepository(db)
 
 	// Initialize services
 	authService := app.NewAuthService(userRepository)
 	userService := app.NewUserService(userRepository)
 	productService := app.NewProductService(productRepository, categoryRepository)
 	launchService := app.NewLaunchService(launchRepository, telegramClient)
+	blogService := app.NewBlogService(blogRepository)
 
 	// Initialize storage (local by default)
 	ctx := context.Background()
@@ -108,6 +110,7 @@ func main() {
 		userService,
 		productService,
 		launchService,
+		blogService,
 		storage,
 		cfg.App.BaseURL,
 		appMailer,

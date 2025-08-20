@@ -14,6 +14,7 @@ type Handler struct {
 	UserService    UserService
 	ProductService ProductService
 	LaunchService  LaunchService
+	BlogService    BlogService
 	Storage        Storage
 	BaseURL        string
 	Mailer         app.Mailer
@@ -26,6 +27,7 @@ func NewHandler(
 	userService UserService,
 	productService ProductService,
 	launchService LaunchService,
+	blogService BlogService,
 	storage Storage,
 	baseURL string,
 	mailer app.Mailer,
@@ -37,6 +39,7 @@ func NewHandler(
 		UserService:    userService,
 		ProductService: productService,
 		LaunchService:  launchService,
+		BlogService:    blogService,
 		Storage:        storage,
 		BaseURL:        baseURL,
 		Mailer:         mailer,

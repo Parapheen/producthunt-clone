@@ -1423,6 +1423,9 @@
   .h-36 {
     height: calc(var(--spacing) * 36);
   }
+  .h-72 {
+    height: calc(var(--spacing) * 72);
+  }
   .h-\[var\(--radix-select-trigger-height\)\] {
     height: var(--radix-select-trigger-height);
   }
@@ -1465,11 +1468,17 @@
   .min-h-screen {
     min-height: 100vh;
   }
+  .w-1\/5 {
+    width: calc(1/5 * 100%);
+  }
   .w-2 {
     width: calc(var(--spacing) * 2);
   }
   .w-2\.5 {
     width: calc(var(--spacing) * 2.5);
+  }
+  .w-2\/5 {
+    width: calc(2/5 * 100%);
   }
   .w-5 {
     width: calc(var(--spacing) * 5);
@@ -3093,6 +3102,9 @@
   .pb-4 {
     padding-bottom: calc(var(--spacing) * 4);
   }
+  .pb-6 {
+    padding-bottom: calc(var(--spacing) * 6);
+  }
   .pl-2 {
     padding-left: calc(var(--spacing) * 2);
   }
@@ -3980,6 +3992,13 @@
   .transform-view {
     transform-box: view-box;
   }
+  .group-hover\:underline {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        text-decoration-line: underline;
+      }
+    }
+  }
   .group-hover\:shadow-sm {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -4138,6 +4157,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-gray-900);
+      }
+    }
+  }
+  .hover\:text-indigo-800 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-indigo-800);
       }
     }
   }

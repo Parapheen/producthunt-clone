@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Parapheen/ph-clone/internal/app"
+	"github.com/Parapheen/ph-clone/internal/domain/blog"
 	"github.com/Parapheen/ph-clone/internal/domain/launch"
 	"github.com/Parapheen/ph-clone/internal/domain/product"
 	"github.com/Parapheen/ph-clone/internal/domain/user"
@@ -88,6 +89,13 @@ type LaunchService interface {
 	ListAwards(ctx context.Context) ([]*launch.Award, error)
 	AssignAwardToLaunch(ctx context.Context, launchID uuid.UUID, awardCode string, periodDate time.Time) error
 	GetAwardsByLaunchIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]*launch.LaunchAward, error)
+}
+
+type BlogService interface {
+	Create(ctx context.Context, p *blog.Post) error
+	Update(ctx context.Context, p *blog.Post) error
+	GetBySlug(ctx context.Context, slug string) (*blog.Post, error)
+	ListPublished(ctx context.Context, limit, offset int) ([]*blog.Post, error)
 }
 
 type Storage interface {

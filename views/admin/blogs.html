@@ -1,0 +1,32 @@
+{{ define "content" }}
+<section class="max-w-4xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Блог — посты</h1>
+    <a href="/admin/blogs/new" class="btn btn-primary">Новый пост</a>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200">
+    <table class="w-full table-fixed">
+      <thead>
+        <tr class="text-left text-gray-600">
+          <th class="p-3 w-2/5">Заголовок</th>
+          <th class="p-3 w-1/5">Slug</th>
+          <th class="p-3 w-1/5">Статус</th>
+          <th class="p-3 w-1/5">Создан</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Posts }}
+        <tr class="border-t">
+          <td class="p-3 truncate">{{ .Title }}</td>
+          <td class="p-3 truncate">{{ .Slug }}</td>
+          <td class="p-3">
+            {{ if .Published }}Опубликован{{ else }}Черновик{{ end }}
+          </td>
+          <td class="p-3">{{ .CreatedAt.Format "02.01.2006" }}</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{ end }}

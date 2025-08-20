@@ -1,0 +1,19 @@
+{{ define "content" }}
+<article class="max-w-3xl mx-auto">
+  <h1 class="text-3xl font-bold text-gray-900">{{ .Post.Title }}</h1>
+
+  <div class="prose max-w-none mt-6">
+    <div class="space-y-4">{{ safeHTML .PostHTML }}</div>
+  </div>
+
+  {{ if .Product }}
+  <div class="mt-8">
+    {{ template "product-card" .Product }}
+  </div>
+  {{ end }} {{ if .LaunchItem }}
+  <div class="mt-8">
+    {{ template "launch-card" .LaunchItem }}
+  </div>
+  {{ end }}
+</article>
+{{ end }}
