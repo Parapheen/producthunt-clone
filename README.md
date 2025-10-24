@@ -226,3 +226,18 @@ This project is licensed under the MIT License.
 - Inspired by Product Hunt
 - Built with Go and HTMX
 - Styled with Tailwind CSS
+
+
+## How to start app locally
+
+```shell
+go mod download
+```
+
+```shell
+cp env.exmaple .env
+```
+
+```shell
+go run cmd/main.go
+```

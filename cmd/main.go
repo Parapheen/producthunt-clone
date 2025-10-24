@@ -46,6 +46,14 @@ func main() {
 	}
 	defer db.Close()
 
+	// Run database migrations
+	logger.Info("Running database migrations...")
+	if err := sqlite.RunMigrations(db.DB, "migrations", logger); err != nil {
+		logger.Error("Failed to run migrations", "error", err)
+		os.Exit(1)
+	}
+	logger.Info("Database migrations completed successfully")
+
 	// Initialize Telegram client
 	telegramClient := telegram.NewTelegramClient(cfg.Telegram.BotToken, logger)
 
