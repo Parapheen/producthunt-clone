@@ -43,13 +43,7 @@ up: migrate-up run
 build:
 	$(GO) build -o $(APP_NAME) cmd/main.go
 
-install: build
-	@echo "Installing $(APP_NAME) to /usr/local/bin/"
-	@sudo install -m 0755 $(APP_NAME) /usr/local/bin/$(APP_NAME)
-
-# Development commands
 deps:
-	$(GO) mod download
 	$(GO) mod tidy
 
 dev: deps
@@ -90,7 +84,6 @@ help:
 	@echo "  run               - Run the application"
 	@echo "  up                - Run migrations and start app"
 	@echo "  build             - Build the application"
-	@echo "  install           - Install to /usr/local/bin"
 	@echo ""
 	@echo "Development:"
 	@echo "  deps              - Download and tidy dependencies"
