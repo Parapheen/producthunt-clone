@@ -4,9 +4,12 @@
 APP_NAME := ph-clone
 DB_PATH := data.db
 MIGRATIONS_DIR := migrations
+CSS_INPUT := assets/css/input.css
+CSS_OUTPUT := assets/css/output.css
 GO := go
+TAILWINDCSS := ./tailwindcss
 
-.PHONY: help migrate-up migrate-status migrate-down migrate-reset migrate-create run up build install deps clean lint fmt vet setup dev test coverage
+.PHONY: help migrate-up migrate-status migrate-down migrate-reset migrate-create run up build install deps clean lint fmt vet setup dev test coverage css-build css-watch css-dev
 
 # Database commands (goose)
 migrate-up:
@@ -64,6 +67,15 @@ vet:
 
 lint: fmt vet
 
+
+# CSS Build/Watch commands
+css-build:
+	$(TAILWINDCSS) -i $(CSS_INPUT) -o $(CSS_OUTPUT)
+
+css-watch:
+	$(TAILWINDCSS) -i $(CSS_INPUT) -o $(CSS_OUTPUT) --watch
+
+css-dev: css-build css-watch
 # Setup
 # setup: install deps and run migrations (non-interactive)
 setup: deps migrate-up
@@ -98,3 +110,6 @@ help:
 	@echo "  clean             - Clean build artifacts"
 	@echo "  setup             - Initial project setup"
 	@echo "  help              - Show this help message"
+	@echo "Tailwind:"
+	@echo "  css-dev           - Autoreload styles"
+
