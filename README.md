@@ -226,3 +226,41 @@ This project is licensed under the MIT License.
 - Inspired by Product Hunt
 - Built with Go and HTMX
 - Styled with Tailwind CSS
+
+
+## To run a project
+
+```shel
+cp env.example .env 
+```
+
+```shell
+go run cmd/main.go
+```
+
+
+## Running migrations 
+
+```shell
+# Get status
+goose -dir migrations/ sqlite3 data.db status
+
+# Make all migrations
+goose -dir migrations/ sqlite3 data.db up
+
+# Move one downgrade
+goose -dir migrations/ sqlite3 data.db down
+
+# Move all downgades 
+goose -dir migrations/ sqlite3 data.db reset
+
+# Create new migrations
+goose -dir migrations/  <migration_name>  sql
+
+# Upgrade to specific version
+goose -dir migrations/ sqlite3 data.db up-to <version>
+
+# Downgrade to specific version
+goose -dir migrations/ sqlite3 data.db down-to <version>
+```
+
